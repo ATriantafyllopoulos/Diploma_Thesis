@@ -55,7 +55,8 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\..\PropertySheets\OPENGL_3_3_DEBUG_32.props" />
+    <Import Project="..\PropertySheets\OPENGL_3_3_DEBUG_32.props" />
+    <Import Project="..\PropertySheets\FREEIMAGE_DEBUG_32.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -156,21 +157,27 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="objModel.cpp" />
     <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="Renderable_GL3.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="vertexBufferObject.cpp" />
     <ClCompile Include="Viewer.cpp" />
     <ClCompile Include="Viewer_GL3.cpp" />
     <ClCompile Include="VirtualWorld.cpp" />
     <ClCompile Include="WindowsHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="objModel.h" />
     <ClInclude Include="PhysicsEngine.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Renderable_GL3.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="vertexBufferObject.h" />
     <ClInclude Include="Viewer.h" />
     <ClInclude Include="Viewer_GL3.h" />
     <ClInclude Include="VirtualObject.h" />

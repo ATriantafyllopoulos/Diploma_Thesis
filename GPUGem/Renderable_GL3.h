@@ -2,13 +2,8 @@
 #define RENDERABLE_GL3_H
 
 #include "Renderable.h"
-
-#include <GL/glew.h>
-
-#include <GL/wglew.h>
-#pragma comment(lib, "glew32.lib")
-#pragma comment(lib, "opengl32.lib")
-
+#include "vertexBufferObject.h"
+#include "texture.h"
 #include "Shader.h"
 #include <glm/gtc/matrix_transform.hpp>
 class Renderable_GL3 :
@@ -22,6 +17,8 @@ public:
 	virtual void draw(Shader *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight) = 0;
 
 protected:
+	CTexture tAmbientTexture;
+	CVertexBufferObject vboModelData;
 	int shapeSizeCounter;
 	unsigned int shapeVao;
 	unsigned int shapeVbo;
