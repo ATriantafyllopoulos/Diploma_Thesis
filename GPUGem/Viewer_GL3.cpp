@@ -6,6 +6,12 @@ Viewer_GL3::Viewer_GL3(HWND hwnd)
 
 	if (create(hwnd))
 		init();
+
+	vEye = glm::vec3(0.0f, 0.0f, 0.0f);
+	vView = glm::vec3(0.0f, 0.0, -1.0f);
+	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	fSpeed = 25.0f;
+	fSensitivity = 0.01f;
 }
 
 Viewer_GL3::~Viewer_GL3()
@@ -71,7 +77,7 @@ bool Viewer_GL3::create(HWND hwnd)
 	glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]); // Get back the OpenGL MAJOR version we are using
 	glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]); // Get back the OpenGL MAJOR version we are using
 
-	//std::cout << "Using OpenGL: " << glVersion[0] << "." << glVersion[1] << std::endl; // Output which version of OpenGL we are using
+	std::cout << "Using OpenGL: " << glVersion[0] << "." << glVersion[1] << std::endl; // Output which version of OpenGL we are using
 	return true; // We have successfully created a context, return true
 }
 
@@ -94,14 +100,140 @@ void Viewer_GL3::render(void)
 	glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 
-	viewMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0.0f, 1.0f, 0.0f));
-	projectionMatrix = glm::perspective(40.f, (float)windowWidth / (float)windowHeight, 1.f, 200.f);  // Create our perspective projection matrix
+	//viewMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0.0f, 1.0f, 0.0f));
+	viewMatrix = glm::lookAt(vEye, vView, vUp);
+	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  // Create our perspective projection matrix
 	//projectionMatrix = glm::ortho(-15.f, 30.f, -5.f, 60.f, 1.f, 10.f);
-
+	cameraUpdate();
 	for (unsigned i = 0; i < models.size(); i++)
 	{
 		models[i]->draw(shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
 	}
 
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
+}
+
+/*-----------------------------------------------
+
+Name:	rotateWithMouse
+
+Params:	none
+
+Result:	Checks for moving of mouse and rotates
+camera.
+
+/*---------------------------------------------*/
+void Viewer_GL3::rotateWithMouse()
+{
+	GetCursorPos(&pCur);
+	RECT rRect; 
+	GetWindowRect(hwnd, &rRect);
+	int iCentX = (rRect.left + rRect.right) >> 1,
+		iCentY = (rRect.top + rRect.bottom) >> 1;
+
+	float deltaX = (float)(iCentX - pCur.x)*fSensitivity;
+	float deltaY = (float)(iCentY - pCur.y)*fSensitivity;
+
+	if (deltaX != 0.0f)
+	{
+		vView -= vEye;
+		vView = glm::rotate(vView, deltaX, glm::vec3(0.0f, 1.0f, 0.0f));
+		vView += vEye;
+	}
+	if (deltaY != 0.0f)
+	{
+		glm::vec3 vAxis = glm::cross(vView - vEye, vUp);
+		vAxis = glm::normalize(vAxis);
+		float fAngle = deltaY;
+		float fNewAngle = fAngle + getAngleX();
+		if (fNewAngle > -89.80f && fNewAngle < 89.80f)
+		{
+			vView -= vEye;
+			vView = glm::rotate(vView, deltaY, vAxis);
+			vView += vEye;
+		}
+	}
+	SetCursorPos(iCentX, iCentY);
+}
+
+/*-----------------------------------------------
+
+Name:	getAngleY
+
+Params:	none
+
+Result:	Gets Y angle of camera (head turning left
+and right).
+
+/*---------------------------------------------*/
+
+float Viewer_GL3::getAngleY()
+{
+	glm::vec3 vDir = vView - vEye; vDir.y = 0.0f;
+	glm::normalize(vDir);
+	float fAngle = acos(glm::dot(glm::vec3(0, 0, -1), vDir))*(180.0f / PI);
+	if (vDir.x < 0)fAngle = 360.0f - fAngle;
+	return fAngle;
+}
+
+/*-----------------------------------------------
+
+Name:		getAngleX
+
+Params:	none
+
+Result:	Gets X angle of camera (head turning up
+and down).
+
+/*---------------------------------------------*/
+
+float Viewer_GL3::getAngleX()
+{
+	glm::vec3 vDir = vView - vEye;
+	vDir = glm::normalize(vDir);
+	glm::vec3 vDir2 = vDir; vDir2.y = 0.0f;
+	vDir2 = glm::normalize(vDir2);
+	float fAngle = acos(glm::dot(vDir2, vDir))*(180.0f / PI);
+	if (vDir.y < 0)fAngle *= -1.0f;
+	return fAngle;
+}
+
+/*-----------------------------------------------
+
+Name:	update
+
+Params:	none
+
+Result:	Performs updates of camera - moving and
+rotating.
+
+/*---------------------------------------------*/
+void Viewer_GL3::cameraUpdate()
+{
+	rotateWithMouse();
+
+	// Get view direction
+	glm::vec3 vMove = vView - vEye;
+	vMove = glm::normalize(vMove);
+	vMove *= fSpeed;
+
+	glm::vec3 vStrafe = glm::cross(vView - vEye, vUp);
+	vStrafe = glm::normalize(vStrafe);
+	vStrafe *= fSpeed;
+
+	int iMove = 0;
+	glm::vec3 vMoveBy;
+	//Get vector of move
+	if ((GetAsyncKeyState('W') >> 15) & 1)
+		vMoveBy += vMove;
+	if ((GetAsyncKeyState('S') >> 15) & 1)
+		vMoveBy -= vMove;
+	if ((GetAsyncKeyState('D') >> 15) & 1)
+		vMoveBy -= vStrafe;
+	if ((GetAsyncKeyState('A') >> 15) & 1)
+		vMoveBy += vStrafe;
+	vEye += vMoveBy; vView += vMoveBy;
+
+	if ((GetAsyncKeyState(27) >> 15) & 1)
+		exit(1);
 }
