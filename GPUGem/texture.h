@@ -47,7 +47,7 @@ public:
 	int getWidth();
 	int getHeight();
 	int getBPP();
-
+	std::string GetPath();
 	void releaseTexture();
 
 	CTexture();

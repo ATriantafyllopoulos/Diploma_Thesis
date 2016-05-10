@@ -14,7 +14,7 @@ public:
 	~Renderable_GL3();
 
 	void draw(){};
-	virtual void draw(Shader *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight) = 0;
+	virtual void draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::vec3 &cameraEye, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight) = 0;
 
 protected:
 	CTexture tAmbientTexture;

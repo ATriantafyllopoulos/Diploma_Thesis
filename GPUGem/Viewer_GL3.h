@@ -57,7 +57,7 @@ public:
 	float getAngleX(), getAngleY();// Functions that get viewing angles
 
 private:
-	Shader *shader; // Our GLSL shader  
+	CShaderProgram *shader; // Our GLSL shader  
 	HGLRC hrc; // Rendering context
 	HDC hdc; // Device context
 	HWND hwnd; // Window identifier
@@ -76,6 +76,8 @@ private:
 	float fSpeed;
 	float fSensitivity; // How many degrees to rotate per pixel moved by mouse (nice value is 0.10)
 	POINT pCur; // For mouse rotation
+
+	CShader shVertex, shFragment, shGeometry;
 };
 
 #endif

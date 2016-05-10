@@ -7,15 +7,20 @@ Viewer_GL3::Viewer_GL3(HWND hwnd)
 	if (create(hwnd))
 		init();
 
-	vEye = glm::vec3(0.0f, 0.0f, 0.0f);
-	vView = glm::vec3(0.0f, 0.0, -1.0f);
+	vEye = glm::vec3(0.0f, 0.0f, 100.0f);
+	vView = glm::vec3(0.0f, 0.0f, 0.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	fSpeed = 25.0f;
-	fSensitivity = 0.01f;
+	fSensitivity = 0.1f;
 }
 
 Viewer_GL3::~Viewer_GL3()
 {
+	shader->deleteProgram();
+	delete shader;
+	shVertex.deleteShader();
+	shFragment.deleteShader();
+
 	wglMakeCurrent(hdc, 0); // Remove the rendering context from our device context
 	wglDeleteContext(hrc); // Delete our rendering context
 	ReleaseDC(hwnd, hdc); // Release the device context from our window
@@ -88,7 +93,20 @@ In the future it might be incorporated to create.
 void Viewer_GL3::init(void)
 {
 	glClearColor(0.4f, 0.6f, 0.9f, 0.0f); // Set the clear color based on Microsofts CornflowerBlue (default in XNA)
-	shader = new Shader("shader.vert", "shader.frag"); // Create our shader by loading our vertex and fragment shader  
+	//shader = new Shader("..//Shaders/shader.vert", "..//Shaders/shader.frag"); // Create our shader by loading our vertex and fragment shader
+	shader = new CShaderProgram;
+	
+	shVertex.loadShader("..//Shaders/shader.vert", GL_VERTEX_SHADER);
+	shFragment.loadShader("..//Shaders/shader.frag", GL_FRAGMENT_SHADER);
+	shGeometry.loadShader("..//Shaders/shader.geom", GL_GEOMETRY_SHADER);
+	
+	shader->createProgram();
+
+	shader->addShaderToProgram(&shVertex);
+	shader->addShaderToProgram(&shFragment);
+	shader->addShaderToProgram(&shGeometry);
+
+	shader->linkProgram();
 }
 
 /**
@@ -96,10 +114,9 @@ Rendering function
 */
 void Viewer_GL3::render(void)
 {
-
 	glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
-
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//viewMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0.0f, 1.0f, 0.0f));
 	viewMatrix = glm::lookAt(vEye, vView, vUp);
 	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  // Create our perspective projection matrix
@@ -107,7 +124,7 @@ void Viewer_GL3::render(void)
 	cameraUpdate();
 	for (unsigned i = 0; i < models.size(); i++)
 	{
-		models[i]->draw(shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
+		models[i]->draw(shader, projectionMatrix, vEye, viewMatrix, windowWidth, windowHeight);
 	}
 
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
@@ -166,7 +183,6 @@ Result:	Gets Y angle of camera (head turning left
 and right).
 
 /*---------------------------------------------*/
-
 float Viewer_GL3::getAngleY()
 {
 	glm::vec3 vDir = vView - vEye; vDir.y = 0.0f;
@@ -186,7 +202,6 @@ Result:	Gets X angle of camera (head turning up
 and down).
 
 /*---------------------------------------------*/
-
 float Viewer_GL3::getAngleX()
 {
 	glm::vec3 vDir = vView - vEye;

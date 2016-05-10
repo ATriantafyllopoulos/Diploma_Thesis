@@ -200,3 +200,8 @@ int CTexture::getBPP()
 {
 	return iBPP;
 }
+
+std::string CTexture::GetPath()
+{
+	return sPath;
+}
