@@ -3,7 +3,6 @@
 
 Viewer_GL3::Viewer_GL3(HWND hwnd)
 {
-
 	if (create(hwnd))
 		init();
 }
