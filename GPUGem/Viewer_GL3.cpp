@@ -7,6 +7,40 @@ Viewer_GL3::Viewer_GL3(HWND hwnd)
 		init();
 }
 
+/*-----------------------------------------------
+
+Name:	ResetTimer
+
+Params:	none
+
+Result:	Resets application timer (for example
+after re-activation of application).
+
+/*---------------------------------------------*/
+
+void Viewer_GL3::ResetTimer()
+{
+	tLastFrame = clock();
+	fFrameInterval = 0.0f;
+}
+
+/*-----------------------------------------------
+
+Name:	UpdateTimer
+
+Params:	none
+
+Result:	Updates application timer.
+
+/*---------------------------------------------*/
+
+void Viewer_GL3::UpdateTimer()
+{
+	clock_t tCur = clock();
+	fFrameInterval = float(tCur - tLastFrame) / float(CLOCKS_PER_SEC);
+	tLastFrame = tCur;
+}
+
 Viewer_GL3::~Viewer_GL3()
 {
 	shader.deleteProgram();
@@ -21,13 +55,7 @@ Viewer_GL3::~Viewer_GL3()
 
 void Viewer_GL3::addToDraw(Renderable *r)
 {
-	//models.push_back(static_cast<std::shared_ptr<Renderable_GL3>>(&*r));
-	//Renderable_GL3* temp1 = static_cast<Renderable_GL3*>(r);
-	//auto temp = std::make_shared<Renderable_GL3>(*temp1);
 	models.push_back((std::shared_ptr<Renderable_GL3>)(static_cast<Renderable_GL3*>(r)));
-	//temp = std::static_pointer_cast<Renderable_GL3>(r);
-	//models.push_back(std::shared_ptr<Renderable_GL3>(static_cast<Renderable_GL3*>(r)));
-	//models.push_back(r);
 }
 
 bool Viewer_GL3::create(HWND hwnd)
@@ -114,11 +142,12 @@ void Viewer_GL3::init(void)
 	vView = glm::vec3(0.0f, 10.0f, 19.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	fSpeed = 25.0f;
-	fSensitivity = 0.1f;
+	fSensitivity = 0.01f;
 
 	viewMatrix = glm::lookAt(vEye, vView, vUp);	//create our view matrix
 	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  //Create our perspective projection matrix
 
+	ResetTimer();
 }
 
 /**
@@ -139,6 +168,7 @@ void Viewer_GL3::render(void)
 		models[i]->draw(&shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
 	}
 	cameraUpdate();
+	UpdateTimer();
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
 }
 
@@ -253,14 +283,16 @@ void Viewer_GL3::cameraUpdate()
 	glm::vec3 vMoveBy;
 	//Get vector of move
 	if ((GetAsyncKeyState('W') >> 15) & 1)
-		vMoveBy += vMove;
+		vMoveBy += vMove * fFrameInterval;
 	if ((GetAsyncKeyState('S') >> 15) & 1)
-		vMoveBy -= vMove;
-	if ((GetAsyncKeyState('D') >> 15) & 1)
-		vMoveBy -= vStrafe;
+		vMoveBy -= vMove * fFrameInterval;
 	if ((GetAsyncKeyState('A') >> 15) & 1)
-		vMoveBy += vStrafe;
-	vEye += vMoveBy; vView += vMoveBy;
+		vMoveBy -= vStrafe * fFrameInterval;
+	if ((GetAsyncKeyState('D') >> 15) & 1)
+		vMoveBy += vStrafe * fFrameInterval;
+
+	vEye += vMoveBy; 
+	vView += vMoveBy;
 
 	if ((GetAsyncKeyState(27) >> 15) & 1)
 		exit(1);

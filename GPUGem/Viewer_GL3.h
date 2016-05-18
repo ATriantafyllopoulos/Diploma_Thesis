@@ -58,6 +58,12 @@ public:
 	float getAngleX(), getAngleY();// Functions that get viewing angles
 
 private:
+
+	void ResetTimer();
+	void UpdateTimer();
+	clock_t tLastFrame;
+	float fFrameInterval;
+
 	CShaderProgram shader; // Our GLSL shader  
 	HGLRC hrc; // Rendering context
 	HDC hdc; // Device context

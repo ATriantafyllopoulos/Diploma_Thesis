@@ -15,6 +15,15 @@ Adds new object to object list. Also adds it to viewer's and engine's list.
 */
 void VirtualWorld::addVirtualObject(std::shared_ptr<VirtualObject> obj)
 {
+	/*clock_t tCurrent = clock();
+	if ((tCurrent - tLastSecond) >= CLOCKS_PER_SEC)
+	{
+		tLastSecond += CLOCKS_PER_SEC;
+		iFPSCount = iCurrentFPS;
+		iCurrentFPS = 0;
+	}
+	if (ptrRenderScene)ptrRenderScene(lpParam);
+	iCurrentFPS++;*/
 	virtualObjects.push_back(obj);
 	viewer->addToDraw(&*obj);
 	//engine->addRigidBody(obj);
