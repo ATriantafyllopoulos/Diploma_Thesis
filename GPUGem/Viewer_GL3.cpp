@@ -139,7 +139,7 @@ void Viewer_GL3::render(void)
 	{
 		models[i]->draw(&shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
 	}
-	//cameraUpdate();
+	cameraUpdate();
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
 }
 
