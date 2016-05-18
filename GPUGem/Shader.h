@@ -8,7 +8,7 @@
 
 #include <string>
 #include <vector>
-
+#include <sstream>
 #include <glm/gtc/type_ptr.hpp>
 /********************************
 
@@ -29,8 +29,9 @@ public:
 	UINT getShaderID();
 
 	CShader();
-
+	bool GetLinesFromFile(std::string sFile, bool bIncludePart, std::vector<std::string>* vResult);
 private:
+
 	UINT uiShader; // ID of shader
 	int iType; // GL_VERTEX_SHADER, GL_FRAGMENT_SHADER...
 	bool bLoaded; // Whether shader was loaded and compiled
@@ -86,6 +87,7 @@ public:
 	CShaderProgram();
 
 private:
+	
 	UINT uiProgram; // ID of program
 	bool bLinked; // Whether program was linked and is ready to use
 };

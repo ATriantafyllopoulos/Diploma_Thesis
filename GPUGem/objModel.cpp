@@ -1,11 +1,5 @@
 #include "objModel.h"
 
-#pragma comment(lib, "assimp.lib")
-
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>     // Post processing flags
-
 CVertexBufferObject CAssimpModel::vboModelData;
 UINT CAssimpModel::uiVAO;
 std::vector<CTexture> CAssimpModel::tTextures;
@@ -14,7 +8,7 @@ std::vector<CTexture> CAssimpModel::tTextures;
 
 Name:	GetDirectoryPath
 
-Params:	sFilePath - guess ^^
+Params:	sFilePath
 
 Result: Returns directory name only from filepath.
 
@@ -33,16 +27,16 @@ std::string GetDirectoryPath(std::string sFilePath)
 	return sDirectory;
 }
 
-CAssimpModel::CAssimpModel()
+CAssimpModel::~CAssimpModel()
 {
-	bLoaded = false;
+
 }
 
 /*-----------------------------------------------
 
 Name:	LoadModelFromFile
 
-Params:	sFilePath - guess ^^
+Params:	sFilePath - path to model
 
 Result: Loads model using Assimp library.
 
@@ -123,7 +117,7 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 			else
 			{
 				CTexture tNew;
-				tNew.loadTexture2D(sFullPath, true);
+				tNew.LoadTexture2D(sFullPath, true);
 				materialRemap[i] = (int)tTextures.size();
 				tTextures.push_back(tNew);
 			}
@@ -134,6 +128,8 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 		int iOldIndex = iMaterialIndices[i];
 		iMaterialIndices[i] = materialRemap[iOldIndex];
 	}
+
+	//FinalizeVBO(); //call explicitly for each model
 
 	return bLoaded = true;
 }
@@ -161,7 +157,7 @@ void CAssimpModel::FinalizeVBO()
 	// Texture coordinates
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(aiVector3D) + sizeof(aiVector2D), (void*)sizeof(aiVector3D));
-	// Normal std::vectors
+	// Normal vectors
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(aiVector3D) + sizeof(aiVector2D), (void*)(sizeof(aiVector3D) + sizeof(aiVector2D)));
 }
@@ -172,7 +168,7 @@ Name:	BindModelsVAO
 
 Params: none
 
-Result: Binds VAO of models with their VBO.
+Result: Binds VAO of model with its VBO.
 
 /*---------------------------------------------*/
 
@@ -183,24 +179,48 @@ void CAssimpModel::BindModelsVAO()
 
 /*-----------------------------------------------
 
-Name:	RenderModel
+Name:	draw
 
 Params: none
 
-Result: Guess what it does ^^.
+Result: Render model.
 
 /*---------------------------------------------*/
 
-void CAssimpModel::draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::vec3 &cameraEye, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight)
+void CAssimpModel::draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight)
 {
 	if (!bLoaded)
 		return;
+
+	
+
+	//transformations
+	//TO BE ADDED: rotation
+	modelMatrix = glm::translate(modelMatrix, position); //translate
+	modelMatrix = glm::scale(modelMatrix, scale); //scale
+	normalMatrix = glm::transpose(glm::inverse(modelMatrix)); //normals
+	
+
 	shader->bind();
+	shader->setUniform("matrices.projMatrix", projectionMatrix);
+	shader->setUniform("matrices.viewMatrix", viewMatrix);
+
+	shader->setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
+	shader->setUniform("sunLight.vDirection", glm::vec3(sqrt(2.f) / 2.f, -sqrt(2.f) / 2.f, 0.f));
+	shader->setUniform("sunLight.fAmbient", 0.5f);
+
+	shader->setUniform("gSampler", 0);
+	shader->setUniform("matrices.modelMatrix", modelMatrix);
+	shader->setUniform("matrices.normalMatrix", normalMatrix);
+	shader->setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	//glBindVertexArray(uiVAO);
 	for (int i = 0; i < (int)iMeshSizes.size(); i++)
 	{
 		int iMatIndex = iMaterialIndices[i];
-		tTextures[iMatIndex].bindTexture();
+		tTextures[iMatIndex].BindTexture();
 		glDrawArrays(GL_TRIANGLES, iMeshStartIndices[i], iMeshSizes[i]);
 	}
+	//glBindVertexArray(0);
 	shader->unbind();
 }

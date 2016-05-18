@@ -7,8 +7,7 @@
 #include <GL/wglew.h>
 #pragma comment(lib, "glew32.lib")
 #pragma comment(lib, "opengl32.lib")
-
-
+#include <memory>
 #include <vector>
 /**
 Basic renderer class. Accessed only by the virtual world object (as of 06.03.2016 main has access too).

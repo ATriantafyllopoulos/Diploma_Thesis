@@ -52,7 +52,8 @@ Result:	Maps whole buffer data to memory and
 
 void* CVertexBufferObject::mapBufferToMemory(int iUsageHint)
 {
-	if(!bDataUploaded)return NULL;
+	if(!bDataUploaded)
+		return NULL;
 	void* ptrRes = glMapBuffer(iBufferType, iUsageHint);
 	return ptrRes;
 }
@@ -72,7 +73,8 @@ Result:	Maps specified part of buffer to memory.
 
 void* CVertexBufferObject::mapSubBufferToMemory(int iUsageHint, UINT uiOffset, UINT uiLength)
 {
-	if(!bDataUploaded)return NULL;
+	if(!bDataUploaded)
+		return NULL;
 	void* ptrRes = glMapBufferRange(iBufferType, uiOffset, uiLength, iUsageHint);
 	return ptrRes;
 }
@@ -153,7 +155,8 @@ Result:	Returns data pointer (only before uplading).
 
 void* CVertexBufferObject::getDataPointer()
 {
-	if(bDataUploaded)return NULL;
+	if(bDataUploaded)
+		return NULL;
 	return (void*)data[0];
 }
 

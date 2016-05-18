@@ -25,6 +25,7 @@
 
 #include <string>
 #include <iostream>
+#include "objModel.h"
 #include "Renderable_GL3.h"
 #include "shader.h"
 #include <glm/glm.hpp>   
@@ -49,7 +50,7 @@ public:
 	~Viewer_GL3();
 	
 	void render(void); // render scene
-	void Viewer::addToDraw(Renderable *r); // add object to draw queue
+	void addToDraw(Renderable *r); // add object to draw queue
 
 	//camera functions
 	void rotateWithMouse();
@@ -57,7 +58,7 @@ public:
 	float getAngleX(), getAngleY();// Functions that get viewing angles
 
 private:
-	CShaderProgram *shader; // Our GLSL shader  
+	CShaderProgram shader; // Our GLSL shader  
 	HGLRC hrc; // Rendering context
 	HDC hdc; // Device context
 	HWND hwnd; // Window identifier
@@ -66,7 +67,7 @@ private:
 	glm::mat4 viewMatrix; // Store the view matrix  
 	glm::mat4 modelMatrix; // Store the model matrix  
 
-	std::vector<Renderable_GL3 *> models; // objects to be drawn on screen
+	std::vector<std::shared_ptr<Renderable_GL3>> models; // objects to be drawn on screen
 
 	bool create(HWND hwnd); // called by constructor
 	void init(void); // called by constructor, after a successfull call to create
@@ -77,7 +78,7 @@ private:
 	float fSensitivity; // How many degrees to rotate per pixel moved by mouse (nice value is 0.10)
 	POINT pCur; // For mouse rotation
 
-	CShader shVertex, shFragment, shGeometry;
+	CShader shVertex, shFragment, shLight;
 };
 
 #endif

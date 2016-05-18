@@ -15,12 +15,6 @@ RigidBody::RigidBody(const double &m, const glm::vec3 &p, const glm::vec3 &v, co
 	inertia = i;
 }
 
-
-
-RigidBody::~RigidBody()
-{
-}
-
 // get functions
 double RigidBody::getMass(void)
 {

@@ -6,18 +6,12 @@ Viewer_GL3::Viewer_GL3(HWND hwnd)
 
 	if (create(hwnd))
 		init();
-
-	vEye = glm::vec3(0.0f, 0.0f, 100.0f);
-	vView = glm::vec3(0.0f, 0.0f, 0.0f);
-	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
-	fSpeed = 25.0f;
-	fSensitivity = 0.1f;
 }
 
 Viewer_GL3::~Viewer_GL3()
 {
-	shader->deleteProgram();
-	delete shader;
+	shader.deleteProgram();
+	//delete shader;
 	shVertex.deleteShader();
 	shFragment.deleteShader();
 
@@ -28,7 +22,13 @@ Viewer_GL3::~Viewer_GL3()
 
 void Viewer_GL3::addToDraw(Renderable *r)
 {
-	models.push_back(static_cast<Renderable_GL3*>(r));
+	//models.push_back(static_cast<std::shared_ptr<Renderable_GL3>>(&*r));
+	//Renderable_GL3* temp1 = static_cast<Renderable_GL3*>(r);
+	//auto temp = std::make_shared<Renderable_GL3>(*temp1);
+	models.push_back((std::shared_ptr<Renderable_GL3>)(static_cast<Renderable_GL3*>(r)));
+	//temp = std::static_pointer_cast<Renderable_GL3>(r);
+	//models.push_back(std::shared_ptr<Renderable_GL3>(static_cast<Renderable_GL3*>(r)));
+	//models.push_back(r);
 }
 
 bool Viewer_GL3::create(HWND hwnd)
@@ -50,8 +50,8 @@ bool Viewer_GL3::create(HWND hwnd)
 	if (nPixelFormat == 0) // If it fails
 		return false;
 
-	bool bResult = SetPixelFormat(hdc, nPixelFormat, &pfd); // Try and set the pixel format based on our PFD
-	if (!bResult) // If it fails
+	// Try and set the pixel format based on our PFD
+	if (!SetPixelFormat(hdc, nPixelFormat, &pfd)) // If it fails
 		return false;
 
 	HGLRC tempOpenGLContext = wglCreateContext(hdc); // Create an OpenGL 2.1 context for our device context
@@ -93,20 +93,33 @@ In the future it might be incorporated to create.
 void Viewer_GL3::init(void)
 {
 	glClearColor(0.4f, 0.6f, 0.9f, 0.0f); // Set the clear color based on Microsofts CornflowerBlue (default in XNA)
+
 	//shader = new Shader("..//Shaders/shader.vert", "..//Shaders/shader.frag"); // Create our shader by loading our vertex and fragment shader
-	shader = new CShaderProgram;
-	
-	shVertex.loadShader("..//Shaders/shader.vert", GL_VERTEX_SHADER);
-	shFragment.loadShader("..//Shaders/shader.frag", GL_FRAGMENT_SHADER);
-	shGeometry.loadShader("..//Shaders/shader.geom", GL_GEOMETRY_SHADER);
-	
-	shader->createProgram();
+	//shader = new CShaderProgram();
+	glEnable(GL_DEPTH_TEST);
+	glClearDepth(1.0);
+	shVertex.loadShader("..//Shaders//main_shader.vert", GL_VERTEX_SHADER);
+	shFragment.loadShader("..//Shaders//main_shader.frag", GL_FRAGMENT_SHADER);
+	shLight.loadShader("..//Shaders//dirLight.frag", GL_FRAGMENT_SHADER);
 
-	shader->addShaderToProgram(&shVertex);
-	shader->addShaderToProgram(&shFragment);
-	shader->addShaderToProgram(&shGeometry);
+	shader.createProgram();
 
-	shader->linkProgram();
+	shader.addShaderToProgram(&shVertex);
+	shader.addShaderToProgram(&shFragment);
+	shader.addShaderToProgram(&shLight);
+
+	shader.linkProgram();
+
+	//camera init parameters
+	vEye = glm::vec3(0.0f, 10.0f, 20.0f);
+	vView = glm::vec3(0.0f, 10.0f, 19.0f);
+	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	fSpeed = 25.0f;
+	fSensitivity = 0.1f;
+
+	viewMatrix = glm::lookAt(vEye, vView, vUp);	//create our view matrix
+	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  //Create our perspective projection matrix
+
 }
 
 /**
@@ -117,16 +130,16 @@ void Viewer_GL3::render(void)
 	glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//viewMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0.0f, 1.0f, 0.0f));
-	viewMatrix = glm::lookAt(vEye, vView, vUp);
-	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  // Create our perspective projection matrix
-	//projectionMatrix = glm::ortho(-15.f, 30.f, -5.f, 60.f, 1.f, 10.f);
-	cameraUpdate();
+	glEnable(GL_DEPTH_TEST);
+	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  //Create our perspective projection matrix
+	
+	
+	CAssimpModel::BindModelsVAO();
 	for (unsigned i = 0; i < models.size(); i++)
 	{
-		models[i]->draw(shader, projectionMatrix, vEye, viewMatrix, windowWidth, windowHeight);
+		models[i]->draw(&shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
 	}
-
+	//cameraUpdate();
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
 }
 
@@ -187,7 +200,7 @@ float Viewer_GL3::getAngleY()
 {
 	glm::vec3 vDir = vView - vEye; vDir.y = 0.0f;
 	glm::normalize(vDir);
-	float fAngle = acos(glm::dot(glm::vec3(0, 0, -1), vDir))*(180.0f / PI);
+	float fAngle = acos(glm::dot(glm::vec3(0.f, 0.f, -1.f), vDir))*(180.0f / PI);
 	if (vDir.x < 0)fAngle = 360.0f - fAngle;
 	return fAngle;
 }
@@ -206,7 +219,8 @@ float Viewer_GL3::getAngleX()
 {
 	glm::vec3 vDir = vView - vEye;
 	vDir = glm::normalize(vDir);
-	glm::vec3 vDir2 = vDir; vDir2.y = 0.0f;
+	glm::vec3 vDir2 = vDir; 
+	vDir2.y = 0.0f;
 	vDir2 = glm::normalize(vDir2);
 	float fAngle = acos(glm::dot(vDir2, vDir))*(180.0f / PI);
 	if (vDir.y < 0)fAngle *= -1.0f;
@@ -251,4 +265,6 @@ void Viewer_GL3::cameraUpdate()
 
 	if ((GetAsyncKeyState(27) >> 15) & 1)
 		exit(1);
+
+	viewMatrix = glm::lookAt(vEye, vView, vUp);	//update our view matrix
 }

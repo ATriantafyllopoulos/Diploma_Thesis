@@ -22,13 +22,13 @@ public:
 	void setViewer(Viewer *v);
 	void setEngine(PhysicsEngine *pe);
 
-	void addVirtualObject(VirtualObject *obj);
+	void addVirtualObject(std::shared_ptr<VirtualObject> obj);
 	void render(void);
 	void update(const double &dt = 0.001);
 	void resize(int w, int h);
 private:
 	Viewer *viewer;
 	PhysicsEngine *engine;
-	std::vector<VirtualObject *> virtualObjects;
+	std::vector<std::shared_ptr<VirtualObject>> virtualObjects;
 };
 

@@ -7,8 +7,8 @@
 #pragma comment(lib, "opengl32.lib")
 #include <vector>
 #include <iostream>
-//#include <SOIL.h>
-#include <FreeImage.h>
+#pragma once
+
 enum ETextureFiltering
 {
 	TEXTURE_FILTER_MAG_NEAREST = 0, // Nearest criterion for magnification
@@ -22,36 +22,45 @@ enum ETextureFiltering
 
 /********************************
 
-Class:	CTexture
+Class:		CTexture
 
 Purpose:	Wraps OpenGL texture
-			object and performs
-			their loading.
+object and performs
+their loading.
 
 ********************************/
 
 class CTexture
 {
 public:
-	void createFromData(BYTE* bData, int a_iWidth, int a_iHeight, int a_iBPP, GLenum format, bool bGenerateMipMaps = false);
-	bool loadTexture2D(std::string a_sPath, bool bGenerateMipMaps = false);
-	void bindTexture(int iTextureUnit = 0);
+	void CreateEmptyTexture(int a_iWidth, int a_iHeight, GLenum format);
+	void CreateFromData(BYTE* bData, int a_iWidth, int a_iHeight, int a_iBPP, GLenum format, bool bGenerateMipMaps = false);
 
-	void setFiltering(int a_tfMagnification, int a_tfMinification);
+	bool ReloadTexture();
 
-	void setSamplerParameter(GLenum parameter, GLenum value);
+	bool LoadTexture2D(std::string a_sPath, bool bGenerateMipMaps = false);
+	void BindTexture(int iTextureUnit = 0);
 
-	int getMinificationFilter();
-	int getMagnificationFilter();
+	void SetFiltering(int a_tfMagnification, int a_tfMinification);
 
-	int getWidth();
-	int getHeight();
-	int getBPP();
+	void SetSamplerParameter(GLenum parameter, GLenum value);
+
+	int GetMinificationFilter();
+	int GetMagnificationFilter();
+
+	int GetWidth();
+	int GetHeight();
+	int GetBPP();
+
+	UINT GetTextureID();
+
 	std::string GetPath();
-	void releaseTexture();
+
+	void DeleteTexture();
 
 	CTexture();
 private:
+
 	int iWidth, iHeight, iBPP; // Texture width, height, and bytes per pixel
 	UINT uiTexture; // Texture name
 	UINT uiSampler; // Sampler name
@@ -62,4 +71,7 @@ private:
 	std::string sPath;
 };
 
+#define NUMTEXTURES 1
+extern CTexture tTextures[NUMTEXTURES];
+void LoadAllTextures();
 #endif

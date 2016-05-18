@@ -11,9 +11,7 @@ public:
 
 	Renderable(const glm::vec3 &c = glm::vec3(0, 0, 0));
 
-	virtual ~Renderable()
-	{
-	};
+	virtual ~Renderable(){};
 
 	virtual void draw() = 0;
 

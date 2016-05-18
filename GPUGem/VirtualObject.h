@@ -12,10 +12,10 @@ class VirtualObject :
 public:
 	VirtualObject(const double &m = 0, const glm::vec3 &p = glm::vec3(0, 0, 0), const glm::vec3 &v = glm::vec3(0, 0, 0), const glm::vec3 &i = glm::vec3(0, 0, 0)) :
 		RigidBody(m, p, v, i) {};
-	virtual ~VirtualObject() {};
+	virtual ~VirtualObject(){};
 
 private:
-	virtual void createRenderingContext(void) = 0;
-	virtual void createPhysicsContext(void) = 0;
+	//virtual void createRenderingContext(void) = 0;
+	//virtual void createPhysicsContext(void) = 0;
 };
 

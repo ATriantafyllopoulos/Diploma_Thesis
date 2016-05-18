@@ -13,11 +13,11 @@ VirtualWorld::~VirtualWorld()
 /**
 Adds new object to object list. Also adds it to viewer's and engine's list.
 */
-void VirtualWorld::addVirtualObject(VirtualObject *obj)
+void VirtualWorld::addVirtualObject(std::shared_ptr<VirtualObject> obj)
 {
 	virtualObjects.push_back(obj);
-	viewer->addToDraw(obj);
-	engine->addRigidBody(obj);
+	viewer->addToDraw(&*obj);
+	//engine->addRigidBody(obj);
 }
 
 // get functions

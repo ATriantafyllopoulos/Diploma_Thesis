@@ -11,12 +11,17 @@ class Renderable_GL3 :
 {
 public:
 	Renderable_GL3();
-	~Renderable_GL3();
+	virtual ~Renderable_GL3(){};
 
 	void draw(){};
-	virtual void draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::vec3 &cameraEye, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight) = 0;
-
+	virtual void draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight){ std::cout << "Error" << std::endl; };
+	
+	void setScale(const glm::vec3 &s);
 protected:
+	glm::mat4 normalMatrix;
+	glm::mat4 modelMatrix;
+	glm::vec3 scale;
+
 	CTexture tAmbientTexture;
 	CVertexBufferObject vboModelData;
 	int shapeSizeCounter;

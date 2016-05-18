@@ -18,15 +18,9 @@ Result:	Loads and compiles shader.
 
 bool CShader::loadShader(std::string sFile, int a_iType)
 {
-	FILE* fp = fopen(sFile.c_str(), "rt");
-	if (!fp)return false;
-
-	// Get all lines from a file
-
 	std::vector<std::string> sLines;
-	char sLine[255];
-	while (fgets(sLine, 255, fp))sLines.push_back(sLine);
-	fclose(fp);
+
+	if (!GetLinesFromFile(sFile, false, &sLines))return false;
 
 	const char** sProgram = new const char*[(int)sLines.size()];
 	for (int i = 0; i < (int)sLines.size(); i++)
@@ -42,11 +36,83 @@ bool CShader::loadShader(std::string sFile, int a_iType)
 	int iCompilationStatus;
 	glGetShaderiv(uiShader, GL_COMPILE_STATUS, &iCompilationStatus);
 
-	if (iCompilationStatus == GL_FALSE)return false;
+	if (iCompilationStatus == GL_FALSE)
+	{
+		char sInfoLog[1024];
+		char sFinalMessage[1536];
+		int iLogLength;
+		glGetShaderInfoLog(uiShader, 1024, &iLogLength, sInfoLog);
+		sprintf(sFinalMessage, "Error! Shader file %s wasn't compiled! The compiler returned:\n\n%s", sFile.c_str(), sInfoLog);
+		MessageBox(NULL, sFinalMessage, "Error", MB_ICONERROR);
+		return false;
+	}
 	iType = a_iType;
 	bLoaded = true;
 
-	return 1;
+	return true;
+}
+
+/*-----------------------------------------------
+
+Name:    GetLinesFromFile
+
+Params:  sFile - path to a file
+         bIncludePart - whether to add include part only
+         vResult - vector of strings to store result to
+
+Result:  Loads and adds include part.
+
+/*---------------------------------------------*/
+
+bool CShader::GetLinesFromFile(std::string sFile, bool bIncludePart, std::vector<std::string>* vResult)
+{
+	FILE* fp = fopen(sFile.c_str(), "rt");
+	if(!fp)return false;
+
+	std::string sDirectory;
+	int slashIndex = -1;
+	for (int i = (int)(sFile.size())-1; i >= 0; i--)
+	{
+		if(sFile[i] == '\\' || sFile[i] == '/')
+		{
+			slashIndex = i;
+			break;
+		}
+	}
+
+	sDirectory = sFile.substr(0, slashIndex+1);
+
+	// Get all lines from a file
+
+	char sLine[255];
+
+	bool bInIncludePart = false;
+
+	while(fgets(sLine, 255, fp))
+	{
+		std::stringstream ss(sLine);
+		std::string sFirst;
+		ss >> sFirst;
+		if(sFirst == "#include")
+		{
+			std::string sFileName;
+			ss >> sFileName;
+			if ((int)sFileName.size() > 0 && sFileName[0] == '\"' && sFileName[(int)sFileName.size() - 1] == '\"')
+			{
+				sFileName = sFileName.substr(1, (int)sFileName.size() - 2);
+				GetLinesFromFile(sDirectory+sFileName, true, vResult);
+			}
+		}
+		else if(sFirst == "#include_part")
+			bInIncludePart = true;
+		else if(sFirst == "#definition_part")
+			bInIncludePart = false;
+		else if(!bIncludePart || (bIncludePart && bInIncludePart))
+			vResult->push_back(sLine);
+	}
+	fclose(fp);
+
+	return true;
 }
 
 /*-----------------------------------------------
@@ -129,7 +195,8 @@ a program, but only compiled one.
 
 bool CShaderProgram::addShaderToProgram(CShader* shShader)
 {
-	if (!shShader->isLoaded())return false;
+	if (!shShader->isLoaded())
+		return false;
 
 	glAttachShader(uiProgram, shShader->getShaderID());
 
@@ -185,7 +252,8 @@ Result:	Tells OpenGL to use this program.
 
 void CShaderProgram::bind() 
 {
-	glUseProgram(uiProgram);
+	if (bLinked)
+		glUseProgram(uiProgram);
 }
 
 /*-----------------------------------------------
