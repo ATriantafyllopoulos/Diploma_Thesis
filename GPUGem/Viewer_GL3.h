@@ -31,7 +31,9 @@
 #include <glm/glm.hpp>   
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include <cuda_gl_interop.h>
 #define PI 3.14159265359
 /**
 Viewer implementation based on OpenGL 3.3 version using glew
@@ -40,6 +42,9 @@ Currently dependent on .NET
 
 Update 10.4.2016: adding camera control functionality
 */
+cudaError_t initializeWithCuda(struct cudaGraphicsResource* testingVBO_CUDA, size_t *num_bytes);
+cudaError_t animateWithCuda(struct cudaGraphicsResource* testingVBO_CUDA, size_t *num_bytes, double offset);
+
 class Viewer_GL3 :
 	public Viewer
 {
@@ -84,6 +89,9 @@ private:
 	float fSensitivity; // How many degrees to rotate per pixel moved by mouse (nice value is 0.10)
 	POINT pCur; // For mouse rotation
 
+	struct cudaGraphicsResource* testingVBO_CUDA; //CUDA resources pointer
+	GLuint testingVAO; //Vertex Array Buffer used for testing
+	size_t num_bytes; //size of vertices
 	CShader shVertex, shFragment, shLight;
 };
 

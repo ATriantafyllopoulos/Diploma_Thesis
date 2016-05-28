@@ -20,13 +20,13 @@ int main()
 	Viewer_GL3 viewer(GLwindow); //create renderer
 	virtualWorld.setViewer(&viewer);
 	//PhysicsEngine engine;
-	std::cout << "Setting up models..." << std::endl;
+	/*std::cout << "Setting up models..." << std::endl;
 	std::cout << std::endl;
 	std::cout << std::endl;
 	if (modelCreation(virtualWorld)) //setup world models
 		std::cout << "Models were succesfully set up." << std::endl;
 	else
-		std::cout << "Error! Models were not set up." << std::endl;
+		std::cout << "Error! Models were not set up." << std::endl;*/
 
 	
 	//virtualWorld.setEngine(&engine);
@@ -54,6 +54,8 @@ int main()
 	printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
 		c[0], c[1], c[2], c[3], c[4]);
 
+	GLwin.Run(); //static_cast<int>( msg.wParam );
+
 	// cudaDeviceReset must be called before exiting in order for profiling and
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
 	cudaStatus = cudaDeviceReset();
@@ -61,8 +63,7 @@ int main()
 		fprintf(stderr, "cudaDeviceReset failed!");
 		return 1;
 	}
-
-	return static_cast<int> (GLwin.Run()); //static_cast<int>( msg.wParam );
+	return 1;
 }
 
 /**

@@ -47,7 +47,8 @@ Viewer_GL3::~Viewer_GL3()
 	//delete shader;
 	shVertex.deleteShader();
 	shFragment.deleteShader();
-
+	cudaGraphicsUnregisterResource(testingVBO_CUDA);
+	glDeleteBuffers(1, &testingVAO);
 	wglMakeCurrent(hdc, 0); // Remove the rendering context from our device context
 	wglDeleteContext(hrc); // Delete our rendering context
 	ReleaseDC(hwnd, hdc); // Release the device context from our window
@@ -138,8 +139,8 @@ void Viewer_GL3::init(void)
 	shader.linkProgram();
 
 	//camera init parameters
-	vEye = glm::vec3(0.0f, 10.0f, 20.0f);
-	vView = glm::vec3(0.0f, 10.0f, 19.0f);
+	vEye = glm::vec3(0.0f, 0.0f, 15.0f);
+	vView = glm::vec3(-1.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	fSpeed = 25.0f;
 	fSensitivity = 0.01f;
@@ -148,6 +149,42 @@ void Viewer_GL3::init(void)
 	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  //Create our perspective projection matrix
 
 	ResetTimer();
+
+	glGenVertexArrays(1, &testingVAO);
+	glBindVertexArray(testingVAO);
+	GLfloat vertices_position[3*1024];
+	/*GLfloat vertices_position[6] = {
+		-1, 0, -10,
+		1, 0 , -10,
+	};*/
+
+	//Create a Vector Buffer Object that will store the vertices on video memory
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+
+	//Allocate space and upload the data from CPU to GPU
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position), vertices_position, GL_STATIC_DRAW);
+	//Get the location of the attributes that enters in the vertex shader
+	GLint position_attribute = glGetAttribLocation(shader.getProgramID(), "inPosition");
+	//Specify how the data for position can be accessed
+	glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	//Enable the attribute
+	glEnableVertexAttribArray(position_attribute);
+	glEnable(GL_PROGRAM_POINT_SIZE);
+
+	num_bytes = sizeof(vertices_position);
+	cudaGraphicsGLRegisterBuffer(&testingVBO_CUDA, testingVAO, cudaGraphicsMapFlagsWriteDiscard);
+	cudaError cudaStatus;
+	cudaStatus = initializeWithCuda(testingVBO_CUDA, &num_bytes);
+	if (cudaStatus != cudaSuccess)
+	{
+		MessageBox(hwnd, "Initialization with CUDA failed.", "Error", MB_ICONINFORMATION);
+	}
+	else
+	{
+		std::cout << "Initialization with CUDA was successful." << std::endl;
+	}
 }
 
 /**
@@ -155,20 +192,45 @@ Rendering function
 */
 void Viewer_GL3::render(void)
 {
+	static double offset = 0.1;
+	
 	glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(45.f, (float)windowWidth / (float)windowHeight, 0.5f, 1000.f);  //Create our perspective projection matrix
-	
-	
-	CAssimpModel::BindModelsVAO();
+
+	//CAssimpModel::BindModelsVAO();
 	for (unsigned i = 0; i < models.size(); i++)
 	{
 		models[i]->draw(&shader, projectionMatrix, viewMatrix, windowWidth, windowHeight);
 	}
+	shader.bind();
+	shader.setUniform("matrices.projMatrix", projectionMatrix);
+	shader.setUniform("matrices.viewMatrix", viewMatrix);
+
+	shader.setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
+	shader.setUniform("sunLight.vDirection", glm::vec3(sqrt(2.f) / 2.f, -sqrt(2.f) / 2.f, 0.f));
+	shader.setUniform("sunLight.fAmbient", 0.5f);
+
+	shader.setUniform("gSampler", 0);
+	glm::mat4 modelMatrix = glm::mat4(1.0);
+	glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelMatrix));
+	shader.setUniform("matrices.modelMatrix", modelMatrix);
+	shader.setUniform("matrices.normalMatrix", normalMatrix);
+	shader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	glBindVertexArray(testingVAO);
+	
+	glPointSize(10.0);
+	glDrawArrays(GL_POINTS, 0, 1024);
+	//glDrawArrays(GL_TRIANGLES, 0, 12);
+
+	glBindVertexArray(0);
+	shader.unbind();
 	cameraUpdate();
 	UpdateTimer();
+	animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
+	offset = -offset;
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
 }
 

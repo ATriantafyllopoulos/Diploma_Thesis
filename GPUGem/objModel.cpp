@@ -183,7 +183,7 @@ Name:	RenderModel
 
 Params: none
 
-Result: Guess what it does ^^.
+Result: Render model on screen.
 
 /*---------------------------------------------*/
 
