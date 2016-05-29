@@ -47,7 +47,8 @@ Viewer_GL3::~Viewer_GL3()
 	//delete shader;
 	shVertex.deleteShader();
 	shFragment.deleteShader();
-	cudaGraphicsUnregisterResource(testingVBO_CUDA);
+	physicsEngine.unregisterResources();
+	//cudaGraphicsUnregisterResource(testingVBO_CUDA);
 	glDeleteBuffers(1, &testingVAO);
 	wglMakeCurrent(hdc, 0); // Remove the rendering context from our device context
 	wglDeleteContext(hrc); // Delete our rendering context
@@ -152,7 +153,8 @@ void Viewer_GL3::init(void)
 
 	glGenVertexArrays(1, &testingVAO);
 	glBindVertexArray(testingVAO);
-	GLfloat vertices_position[3*1024];
+	numOfParticles = 1024;
+	GLfloat vertices_position[3 * 1024];
 	/*GLfloat vertices_position[6] = {
 		-1, 0, -10,
 		1, 0 , -10,
@@ -173,10 +175,20 @@ void Viewer_GL3::init(void)
 	glEnableVertexAttribArray(position_attribute);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
-	num_bytes = sizeof(vertices_position);
-	cudaGraphicsGLRegisterBuffer(&testingVBO_CUDA, testingVAO, cudaGraphicsMapFlagsWriteDiscard);
-	cudaError cudaStatus;
+	size_t num_bytes = sizeof(vertices_position);
+	physicsEngine.registerResources(testingVAO, numOfParticles, num_bytes);
+	//cudaGraphicsGLRegisterBuffer(&testingVBO_CUDA, testingVAO, cudaGraphicsMapFlagsWriteDiscard);
+	/*cudaError cudaStatus;
 	cudaStatus = initializeWithCuda(testingVBO_CUDA, &num_bytes);
+	if (cudaStatus != cudaSuccess)
+	{
+		MessageBox(hwnd, "Initialization with CUDA failed.", "Error", MB_ICONINFORMATION);
+	}
+	else
+	{
+		std::cout << "Initialization with CUDA was successful." << std::endl;
+	}*/
+	cudaError_t cudaStatus = physicsEngine.initialize();
 	if (cudaStatus != cudaSuccess)
 	{
 		MessageBox(hwnd, "Initialization with CUDA failed.", "Error", MB_ICONINFORMATION);
@@ -192,7 +204,7 @@ Rendering function
 */
 void Viewer_GL3::render(void)
 {
-	static double offset = 0.1;
+	//static double offset = 0.1;
 	
 	glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
@@ -222,15 +234,20 @@ void Viewer_GL3::render(void)
 	glBindVertexArray(testingVAO);
 	
 	glPointSize(10.0);
-	glDrawArrays(GL_POINTS, 0, 1024);
+	glDrawArrays(GL_POINTS, 0, numOfParticles);
 	//glDrawArrays(GL_TRIANGLES, 0, 12);
 
 	glBindVertexArray(0);
 	shader.unbind();
 	cameraUpdate();
 	UpdateTimer();
-	animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
-	offset = -offset;
+	cudaError_t cudaStatus = physicsEngine.animate();
+	if (cudaStatus != cudaSuccess)
+	{
+		MessageBox(hwnd, "Animating particles with CUDA failed.", "Error", MB_ICONINFORMATION);
+	}
+	//animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
+	//offset = -offset;
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering
 }
 

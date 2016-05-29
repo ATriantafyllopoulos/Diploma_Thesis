@@ -12,6 +12,13 @@ bool modelCreation(VirtualWorld &world);
 
 int main()
 {
+	// Choose which GPU to run on, change this on a multi-GPU system.
+	cudaError_t cudaStatus = cudaSetDevice(0);
+	if (cudaStatus != cudaSuccess)
+	{
+		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+	}
+
 	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL); //get process ID
 	int nCmdShow = 5; //set to show window
 	WindowsHandler GLwin(hInstance, 640, 480, L"Renderer"); //create rendering window
@@ -45,7 +52,7 @@ int main()
 	int c[arraySize] = { 0 };
 
 	// Add vectors in parallel.
-	cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
+	cudaStatus = addWithCuda(c, a, b, arraySize);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "addWithCuda failed!");
 		return 1;

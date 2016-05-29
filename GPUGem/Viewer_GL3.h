@@ -31,9 +31,7 @@
 #include <glm/glm.hpp>   
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include <cuda_gl_interop.h>
+#include "PhysicsEngineCUDA.h"
 #define PI 3.14159265359
 /**
 Viewer implementation based on OpenGL 3.3 version using glew
@@ -91,8 +89,9 @@ private:
 
 	struct cudaGraphicsResource* testingVBO_CUDA; //CUDA resources pointer
 	GLuint testingVAO; //Vertex Array Buffer used for testing
-	size_t num_bytes; //size of vertices
+	int numOfParticles; //total number of particles
 	CShader shVertex, shFragment, shLight;
+	PhysicsEngineCUDA physicsEngine;
 };
 
 #endif

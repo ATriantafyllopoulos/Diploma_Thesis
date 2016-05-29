@@ -157,13 +157,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="animateKernel.cu" />
-    <CudaCompile Include="initializeParticles.cu" />
-    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="addKernel.cu" />
+    <CudaCompile Include="physicsKernels.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="objModel.cpp" />
+    <ClCompile Include="PhysicsEngineCUDA.cpp" />
     <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="Renderable_GL3.cpp" />
     <ClCompile Include="RigidBody.cpp" />
@@ -179,6 +179,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="common_header.h" />
     <ClInclude Include="objModel.h" />
     <ClInclude Include="PhysicsEngine.h" />
+    <ClInclude Include="PhysicsEngineCUDA.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Renderable_GL3.h" />
     <ClInclude Include="RigidBody.h" />
