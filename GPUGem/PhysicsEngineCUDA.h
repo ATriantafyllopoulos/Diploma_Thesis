@@ -8,10 +8,9 @@
 //list of kernel declarations
 //these kernels must be actually implemented in a separate .cu file
 //in these project they are implemented in physicsKernel.cu
-//__global__ void animateKernel(float3* positions, double offset);
-//__global__ void initializeKernel(float3* positions);
-void dummyInitialization(float3* positions);
-void dummyAnimation(float3* positions, double offset);
+//use dummy functions instead of kernels because kernels can only be invoked in .cu files
+void dummyInitialization(float3* positions, const int &numberOfParticles);
+void dummyAnimation(float3* positions, const double &offset, const int &numberOfParticles);
 
 /**
 CUDA functionality wrapper class

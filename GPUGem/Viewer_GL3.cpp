@@ -123,10 +123,10 @@ void Viewer_GL3::init(void)
 {
 	glClearColor(0.4f, 0.6f, 0.9f, 0.0f); // Set the clear color based on Microsofts CornflowerBlue (default in XNA)
 
-	//shader = new Shader("..//Shaders/shader.vert", "..//Shaders/shader.frag"); // Create our shader by loading our vertex and fragment shader
-	//shader = new CShaderProgram();
 	glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0);
+	glPointSize(10.0);
+
 	shVertex.loadShader("..//Shaders//main_shader.vert", GL_VERTEX_SHADER);
 	shFragment.loadShader("..//Shaders//main_shader.frag", GL_FRAGMENT_SHADER);
 	shLight.loadShader("..//Shaders//dirLight.frag", GL_FRAGMENT_SHADER);
@@ -153,50 +153,39 @@ void Viewer_GL3::init(void)
 
 	glGenVertexArrays(1, &testingVAO);
 	glBindVertexArray(testingVAO);
-	numOfParticles = 1024;
-	GLfloat vertices_position[3 * 1024];
-	/*GLfloat vertices_position[6] = {
-		-1, 0, -10,
-		1, 0 , -10,
-	};*/
+	numOfParticles = 1048576;
+	GLfloat *vertices_position = new GLfloat[3 * 1048576]; //changed from static to dynamic allocation
 
 	//Create a Vector Buffer Object that will store the vertices on video memory
 	GLuint vbo;
 	glGenBuffers(1, &vbo);
-
+	//GLsizeiptr size = sizeof(vertices_position)*numOfParticles * 3;
 	//Allocate space and upload the data from CPU to GPU
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position), vertices_position, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position) * numOfParticles * 3, vertices_position, GL_STATIC_DRAW);
 	//Get the location of the attributes that enters in the vertex shader
 	GLint position_attribute = glGetAttribLocation(shader.getProgramID(), "inPosition");
 	//Specify how the data for position can be accessed
-	glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(position_attribute, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	//Enable the attribute
 	glEnableVertexAttribArray(position_attribute);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
-	size_t num_bytes = sizeof(vertices_position);
+	size_t num_bytes = sizeof(vertices_position) * numOfParticles * 3;
 	physicsEngine.registerResources(testingVAO, numOfParticles, num_bytes);
-	//cudaGraphicsGLRegisterBuffer(&testingVBO_CUDA, testingVAO, cudaGraphicsMapFlagsWriteDiscard);
-	/*cudaError cudaStatus;
-	cudaStatus = initializeWithCuda(testingVBO_CUDA, &num_bytes);
-	if (cudaStatus != cudaSuccess)
-	{
-		MessageBox(hwnd, "Initialization with CUDA failed.", "Error", MB_ICONINFORMATION);
-	}
-	else
-	{
-		std::cout << "Initialization with CUDA was successful." << std::endl;
-	}*/
 	cudaError_t cudaStatus = physicsEngine.initialize();
 	if (cudaStatus != cudaSuccess)
 	{
 		MessageBox(hwnd, "Initialization with CUDA failed.", "Error", MB_ICONINFORMATION);
+		delete[] vertices_position;
+		exit(1);
 	}
 	else
 	{
 		std::cout << "Initialization with CUDA was successful." << std::endl;
 	}
+	glBindVertexArray(testingVAO);
+	delete[] vertices_position;
 }
 
 /**
@@ -231,13 +220,13 @@ void Viewer_GL3::render(void)
 	shader.setUniform("matrices.modelMatrix", modelMatrix);
 	shader.setUniform("matrices.normalMatrix", normalMatrix);
 	shader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	glBindVertexArray(testingVAO);
+	//glBindVertexArray(testingVAO); //avoid multiple bind calls
 	
-	glPointSize(10.0);
+
 	glDrawArrays(GL_POINTS, 0, numOfParticles);
 	//glDrawArrays(GL_TRIANGLES, 0, 12);
 
-	glBindVertexArray(0);
+	//glBindVertexArray(0); //avoid multiple bind calls
 	shader.unbind();
 	cameraUpdate();
 	UpdateTimer();
@@ -246,6 +235,7 @@ void Viewer_GL3::render(void)
 	{
 		MessageBox(hwnd, "Animating particles with CUDA failed.", "Error", MB_ICONINFORMATION);
 	}
+
 	//animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
 	//offset = -offset;
 	SwapBuffers(hdc); // Swap buffers so we can see our rendering

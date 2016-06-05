@@ -3,7 +3,7 @@
 
 PhysicsEngineCUDA::PhysicsEngineCUDA()
 {
-	offset = 1; //remove in future versions
+	offset = 0.1; //remove in future versions
 }
 
 
@@ -42,12 +42,9 @@ cudaError_t PhysicsEngineCUDA::initialize()
 		return error("initialize_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	dummyInitialization(positions);
+	dummyInitialization(positions, numOfParticles);
 	
-	// Check for any errors launching the kernel
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess)
-		return error("initialize_cudaGetLastError");
+	
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
@@ -85,7 +82,7 @@ cudaError_t PhysicsEngineCUDA::animate()
 		return error("animate_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	dummyAnimation(positions, offset);
+	dummyAnimation(positions, offset, numOfParticles);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
