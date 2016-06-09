@@ -4,14 +4,14 @@
 #include "device_launch_parameters.h"
 #include <cuda_gl_interop.h>
 #include <iostream>
-
+#include "Primitives.h"
 //list of kernel declarations
 //these kernels must be actually implemented in a separate .cu file
 //in these project they are implemented in physicsKernel.cu
 //use dummy functions instead of kernels because kernels can only be invoked in .cu files
 void dummyInitialization(float3* positions, const int &numberOfParticles);
 void dummyAnimation(float3* positions, const double &offset, const int &numberOfParticles);
-
+void dummyMeshCreation(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, const float &d, const int &numberOfParticles);
 /**
 CUDA functionality wrapper class
 */

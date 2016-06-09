@@ -153,8 +153,8 @@ void Viewer_GL3::init(void)
 
 	glGenVertexArrays(1, &testingVAO);
 	glBindVertexArray(testingVAO);
-	numOfParticles = 1048576;
-	GLfloat *vertices_position = new GLfloat[3 * 1048576]; //changed from static to dynamic allocation
+	numOfParticles = 1024;
+	GLfloat *vertices_position = new GLfloat[3 * 1024]; //changed from static to dynamic allocation
 
 	//Create a Vector Buffer Object that will store the vertices on video memory
 	GLuint vbo;
@@ -235,6 +235,12 @@ void Viewer_GL3::render(void)
 	{
 		MessageBox(hwnd, "Animating particles with CUDA failed.", "Error", MB_ICONINFORMATION);
 	}
+	/*cudaStatus = physicsEngine.collisionDetection();
+	if (cudaStatus != cudaSuccess)
+	{
+		MessageBox(hwnd, "Collision detection with CUDA failed.", "Error", MB_ICONINFORMATION);
+		exit(1);
+	}*/
 
 	//animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
 	//offset = -offset;

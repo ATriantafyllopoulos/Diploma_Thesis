@@ -51,13 +51,14 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 6.5.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\PropertySheets\Debug\ASSIMP_3_1_1.props" />
     <Import Project="..\PropertySheets\Debug\FREEIMAGE_DEBUG_32.props" />
     <Import Project="..\PropertySheets\Debug\OPENGL_3_3_DEBUG_32.props" />
+    <Import Project="..\PropertySheets\Debug\CUB_DEBUG.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -93,6 +94,9 @@
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_12,sm_12</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -158,9 +162,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="addKernel.cu" />
+    <CudaCompile Include="CollisionDetectionCUDA.cu" />
+    <CudaCompile Include="customBlockRadixSort.cu" />
+    <CudaCompile Include="generateBVH.cu" />
     <CudaCompile Include="physicsKernels.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CustomBVHtree.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="objModel.cpp" />
     <ClCompile Include="PhysicsEngineCUDA.cpp" />
@@ -177,9 +185,11 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_header.h" />
+    <ClInclude Include="CustomBVHtree.h" />
     <ClInclude Include="objModel.h" />
     <ClInclude Include="PhysicsEngine.h" />
     <ClInclude Include="PhysicsEngineCUDA.h" />
+    <ClInclude Include="Primitives.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Renderable_GL3.h" />
     <ClInclude Include="RigidBody.h" />
@@ -194,6 +204,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 6.5.targets" />
   </ImportGroup>
 </Project>

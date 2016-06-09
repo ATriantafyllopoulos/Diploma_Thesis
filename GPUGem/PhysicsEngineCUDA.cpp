@@ -3,7 +3,7 @@
 
 PhysicsEngineCUDA::PhysicsEngineCUDA()
 {
-	offset = 0.1; //remove in future versions
+	offset = 0.1; //remove in future versions - only used for animation
 }
 
 
@@ -44,8 +44,6 @@ cudaError_t PhysicsEngineCUDA::initialize()
 	// Launch a kernel on the GPU with one thread for each element.
 	dummyInitialization(positions, numOfParticles);
 	
-	
-
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
@@ -61,6 +59,48 @@ cudaError_t PhysicsEngineCUDA::initialize()
 
 cudaError_t PhysicsEngineCUDA::collisionDetection()
 {
+	float3* positions;
+
+	cudaStatus = cudaGraphicsMapResources(1, &cudaVAO, 0);
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_cudaGraphicsMapResources");
+
+	cudaStatus = cudaGraphicsResourceGetMappedPointer((void**)&positions, &numBytes, cudaVAO);
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_cudaGraphicsResourceGetMappedPointer");
+
+	/*float d = 0.1; //grid size
+	float3 s; //smallest grid coordinates
+	s.x = -10.f;
+	s.y = -10.f;
+	s.z = -10.f;
+
+	cudaExtent volumeSizeBytes = make_cudaExtent(sizeof(float4) * 10, 10, 10);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_make_cudaExtent");
+
+	cudaPitchedPtr grid; //3D grid texture
+	cudaStatus = cudaMalloc3D(&grid, volumeSizeBytes);
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_cudaMalloc3D");
+
+	// Launch a kernel on the GPU with one thread for each element.
+	dummyMeshCreation(positions, grid, s, d, numOfParticles);
+	*/
+	Particle *bvh;
+
+
+	// cudaDeviceSynchronize waits for the kernel to finish, and returns
+	// any errors encountered during the launch.
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_cudaDeviceSynchronize");
+
+	cudaStatus = cudaGraphicsUnmapResources(1, &cudaVAO, 0);
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_cudaGraphicsUnmapResources");
+
 	return cudaStatus;
 }
 
