@@ -12,6 +12,7 @@
 void dummyInitialization(float3* positions, const int &numberOfParticles);
 void dummyAnimation(float3* positions, const double &offset, const int &numberOfParticles);
 void dummyMeshCreation(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, const float &d, const int &numberOfParticles);
+CollisionList* detectCollisions(float3 *positions, int numObjects);
 /**
 CUDA functionality wrapper class
 */

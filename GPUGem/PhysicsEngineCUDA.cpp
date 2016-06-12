@@ -88,8 +88,8 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 	// Launch a kernel on the GPU with one thread for each element.
 	dummyMeshCreation(positions, grid, s, d, numOfParticles);
 	*/
-	Particle *bvh;
-
+	CollisionList *collisions;
+	collisions = detectCollisions(positions, numOfParticles);
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.

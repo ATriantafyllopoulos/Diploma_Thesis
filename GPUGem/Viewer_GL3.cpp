@@ -235,12 +235,12 @@ void Viewer_GL3::render(void)
 	{
 		MessageBox(hwnd, "Animating particles with CUDA failed.", "Error", MB_ICONINFORMATION);
 	}
-	/*cudaStatus = physicsEngine.collisionDetection();
+	cudaStatus = physicsEngine.collisionDetection();
 	if (cudaStatus != cudaSuccess)
 	{
 		MessageBox(hwnd, "Collision detection with CUDA failed.", "Error", MB_ICONINFORMATION);
 		exit(1);
-	}*/
+	}
 
 	//animateWithCuda(testingVBO_CUDA, &num_bytes, offset);
 	//offset = -offset;
