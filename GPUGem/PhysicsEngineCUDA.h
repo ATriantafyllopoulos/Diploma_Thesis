@@ -40,7 +40,7 @@ public:
 	//animate particles (only used for testing purposes)
 	cudaError_t animate();
 private:
-	struct cudaGraphicsResource* cudaVAO; //CUDA-OpenGL shared memory
+	struct cudaGraphicsResource *cudaVAO; //CUDA-OpenGL shared memory
 	size_t numBytes; //number of bytes in VAO
 	int numOfParticles; //total number of particles
 	double offset; //animation offset (only used for testing purposes)

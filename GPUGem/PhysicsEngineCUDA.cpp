@@ -13,6 +13,12 @@ PhysicsEngineCUDA::~PhysicsEngineCUDA()
 
 cudaError_t PhysicsEngineCUDA::registerResources(GLuint &GLvao, int number, size_t sz)
 {
+	cudaStatus = cudaSetDevice(0);
+	if (cudaStatus != cudaSuccess)
+		return error("registerResources");
+	cudaStatus = cudaGLSetGLDevice(0);
+	if (cudaStatus != cudaSuccess)
+		return error("registerResources");
 	cudaStatus = cudaGraphicsGLRegisterBuffer(&cudaVAO, GLvao, cudaGraphicsMapFlagsWriteDiscard);
 	if (cudaStatus != cudaSuccess)
 		return error("registerResources");

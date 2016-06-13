@@ -29,7 +29,7 @@
 * Simple demonstration of cub::BlockRadixSort
 ******************************************************************************/
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)
-#define CUB_STDERR
+/*#define CUB_STDERR
 #include <stdio.h>
 #include <iostream>
 #include <algorithm>

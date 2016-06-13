@@ -171,6 +171,7 @@ void Viewer_GL3::init(void)
 	glEnableVertexAttribArray(position_attribute);
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
+	glBindVertexArray(0);
 	size_t num_bytes = sizeof(vertices_position) * numOfParticles * 3;
 	physicsEngine.registerResources(testingVAO, numOfParticles, num_bytes);
 	cudaError_t cudaStatus = physicsEngine.initialize();
