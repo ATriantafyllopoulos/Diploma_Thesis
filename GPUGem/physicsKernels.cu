@@ -2,6 +2,8 @@
 #include "device_launch_parameters.h"
 #include <iostream>
 
+cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
+
 __global__ void animateKernel(float3* positions, float offset)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -37,48 +39,46 @@ __global__ void meshCreationKernel(float3 *positions, cudaPitchedPtr gridCoordin
 }
 
 
-void dummyInitialization(float3* positions, const int &numberOfParticles)
+cudaError_t dummyInitialization(float3* positions, const int &numberOfParticles)
 {
 	int numOfThreads = 512;
 	initializeKernel << <(numberOfParticles + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions);
 	// Check for any errors launching the kernel
 	cudaError_t cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
-	{
-		std::cout << "CUDA engine failed!" << std::endl;
-		std::cout << "callback function: dummyInitialization" << std::endl;
-		std::cout << "Error type: " << cudaStatus << std::endl;
-		system("pause"); //for now pause system when an error occurs (only for debug purposes)
-	}
+		return cudaFail(cudaStatus, "dummyInitialization");
+	return cudaSuccess;
 }
 
-void dummyAnimation(float3* positions, const double &offset, const int &numberOfParticles)
+cudaError_t dummyAnimation(float3* positions, const double &offset, const int &numberOfParticles)
 {
 	int numOfThreads = 512;
 	animateKernel << <(numberOfParticles + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, offset);
 	// Check for any errors launching the kernel
 	cudaError_t cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
-	{
-		std::cout << "CUDA engine failed!" << std::endl;
-		std::cout << "callback function: dummyAnimation" << std::endl;
-		std::cout << "Error type: " << cudaStatus << std::endl;
-		system("pause"); //for now pause system when an error occurs (only for debug purposes)
-	}
+		return cudaFail(cudaStatus, "dummyAnimation");
+	return cudaSuccess;
 }
 
-void dummyMeshCreation(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, const float &d, const int &numberOfParticles)
+cudaError_t dummyMeshCreation(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, const float &d, const int &numberOfParticles)
 {
 	int numOfThreads = 512;
 	meshCreationKernel << <(numberOfParticles + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, gridCoordinates, smallestCoords, d);
 	// Check for any errors launching the kernel
 	cudaError_t cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
-	{
-		std::cout << "CUDA engine failed!" << std::endl;
-		std::cout << "callback function: dummyMeshCreation" << std::endl;
-		std::cout << "Error type: " << cudaStatus << std::endl;
-		system("pause"); //for now pause system when an error occurs (only for debug purposes)
-	}
+		return cudaFail(cudaStatus, "dummyMeshCreation");
+	return cudaSuccess;
 }
 
+cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName)
+{
+	std::cout << "CUDA engine failed!" << std::endl;
+	std::cout << "callback function:" << funcName << std::endl;
+	std::cout << "Error type: " << cudaStatus << std::endl;
+	std::cout << "Enter random character to continue..." << std::endl;
+	int x;
+	std::cin >> x;
+	return cudaStatus;
+}

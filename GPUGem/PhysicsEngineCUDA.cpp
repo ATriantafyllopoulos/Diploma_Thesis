@@ -43,6 +43,8 @@ cudaError_t PhysicsEngineCUDA::initialize()
 
 	// Launch a kernel on the GPU with one thread for each element.
 	dummyInitialization(positions, numOfParticles);
+	if (cudaStatus != cudaSuccess)
+		return error("initialize_dummyInitialization");
 	
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
@@ -88,8 +90,9 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 	// Launch a kernel on the GPU with one thread for each element.
 	dummyMeshCreation(positions, grid, s, d, numOfParticles);
 	*/
-	CollisionList *collisions;
-	collisions = detectCollisions(positions, numOfParticles);
+	cudaStatus = detectCollisions(positions, numOfParticles);
+	if (cudaStatus != cudaSuccess)
+		return error("collisionDetection_detectCollisions");
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
@@ -122,8 +125,9 @@ cudaError_t PhysicsEngineCUDA::animate()
 		return error("animate_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	dummyAnimation(positions, offset, numOfParticles);
-
+	cudaStatus = dummyAnimation(positions, offset, numOfParticles);
+	if (cudaStatus != cudaSuccess)
+		return error("initialize_dummyAnimation");
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
@@ -148,6 +152,8 @@ cudaError_t PhysicsEngineCUDA::error(char *func)
 	std::cout << "CUDA engine failed!" << std::endl;
 	std::cout << "callback function: " << func << std::endl;
 	std::cout << "Error type: " << cudaStatus << std::endl;
-	system("pause"); //for now pause system when an error occurs (only for debug purposes)
+	std::cout << "Enter random character to continue..." << std::endl;
+	int x;
+	std::cin >> x;
 	return cudaStatus;
 }

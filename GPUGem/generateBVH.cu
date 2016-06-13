@@ -1,9 +1,9 @@
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "Primitives.h"
 #include <stdio.h>
 
+cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
 //custom __popc implementation because __popc requires 
 //compute capability 5+ (sm 20)
 __device__ inline int bitCount(int a)
@@ -224,7 +224,8 @@ __global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, i
 
 }
 
-Particle* generateHierarchy(Particle* leafNodes,
+cudaError_t generateHierarchy(Particle *internalNodes,
+	Particle* leafNodes,
 	unsigned int* sortedMortonCodes,
 	int           numObjects)
 {
@@ -233,12 +234,11 @@ Particle* generateHierarchy(Particle* leafNodes,
 	//InternalNode* internalNodes = new InternalNode[numObjects - 1];
 	cudaError_t cudaStatus;
 
-	Particle* internalNodes;
-	cudaStatus = cudaMalloc((void**)&internalNodes, numObjects * sizeof(Particle));
+	/*cudaStatus = cudaMalloc((void**)&internalNodes, numObjects * sizeof(Particle));
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc_generateHierarchy failed!");
-		goto Error;
-	}
+		cudaFree(internalNodes);
+		return cudaFail(cudaStatus, "cudaMalloc_internalNodes");
+	}*/
 	// Construct leaf nodes.
 	// Note: This step can be avoided by storing
 	// the tree in a slightly different way.
@@ -247,21 +247,22 @@ Particle* generateHierarchy(Particle* leafNodes,
 	int numOfThreads = 512;
 
 	//launch for numobjects - 1
+	//total number of internal nodes for a bvh with N leaves is N-1
 	constructInternalNodes << <(numObjects - 1 + numOfThreads - 1) / numOfThreads, numOfThreads >> >(internalNodes, leafNodes, sortedMortonCodes, numObjects);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "constructInternalNodes launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
+		cudaFree(internalNodes);
+		return cudaFail(cudaStatus, "constructInternalNodes_cudaGetLastError");
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching constructInternalNodes!\n", cudaStatus);
-		goto Error;
+		cudaFree(internalNodes);
+		return cudaFail(cudaStatus, "constructInternalNodes_cudaDeviceSynchronize");
 	}
 
 	//assign primitives to internal nodes
@@ -272,16 +273,16 @@ Particle* generateHierarchy(Particle* leafNodes,
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "assignPrimitives launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
+		cudaFree(internalNodes);
+		return cudaFail(cudaStatus, "assignPrimitives_cudaGetLastError");
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching assignPrimitives!\n", cudaStatus);
-		goto Error;
+		cudaFree(internalNodes);
+		return cudaFail(cudaStatus, "assignPrimitives_cudaDeviceSynchronize");
 	}
 
 	// Construct internal nodes.
@@ -293,10 +294,5 @@ Particle* generateHierarchy(Particle* leafNodes,
 	}*/
 
 	// Node 0 is the root.
-	return &internalNodes[0];
-
-Error:
-	cudaFree(leafNodes);
-	cudaFree(internalNodes);
-	return NULL;
+	return cudaSuccess;
 }

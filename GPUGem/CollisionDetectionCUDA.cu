@@ -2,10 +2,26 @@
 #include "device_launch_parameters.h"
 #include "Primitives.h"
 #include <algorithm>
-#include <thrust/sort.h>
-#include <thrust/device_ptr.h>
-#include <thrust/device_vector.h>
-Particle* generateHierarchy(Particle* leafNodes,
+
+#define CUB_STDERR
+
+//define _CubLog to avoid encountering error: "undefined reference"
+#if !defined(_CubLog)
+#if (CUB_PTX_ARCH == 0)
+#define _CubLog(format, ...) printf(format,__VA_ARGS__);
+#elif (CUB_PTX_ARCH >= 200)
+#define _CubLog(format, ...) printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);
+#endif
+#endif
+
+//cub headers
+#include <cub/util_allocator.cuh>
+#include <cub/device/device_radix_sort.cuh>
+//#include <test/test_util.h>
+
+cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
+cudaError_t generateHierarchy(Particle *internalNodes,
+	Particle* leafNodes,
 	unsigned int* sortedMortonCodes,
 	int           numObjects);
 __device__ inline float MIN(float x, float y)
@@ -143,13 +159,13 @@ __global__ void constructLeafNodes(Particle* leafNodes, float3 *positions, int n
 	}
 }
 
-CollisionList* detectCollisions(float3 *positions, int numObjects)
+cudaError_t detectCollisions(float3 *positions, int numObjects)
 {
 	unsigned int *mortonCodes;
 	cudaError_t cudaStatus = cudaMalloc((void**)&mortonCodes, numObjects * sizeof(unsigned int));
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc_detectCollisions failed!");
-		goto Error;
+		cudaFree(mortonCodes);
+		return cudaFail(cudaStatus, "cudaMalloc_mortonCodes");
 	}
 
 	int numOfThreads = 512; //maximum amount of threads supported by laptop
@@ -160,78 +176,140 @@ CollisionList* detectCollisions(float3 *positions, int numObjects)
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "generateMortonCodes launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
+		cudaFree(mortonCodes);
+		return cudaFail(cudaStatus, "generateMortonCodes_getLastError");
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching generateMortonCodes!\n", cudaStatus);
-		goto Error;
+		cudaFree(mortonCodes);
+		return cudaFail(cudaStatus, "generateMortonCodes_cudaDeviceSynchronize");
 	}
 
-	CollisionList *collisions;
-	cudaStatus = cudaMalloc((void**)&collisions, numObjects * sizeof(CollisionList));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc_collisions failed!");
-		goto Error;
-	}
+	/*cudaStatus = cudaMalloc((void**)&collisions, numObjects * sizeof(CollisionList));
+	if (cudaStatus != cudaSuccess)  {
+		cudaFree(mortonCodes);
+		cudaFree(collisions);
+		return cudaFail(cudaStatus, "cudaMalloc_collisions");
+	}*/
 
 	//create leaf nodes here
 	//then sort them using their morton codes as keys
 	//and pass them as argument to the BVH hierarchy creation routine
 	Particle *leafNodes;
 	cudaStatus = cudaMalloc((void**)&leafNodes, numObjects * sizeof(Particle));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc_leafNodes_detectCollisions failed!");
-		goto Error;
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		//cudaFree(collisions);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "cudaMalloc_leafNodes");
 	}
 	constructLeafNodes << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, positions, numObjects);
 	
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "constructLeafNodes launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		//cudaFree(collisions);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "constructLeafNodes_cudaGetLastError");
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching constructLeafNodes!\n", cudaStatus);
-		goto Error;
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		//cudaFree(collisions);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "constructLeafNodes_cudaDeviceSynchronize");
 	}
-		
-
-	//sorting morton codes
+	//sorting morton codes using thrust (deprecated)
 	//no need to store them in a different buffer
 	//also sorting leaf nodes
 	//each leaf node has a field containing its original address
 	//thrust::device_ptr<Particle> devParticlePtr(leafNodes);
-	thrust::device_ptr<unsigned int> devMortonCodesPtr(mortonCodes);
+	/*thrust::device_ptr<unsigned int> devMortonCodesPtr(mortonCodes);
 
 	thrust::device_ptr<float3> devTest(positions);
 	thrust::sort_by_key(devMortonCodesPtr, devMortonCodesPtr + numObjects, devTest);
 	
 	float3 *test = thrust::raw_pointer_cast(devTest);
 	//leafNodes = thrust::raw_pointer_cast(devParticlePtr);
-	mortonCodes = thrust::raw_pointer_cast(devMortonCodesPtr);
+	mortonCodes = thrust::raw_pointer_cast(devMortonCodesPtr);*/
+	
+	//sorting procedure using cub (currently building)
+	cub::DoubleBuffer<unsigned int> sortKeys; //keys to sort by - Morton codes
+	cub::DoubleBuffer<Particle> sortValues; //also sort corresponding particles by key
+	
+	//presumambly, there is no need to allocate space for the current buffers
+	sortKeys.d_buffers[0] = mortonCodes;
+	sortValues.d_buffers[0] = leafNodes;
+	
+	//allocate memory for alternate buffers
+	//allocate memory using cub allocator
+	//so many problems here
+	//is it enough to allocate memory only for alternate buffers?
+	//what about error checking
+	/*
+	cudaFree(mortonCodes);
+	//cudaFree(collisions);
+	g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+	cudaFree(leafNodes);
+	*/
+	cub::CachingDeviceAllocator  g_allocator(true);
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[1], sizeof(unsigned int) * numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "sortKeys_gAllocate");
+	
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Particle) * numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "sortValues_gAllocate");
 
-	Particle* bvh = generateHierarchy(leafNodes, mortonCodes, numObjects);
+	// Allocate temporary storage
+	size_t  temp_storage_bytes = 0;
+	void    *d_temp_storage = NULL;
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "first call to DeviceRadixSort");
+	cudaStatus = g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "first call to DeviceRadixSort");
+
+	// Run
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "second call to DeviceRadixSort");
+
+	//allocate memory for internal nodes
+	Particle* internalNodes;
+	cudaStatus = cudaMalloc((void**)&internalNodes, (numObjects - 1) * sizeof(Particle));
+	if (cudaStatus != cudaSuccess) {
+		cudaFree(mortonCodes);
+		cudaFree(internalNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "cudaMalloc_internalNodes");
+	}
+	cudaStatus = generateHierarchy(internalNodes, leafNodes, mortonCodes, numObjects);
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		//cudaFree(collisions);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "bvh_generateHierarchy");
+	}
 	/*unsigned int *sortedMortonCodes;
 	cudaStatus = cudaMalloc((void**)&sortedMortonCodes, numObjects * sizeof(unsigned int));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc_detectCollisions failed!");
 		goto Error;
 	}*/
-	return collisions;
-Error:
-	cudaFree(mortonCodes);
-	cudaFree(collisions);
-	//cudaFree(sortedMortonCodes);
-	return NULL;
+	return cudaSuccess;
 }
 
