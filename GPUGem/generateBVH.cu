@@ -2,7 +2,7 @@
 #include "device_launch_parameters.h"
 #include "Primitives.h"
 #include <stdio.h>
-
+#include <iostream>
 cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
 //custom __popc implementation because __popc requires 
 //compute capability 5+ (sm 20)
@@ -25,26 +25,90 @@ __device__ inline int MAX(int x, int y)
 {
 	return x > y ? x : y;
 }
-
-//determine range using Terro Karras' algorithm presented in
-//Maximizing Parallelism in the Construction of BVHs, Octrees and k-d Trees
-__device__ int2 determineRange(Particle *internalNodes, Particle *leafnodes, unsigned int* sortedMortonCodes, int numObjects, int idx)
+__device__ int2 determineRange(int numObjects, int idx)
 {
 	int d;
-	int d1 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + 1]);
-	int d2 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - 1]);
+	//int d1 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + 1]);
+	//int d2 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - 1]);
+	int d1 = __clz(idx ^ (idx + 1));
+	int d2 = __clz(idx ^ (idx - 1));
+	d = d1 > d2 ? 1 : -1;
+
+
+	//int dmin = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - d]);
+	int dmin = __clz(idx ^ (idx-d));
+	int lmax = 2;
+	//while (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 2;
+	while (__clz(idx ^ (idx + lmax*d)) > dmin) lmax <<= 1;
+
+	int l = 0;
+	int t = lmax >> 1;
+	while (t >= 1) //at last iteration 1 >> 1 = 0 (integers)
+	{
+		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin)
+		if (__clz(idx ^ (idx + (l + t) *d)) > dmin)
+			l += t;
+		t >>= 1;
+	}
+
+	int j = idx + l*d; //found range's other end (I think)
+	//this is the point where we need to check for duplicate keys
+	//we use findSplit function as a guide
+	//corresponding to (first, last)
+	//is this all that's necessary to deal with duplicate keys?
+	/*if (sortedMortonCodes[idx] == sortedMortonCodes[j])
+	{
+	int2 range;
+	range.x = d > 0 ? idx : (idx + j) / 2; //if d positive then start at idx
+	range.y = d < 0 ? idx : (idx + j) / 2; //if d negative then stop at idx
+	return range; //is a return needed?
+	}*/
+
+	//from now on we search for the split position
+	//int dnode = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[j]);
+	int dnode = __clz(idx ^ j);
+
+	int s = 0;
+	t = lmax >> 1;
+	while (t > 0) //at last iteration 1 >> 2 = 0 (integers)
+	{
+
+		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + (s+t) * d]) > dnode)
+		if (__clz(idx ^ (idx + (s + t) * d)) > dnode)
+			s += t;
+		t >> 1;
+	}
+	int gamma = idx + s*d + MIN(d, 0);
+	int2 range;
+	range.x = j;
+	range.y = gamma;
+	return range;
+
+}
+//determine range using Terro Karras' algorithm presented in
+//Maximizing Parallelism in the Construction of BVHs, Octrees and k-d Trees
+/*__device__ int2 determineRange(unsigned int* sortedMortonCodes, int numObjects, int idx)
+{
+	int d;
+	//int d1 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + 1]);
+	//int d2 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - 1]);
+	int d1 = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + 1]);
+	int d2 = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx - 1]);
 	d = d1 > d2 ? 1 : -1;
 	
 	
-	int dmin = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - d]);
-	int lmax = 128;
-	while (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 2;
-	
+	//int dmin = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - d]);
+	int dmin = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx - d]);
+	int lmax = 2;
+	//while (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 2;
+	while (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 1;
+
 	int l = 0;
 	int t = lmax >> 1;
-	while (t > 0) //at last iteration 1 >> 1 = 0 (integers)
+	while (t >= 1) //at last iteration 1 >> 1 = 0 (integers)
 	{
-		if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin)
+		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin)
+		if (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + (l+t) *d]) > dmin)
 			l += t;
 		t >> 1;
 	}
@@ -53,20 +117,25 @@ __device__ int2 determineRange(Particle *internalNodes, Particle *leafnodes, uns
 	//we use findSplit function as a guide
 	//corresponding to (first, last)
 	//is this all that's necessary to deal with duplicate keys?
-	if (sortedMortonCodes[idx] == sortedMortonCodes[j])
+	/*if (sortedMortonCodes[idx] == sortedMortonCodes[j])
 	{
 		int2 range;
 		range.x = d > 0 ? idx : (idx + j) / 2; //if d positive then start at idx
 		range.y = d < 0 ? idx : (idx + j) / 2; //if d negative then stop at idx
-	}
+		return range; //is a return needed?
+	}*/
 
 	//from now on we search for the split position
-	int dnode = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[j]);
+	//int dnode = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[j]);
+	/*int dnode = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[j]);
+
 	int s = 0;
 	t = lmax >> 1;
 	while (t > 0) //at last iteration 1 >> 2 = 0 (integers)
 	{
-		if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + (s+t) * d]) > dnode)
+		
+		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + (s+t) * d]) > dnode)
+		if (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + (s + t) * d]) > dnode)
 			s += t;
 		t >> 1;
 	}
@@ -78,7 +147,7 @@ __device__ int2 determineRange(Particle *internalNodes, Particle *leafnodes, uns
 	//(internalNodes + idx)->left = MIN(idx, j) == gamma ? (leafnodes + gamma) : (internalNodes + gamma);
 	//(internalNodes + idx)->right = MAX(idx, j) == gamma + 1 ? (leafnodes + gamma + 1) : (internalNodes + gamma + 1);
 
-}
+}*/
 
 int findSplit(unsigned int* sortedMortonCodes, int first, int last)
 {
@@ -131,9 +200,42 @@ __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNo
 	//This way the index of every internal node coincides with either its first
 	//or its last key
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	int2 range = determineRange(internalNodes, leafNodes, sortedMortonCodes, numObjects, idx);
+	if (idx > numObjects) return;
+	int2 range = determineRange(numObjects, idx);
 	int j = range.x;
 	int gamma = range.y;
+
+	if (MIN(idx, j) == gamma)
+	{
+		 (internalNodes + idx)->left = (leafNodes + gamma);
+		 (leafNodes + gamma)->parent = (internalNodes + idx);
+	}
+	else
+	{
+		(internalNodes + idx)->left = (internalNodes + gamma);
+		(internalNodes + gamma)->parent = (internalNodes + idx);
+
+	}
+	if (MAX(idx, j) == gamma + 1)
+	{
+		(internalNodes + idx)->left = (leafNodes + gamma + 1);
+		(leafNodes + gamma + 1)->parent = (internalNodes + idx);
+	}
+	else
+	{
+		(internalNodes + idx)->left = (internalNodes + gamma + 1);
+		(internalNodes + gamma + 1)->parent = (internalNodes + idx);
+
+	}
+	/*Particle *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
+	(internalNodes + idx)->left = leftChild;
+	leftChild->parent = (internalNodes + idx);
+
+	Particle *rightChild = (MAX(idx, j) == gamma + 1 ? (leafNodes + gamma + 1) : (internalNodes + gamma + 1));
+	(internalNodes + idx)->right = rightChild;
+	rightChild->parent = (internalNodes + idx);
+	*/
+	internalNodes[idx].isLeaf = false;
 
 	//Update by Andreas:
 	//No need to explicitly find split
@@ -164,16 +266,6 @@ __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNo
 	internalNodes[idx].right = childB;
 	childA->parent = &internalNodes[idx];
 	childB->parent = &internalNodes[idx];*/
-
-	
-	Particle *leftChild = MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma);
-	(internalNodes + idx)->left = leftChild;
-	leftChild->parent = (internalNodes + idx);
-	
-	Particle *rightChild = MAX(idx, j) == gamma + 1 ? (leafNodes + gamma + 1) : (internalNodes + gamma + 1);
-	(internalNodes + idx)->right = rightChild;
-	rightChild->parent = (internalNodes + idx);
-	internalNodes[idx].isLeaf = true;
 }
 
 __global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, int numObjects)
@@ -262,9 +354,10 @@ cudaError_t generateHierarchy(Particle *internalNodes,
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
 		cudaFree(internalNodes);
+		exit(1);
 		return cudaFail(cudaStatus, "constructInternalNodes_cudaDeviceSynchronize");
 	}
-
+	exit(1);
 	//assign primitives to internal nodes
 	//launch kernel for each leaf node
 	//each thread works each way recursively to the top
