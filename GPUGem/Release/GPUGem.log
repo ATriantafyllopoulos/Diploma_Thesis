@@ -1,0 +1,39 @@
+﻿Build started 5/12/2016 12:03:16 PM.
+     1>Project "I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem\GPUGem.vcxproj" on node 2 (Build target(s)).
+     1>AddCudaCompileDeps:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /DNDEBUG /D_CONSOLE /D_MBCS /II:\Documents\SDKs\glew-1.13.0\include\ /II:\Documents\SDKs\glm /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include" /I. /FIcuda_runtime.h /c "I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem\kernel.cu" 
+       CudaBuild:
+         Compiling CUDA source file kernel.cu...
+         cmd.exe /C "C:\Users\Andreas\AppData\Local\Temp\tmpfcd4b56216b14a10aa791535d9fbd72d.cmd"
+         "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"I:\Documents\SDKs\glew-1.13.0\include\\" -II:\Documents\SDKs\glm -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include"     --keep-dir Release -maxrregcount=0  --machine 32 --compile -cudart static     -DWIN32 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MTd " -o Release\kernel.cu.obj "I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem\kernel.cu"
+         
+         I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\bin\nvcc.exe" -gencode=arch=compute_20,code=\"sm_20,compute_20\" --use-local-env --cl-version 2013 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin"  -I"I:\Documents\SDKs\glew-1.13.0\include\\" -II:\Documents\SDKs\glm -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include"     --keep-dir Release -maxrregcount=0  --machine 32 --compile -cudart static     -DWIN32 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Zi  /MTd " -o Release\kernel.cu.obj "I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem\kernel.cu" 
+         kernel.cu
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"I:\Documents\SDKs\glew-1.13.0\include\\" /II:\Documents\SDKs\glm /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _MBCS /Gm- /EHsc /MTd /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp objModel.cpp Renderable.cpp Renderable_GL3.cpp RigidBody.cpp Shader.cpp texture.cpp vertexBufferObject.cpp Viewer.cpp Viewer_GL3.cpp VirtualWorld.cpp WindowsHandler.cpp
+         main.cpp
+     1>main.cpp(1): fatal error C1083: Cannot open include file: 'cuda_runtime.h': No such file or directory
+         objModel.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+         Renderable.cpp
+         Renderable_GL3.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+         RigidBody.cpp
+         Shader.cpp
+     1>Shader.cpp(21): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\stdio.h(211) : see declaration of 'fopen'
+         texture.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+         vertexBufferObject.cpp
+         Viewer.cpp
+         Viewer_GL3.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+         VirtualWorld.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+         WindowsHandler.cpp
+     1>i:\documents\visual studio 2013\projects\diploma_thesis\learning\gpugem\gpugem\texture.h(11): fatal error C1083: Cannot open include file: 'FreeImage.h': No such file or directory
+     1>Done Building Project "I:\Documents\Visual Studio 2013\Projects\Diploma_Thesis\Learning\GPUGem\GPUGem\GPUGem.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:34.78
