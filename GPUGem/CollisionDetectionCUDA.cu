@@ -2,7 +2,7 @@
 #include "device_launch_parameters.h"
 #include "Primitives.h"
 #include <algorithm>
-
+#include <iostream>
 #define CUB_STDERR
 
 //define _CubLog to avoid encountering error: "undefined reference"
@@ -17,7 +17,7 @@
 //cub headers
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_radix_sort.cuh>
-//#include <test/test_util.h>
+#include <cub/test/test_util.h>
 
 cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
 cudaError_t generateHierarchy(Particle *internalNodes,
@@ -239,7 +239,7 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	float3 *test = thrust::raw_pointer_cast(devTest);
 	//leafNodes = thrust::raw_pointer_cast(devParticlePtr);
 	mortonCodes = thrust::raw_pointer_cast(devMortonCodesPtr);*/
-	
+
 	//sorting procedure using cub (currently building)
 	cub::DoubleBuffer<unsigned int> sortKeys; //keys to sort by - Morton codes
 	cub::DoubleBuffer<Particle> sortValues; //also sort corresponding particles by key
@@ -260,13 +260,23 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	cudaFree(leafNodes);
 	*/
 	cub::CachingDeviceAllocator  g_allocator(true);
+
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[0], sizeof(unsigned int) * numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "sortKeys_gAllocate");
+
 	cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[1], sizeof(unsigned int) * numObjects);
 	if (cudaStatus != cudaSuccess)
 		return cudaFail(cudaStatus, "sortKeys_gAllocate");
 	
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[0], sizeof(Particle) * numObjects);
+	if (cudaStatus != cudaSuccess)
+		return cudaFail(cudaStatus, "sortValues_gAllocate");
+
 	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Particle) * numObjects);
 	if (cudaStatus != cudaSuccess)
 		return cudaFail(cudaStatus, "sortValues_gAllocate");
+
 
 	// Allocate temporary storage
 	size_t  temp_storage_bytes = 0;
@@ -278,13 +288,36 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	if (cudaStatus != cudaSuccess)
 		return cudaFail(cudaStatus, "first call to DeviceRadixSort");
 
+
+	// Initialize device arrays
+	CubDebugExit(cudaMemcpy(sortKeys.d_buffers[sortKeys.selector], mortonCodes, sizeof(unsigned int) * numObjects, cudaMemcpyDeviceToDevice));
+	CubDebugExit(cudaMemcpy(sortValues.d_buffers[sortValues.selector], leafNodes, sizeof(Particle) * numObjects, cudaMemcpyDeviceToDevice));
+
+	unsigned int *h_keys = new unsigned int[numObjects];
+	cudaMemcpy(h_keys, mortonCodes, sizeof(unsigned int) * numObjects, cudaMemcpyDeviceToHost);
+	int compare = CompareDeviceResults(h_keys, mortonCodes, numObjects, true, true);
+	if (!compare)
+		std::cout << "Comparison results before sort: " << "TRUE" << std::endl;
+	else
+		std::cout << "Comparison results before sort: " << "FALSE" << std::endl;
+
+	std::stable_sort(h_keys, h_keys + numObjects); //now reference keys are sorted
+
 	// Run
 	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numObjects);
 	if (cudaStatus != cudaSuccess)
 		return cudaFail(cudaStatus, "second call to DeviceRadixSort");
+	
+	compare = CompareDeviceResults(h_keys, sortKeys.Current(), numObjects, true, false);
+	if (!compare)
+		std::cout << "Comparison results after sort: " << "TRUE" << std::endl;
+	else
+		std::cout << "Comparison results after sort: " << "FALSE" << std::endl;
 
 	//allocate memory for internal nodes
+	//DO NOT CROSS THIS BREAKPOINT UNTIL ALL OTHER ISSUES ARE RESOLVED
 	Particle* internalNodes;
+	exit(1);
 	cudaStatus = cudaMalloc((void**)&internalNodes, (numObjects - 1) * sizeof(Particle));
 	if (cudaStatus != cudaSuccess) {
 		cudaFree(mortonCodes);
