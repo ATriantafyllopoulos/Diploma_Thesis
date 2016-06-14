@@ -1,0 +1,45 @@
+﻿Build started 13-Jun-16 6:44:23 PM.
+     1>Project "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\GPUGem\GPUGem.vcxproj" on node 2 (Build target(s)).
+     1>AddCudaCompileDeps:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_DEBUG /D_CONSOLE /D_MBCS /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glew-1.13.0\include\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glm\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\FreeImage\Dist\x32\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\assimp-3.1.1\include\" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I. /FIcuda_runtime.h /c "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\GPUGem\CollisionDetectionCUDA.cu" 
+       AddCudaCompileDeps:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_DEBUG /D_CONSOLE /D_MBCS /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glew-1.13.0\include\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glm\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\FreeImage\Dist\x32\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\assimp-3.1.1\include\" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /I. /FIcuda_runtime.h /c "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\GPUGem\generateBVH.cu" 
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glew-1.13.0\include\\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\glm\\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\FreeImage\Dist\x32\\" /I"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\assimp-3.1.1\include\\" /I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Viewer_GL3.cpp
+         Viewer_GL3.cpp
+     1>c:\users\triantafyllopoulos\documents\visual studio 2013\projects\diplomathesis\gpugem\gpugem\viewer_gl3.cpp(307): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\triantafyllopoulos\documents\visual studio 2013\projects\diplomathesis\gpugem\gpugem\viewer_gl3.cpp(329): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\GPUGem.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\assimp-3.1.1\lib" /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\glew-1.13.0\lib\Release\Win32\glew32.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Libs\FreeImage\Dist\x32\FreeImage.lib" "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\\Libs\assimp-3.1.1\lib\assimpd.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\GPUGem.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\GPUGem.lib" /MACHINE:X86 Debug\addKernel.cu.obj
+         Debug\CollisionDetectionCUDA.cu.obj
+         Debug\customBlockRadixSort.cu.obj
+         Debug\generateBVH.cu.obj
+         Debug\physicsKernels.cu.obj
+         Debug\CustomBVHtree.obj
+         Debug\main.obj
+         Debug\objModel.obj
+         Debug\PhysicsEngineCUDA.obj
+         Debug\Renderable.obj
+         Debug\Renderable_GL3.obj
+         Debug\RigidBody.obj
+         Debug\Shader.obj
+         Debug\texture.obj
+         Debug\vertexBufferObject.obj
+         Debug\Viewer.obj
+         Debug\Viewer_GL3.obj
+         Debug\VirtualWorld.obj
+         Debug\WindowsHandler.obj
+         GPUGem.vcxproj -> C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\GPUGem.exe
+       PostBuildEvent:
+         echo copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\"
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\"
+         :VCEnd
+         copy "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart*.dll" "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\Debug\"
+         C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart32_65.dll
+         C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\bin\cudart64_65.dll
+                 2 file(s) copied.
+     1>Done Building Project "C:\Users\Triantafyllopoulos\Documents\Visual Studio 2013\Projects\DiplomaThesis\GPUGem\GPUGem\GPUGem.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.01

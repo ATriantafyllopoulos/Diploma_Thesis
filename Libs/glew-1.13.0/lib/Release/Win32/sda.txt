@@ -1,0 +1,2 @@
+I:\Documents\glew-1.13.0\include\;
+I:\Documents\glew-1.13.0\lib\Release\Win32\glew32.lib;
