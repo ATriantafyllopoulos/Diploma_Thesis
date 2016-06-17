@@ -19,11 +19,17 @@
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/test/test_util.h>
 
+/*
+This particular file is a mess. I definitely need to clean it up on the weekend.
+It's decided. The weekend will be dedicated to cleaning up the code.
+This will need to be part of a class.
+*/
+__global__ void handleCollisions(Particle *leafNodes, int numberOfPrimitives);
 cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
 cudaError_t generateHierarchy(Particle *internalNodes,
 	Particle* leafNodes,
 	unsigned int* sortedMortonCodes,
-	int           numObjects);
+	int           numberOfPrimitives);
 __device__ inline float MIN(float x, float y)
 {
 	return x < y ? x : y;
@@ -74,7 +80,8 @@ __device__ void traverseIterative(CollisionList& list,
 	// and push NULL to indicate that there are no postponed nodes.
 	Particle* stack[64]; //AT: Is 64 the correct size to use?
 	Particle** stackPtr = stack;
-	*stackPtr++ = NULL; // push
+	//when stack is empty thread will return
+	*stackPtr++ = NULL; // push NULL at beginning
 
 	// Traverse nodes starting from the root.
 	Particle* node = root;
@@ -86,24 +93,19 @@ __device__ void traverseIterative(CollisionList& list,
 		bool overlapL = (checkOverlap(queryLeaf, childL));
 		bool overlapR = (checkOverlap(queryLeaf, childR));
 
-		//this is wrong
-		//what exactly is a queryleaf?
-		//How do I access it efficiently?
-		//for now I pass it as an argument
-		//Primitive* queryLeaf = bvh.getLeaf(queryObjectIdx);
-		
-		if (node->leftmost->id <= queryLeaf->id)
+		if (node->leftmost <= queryLeaf->id)
 			overlapL = false;
 
-		if (node->rightmost->id <= queryLeaf->id)
+		if (node->rightmost <= queryLeaf->id)
 			overlapR = false;
 		// Query overlaps a leaf node => report collision.
-		if (overlapL && childL->isLeaf);
+		if (overlapL && childL->isLeaf)
+			queryLeaf->collisions[queryLeaf->collisionCounter++] = childL;
 			//list.add(queryLeaf->id, childL->id);
-
-		if (overlapR && childR->isLeaf);
-			//list.add(queryLeaf->id, childR->id);
-
+		queryLeaf->collisionCounter = queryLeaf->collisionCounter > 7 ? 0 : queryLeaf->collisionCounter; //avoid overflow
+		if (overlapR && childR->isLeaf)
+			queryLeaf->collisions[queryLeaf->collisionCounter++] = childR;
+		queryLeaf->collisionCounter = queryLeaf->collisionCounter > 7 ? 0 : queryLeaf->collisionCounter; //avoid overflow
 		// Query overlaps an internal node => traverse.
 		bool traverseL = (overlapL && !childL->isLeaf);
 		bool traverseR = (overlapR && !childR->isLeaf);
@@ -119,50 +121,111 @@ __device__ void traverseIterative(CollisionList& list,
 	} while (node != NULL);
 }
 
-__global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes, int numObjects)
+__global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes, int numberOfPrimitives)
 {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < numObjects)
-	{
-		mortonCodes[idx] = morton3D(positions[idx].x, positions[idx].y, positions[idx].z);
-	}
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numberOfPrimitives)
+		return;
+
+	mortonCodes[index] = morton3D(positions[index].x, positions[index].y, positions[index].z);
 }
 
 __global__ void findPotentialCollisions(CollisionList list, Particle *internalNodes, Particle *leafNodes, int numOfLeaves)
 {
-	int idx = threadIdx.x + blockDim.x * blockIdx.x;
-	if (idx < numOfLeaves)
-	{
-		Particle *leaf = leafNodes + idx;
-		traverseIterative(list, internalNodes, leaf);
-	}
+	int index = threadIdx.x + blockDim.x * blockIdx.x;
+	if (index >= numOfLeaves)
+		return;
+
+	Particle *leaf = leafNodes + index;
+	traverseIterative(list, internalNodes, leaf);
 }
 
 /*
 routine is called before BVH is created
 leaf node primitives are yet unsorted
-radius is currently hard-coded -> 1
+radius and mass are currently hard-coded -> 1 [OPEN]
+Make radius parametric. Design interface to input parameters. [OPEN]
 */
-__global__ void constructLeafNodes(Particle* leafNodes, float3 *positions, int numObjects)
+__global__ void constructLeafNodes(Particle* leafNodes,
+	float3 *positions,
+	int numberOfPrimitives)
 {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < numObjects)
-	{
-		leafNodes[idx].id = idx; //leaf nodes are unsorted
-		leafNodes[idx].isLeaf = true;
-		//each leaf reports rightmost leaf of left and right sutree as itself
-		leafNodes[idx].leftmost = leafNodes + idx;
-		leafNodes[idx].rightmost = leafNodes + idx;
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numberOfPrimitives)
+		return;
+	leafNodes[index].id = index; //leaf nodes are unsorted
+	leafNodes[index].isLeaf = true;
+	//each leaf reports rightmost leaf of left and right sutree as itself
+	leafNodes[index].leftmost = index;
+	leafNodes[index].rightmost = index;
 
-		leafNodes[idx].centroid = positions[idx];
-		leafNodes[idx].radius = 1;
-	}
+	leafNodes[index].left = NULL;
+	leafNodes[index].right = NULL;
+
+	leafNodes[index].parent = NULL;
+
+	//copying state vectors
+	//too slow because of too many memory calls
+	leafNodes[index].centroid = positions[index];
+	leafNodes[index].radius = 1;
+	leafNodes[index].mass = 1;
+	leafNodes[index].collisionCounter = 0;
+
+	//float3 a = linearMomenta[index];
+	//leafNodes[index].linearMomentum = linearMomenta[index];
+	//leafNodes[index].linearMomentum = *(float3*)((double*)(linearMomenta + index));
+	/*float x = *(float*)(linearMomenta + index);
+	float y = *(float*)(linearMomenta + index + 32);
+	float z = *(float*)(linearMomenta + index + 64);
+
+	leafNodes[index].linearMomentum = make_float3(x, y, z);*/
+	/*int idx = 3 * blockIdx.x * blockDim.x + threadIdx.x;
+	__shared__ float sMomenta[512 * 3];
+	sMomenta[threadIdx.x] = linearMomenta[idx];
+	sMomenta[threadIdx.x + 512] = linearMomenta[idx + 512];
+	sMomenta[threadIdx.x + 1024] = linearMomenta[idx + 1024];
+	__syncthreads();*/
+
+	//leafNodes[idx].linearMomentum.x = (sMomenta)[threadIdx.x];
+	//leafNodes[idx + 512].linearMomentum.y = (sMomenta)[threadIdx.x + 512];
+	//leafNodes[idx + 1024].linearMomentum.z = (sMomenta)[threadIdx.x + 1024];
+	//leafNodes[index].angularMomentum = angularMomentums[index];
+	//leafNodes[index].quaternion = quaternions[index];
 }
 
-cudaError_t detectCollisions(float3 *positions, int numObjects)
+__global__ void testingMemoryAccess(float *input, float *output, int numberOfPrimitives)
+{
+	/*int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numberOfPrimitives) return;
+	output[index] = input[index];*/
+	int idx = 3 * blockIdx.x * blockDim.x + threadIdx.x;
+	__shared__ float sMomenta[512 * 3];
+	sMomenta[threadIdx.x] = input[idx];
+	sMomenta[threadIdx.x + 512] = input[idx + 512];
+	sMomenta[threadIdx.x + 1024] = input[idx + 1024];
+	__syncthreads();
+
+	output[idx] = (sMomenta)[threadIdx.x];
+	output[idx + 512] = (sMomenta)[threadIdx.x + 512];
+	output[idx + 1024] = (sMomenta)[threadIdx.x + 1024];
+}
+
+__global__ void assignMomenta(Particle *leafNodes, float3 *linearMomenta, int numberOfPrimitives)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numberOfPrimitives)
+		return;
+	leafNodes[index].linearMomentum = linearMomenta[index];
+}
+/*
+Potential error: sorting the leaf nodes by value, using Morton codes as keys, is not done on the code I found. [OPEN]
+*/
+cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numberOfPrimitives)
 {
 	unsigned int *mortonCodes;
-	cudaError_t cudaStatus = cudaMalloc((void**)&mortonCodes, numObjects * sizeof(unsigned int));
+	cudaError_t cudaStatus = cudaMalloc((void**)&mortonCodes, numberOfPrimitives * sizeof(unsigned int));
+	//cudaStatus = cudaMemset(mortonCodes, 0, sizeof(unsigned int) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess) {
 		cudaFree(mortonCodes);
 		return cudaFail(cudaStatus, "cudaMalloc_mortonCodes");
@@ -171,7 +234,7 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	int numOfThreads = 512; //maximum amount of threads supported by laptop
 	//assign a Morton code to each primitive
 	//launch all objects
-	generateMortonCodes << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, mortonCodes, numObjects);
+	generateMortonCodes << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, mortonCodes, numberOfPrimitives);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
@@ -188,31 +251,52 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 		return cudaFail(cudaStatus, "generateMortonCodes_cudaDeviceSynchronize");
 	}
 
-	/*cudaStatus = cudaMalloc((void**)&collisions, numObjects * sizeof(CollisionList));
-	if (cudaStatus != cudaSuccess)  {
-		cudaFree(mortonCodes);
-		cudaFree(collisions);
-		return cudaFail(cudaStatus, "cudaMalloc_collisions");
-	}*/
-
 	//create leaf nodes here
 	//then sort them using their morton codes as keys
 	//and pass them as argument to the BVH hierarchy creation routine
 	Particle *leafNodes;
-	cudaStatus = cudaMalloc((void**)&leafNodes, numObjects * sizeof(Particle));
+	cudaStatus = cudaMalloc((void**)&leafNodes, numberOfPrimitives * sizeof(Particle));
+	//cudaStatus = cudaMemset(leafNodes, 0, sizeof(Particle) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess){
 		cudaFree(mortonCodes);
-		//cudaFree(collisions);
 		cudaFree(leafNodes);
 		return cudaFail(cudaStatus, "cudaMalloc_leafNodes");
 	}
-	constructLeafNodes << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, positions, numObjects);
-	
+
+	float3 *temp;
+	cudaStatus = cudaMalloc((void**)&temp, numberOfPrimitives * sizeof(float3));
+	//cudaStatus = cudaMemset(leafNodes, 0, sizeof(Particle) * numberOfPrimitives);
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "cudaMalloc_temp");
+	}
+
+	testingMemoryAccess << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >((float*)linearMomenta, (float*)temp, numberOfPrimitives);
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess){
 		cudaFree(mortonCodes);
-		//cudaFree(collisions);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "testingMemoryAccess_cudaGetLastError");
+	}
+
+	// cudaDeviceSynchronize waits for the kernel to finish, and returns
+	// any errors encountered during the launch.
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "testingMemoryAccess_cudaDeviceSynchronize");
+	}
+
+
+
+	constructLeafNodes << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, positions, numberOfPrimitives);	
+	// Check for any errors launching the kernel
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
 		cudaFree(leafNodes);
 		return cudaFail(cudaStatus, "constructLeafNodes_cudaGetLastError");
 	}
@@ -222,24 +306,28 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess){
 		cudaFree(mortonCodes);
-		//cudaFree(collisions);
 		cudaFree(leafNodes);
 		return cudaFail(cudaStatus, "constructLeafNodes_cudaDeviceSynchronize");
 	}
-	//sorting morton codes using thrust (deprecated)
-	//no need to store them in a different buffer
-	//also sorting leaf nodes
-	//each leaf node has a field containing its original address
-	//thrust::device_ptr<Particle> devParticlePtr(leafNodes);
-	/*thrust::device_ptr<unsigned int> devMortonCodesPtr(mortonCodes);
 
-	thrust::device_ptr<float3> devTest(positions);
-	thrust::sort_by_key(devMortonCodesPtr, devMortonCodesPtr + numObjects, devTest);
-	
-	float3 *test = thrust::raw_pointer_cast(devTest);
-	//leafNodes = thrust::raw_pointer_cast(devParticlePtr);
-	mortonCodes = thrust::raw_pointer_cast(devMortonCodesPtr);*/
+	assignMomenta << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, linearMomenta, numberOfPrimitives);
+	// Check for any errors launching the kernel
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "assignMomenta_cudaGetLastError");
+	}
 
+	// cudaDeviceSynchronize waits for the kernel to finish, and returns
+	// any errors encountered during the launch.
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		return cudaFail(cudaStatus, "assignMomenta_cudaDeviceSynchronize");
+	}
+	exit(1);
 	//sorting procedure using cub (currently building)
 	cub::DoubleBuffer<unsigned int> sortKeys; //keys to sort by - Morton codes
 	cub::DoubleBuffer<Particle> sortValues; //also sort corresponding particles by key
@@ -247,104 +335,124 @@ cudaError_t detectCollisions(float3 *positions, int numObjects)
 	//presumambly, there is no need to allocate space for the current buffers
 	sortKeys.d_buffers[0] = mortonCodes;
 	sortValues.d_buffers[0] = leafNodes;
-	
-	//allocate memory for alternate buffers
-	//allocate memory using cub allocator
-	//so many problems here
-	//is it enough to allocate memory only for alternate buffers?
-	//what about error checking
-	/*
-	cudaFree(mortonCodes);
-	//cudaFree(collisions);
-	g_allocator.DeviceFree(sortKeys.d_buffers[1]);
-	cudaFree(leafNodes);
-	*/
+
 	cub::CachingDeviceAllocator  g_allocator(true);
 
-	/*cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[0], sizeof(unsigned int) * numObjects);
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[1], sizeof(unsigned int) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess)
+	{
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
 		return cudaFail(cudaStatus, "sortKeys_gAllocate");
-	*/
-	cudaStatus = g_allocator.DeviceAllocate((void**)&sortKeys.d_buffers[1], sizeof(unsigned int) * numObjects);
-	if (cudaStatus != cudaSuccess)
-		return cudaFail(cudaStatus, "sortKeys_gAllocate");
+	}
 	
-	/*cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[0], sizeof(Particle) * numObjects);
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Particle) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess)
+	{
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
 		return cudaFail(cudaStatus, "sortValues_gAllocate");
-	*/
-	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Particle) * numObjects);
-	if (cudaStatus != cudaSuccess)
-		return cudaFail(cudaStatus, "sortValues_gAllocate");
-
+	}
 
 	// Allocate temporary storage
 	size_t  temp_storage_bytes = 0;
 	void    *d_temp_storage = NULL;
-	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numObjects);
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numberOfPrimitives);
 	if (cudaStatus != cudaSuccess)
+	{
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
 		return cudaFail(cudaStatus, "first call to DeviceRadixSort");
+	}
 	cudaStatus = g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes);
 	if (cudaStatus != cudaSuccess)
-		return cudaFail(cudaStatus, "first call to DeviceRadixSort");
-
-
-	// Initialize device arrays
-	//CubDebugExit(cudaMemcpy(sortKeys.d_buffers[sortKeys.selector], mortonCodes, sizeof(unsigned int) * numObjects, cudaMemcpyDeviceToDevice));
-	//CubDebugExit(cudaMemcpy(sortValues.d_buffers[sortValues.selector], leafNodes, sizeof(Particle) * numObjects, cudaMemcpyDeviceToDevice));
-
-	//no need to check results of sort
-	/*unsigned int *h_keys = new unsigned int[numObjects];
-	cudaMemcpy(h_keys, mortonCodes, sizeof(unsigned int) * numObjects, cudaMemcpyDeviceToHost);
-	int compare = CompareDeviceResults(h_keys, mortonCodes, numObjects, true, true);
-	if (!compare)
-		std::cout << "Comparison results before sort: " << "TRUE" << std::endl;
-	else
-		std::cout << "Comparison results before sort: " << "FALSE" << std::endl;
-
-	std::stable_sort(h_keys, h_keys + numObjects); //now reference keys are sorted
-	*/
-	// Run
-	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numObjects);
-	if (cudaStatus != cudaSuccess)
-		return cudaFail(cudaStatus, "second call to DeviceRadixSort");
-	
-	/*compare = CompareDeviceResults(h_keys, sortKeys.Current(), numObjects, true, false);
-	if (!compare)
-		std::cout << "Comparison results after sort: " << "TRUE" << std::endl;
-	else
-		std::cout << "Comparison results after sort: " << "FALSE" << std::endl;
-	*/
-	//allocate memory for internal nodes
-	//DO NOT CROSS THIS BREAKPOINT UNTIL ALL OTHER ISSUES ARE RESOLVED
-	Particle* internalNodes;
-	//exit(1); I can now proceed below this breakpoint
-	//sort seems to be working properly
-	cudaStatus = cudaMalloc((void**)&internalNodes, (numObjects - 1) * sizeof(Particle));
-	if (cudaStatus != cudaSuccess) {
+	{
+		cudaFree(d_temp_storage);
 		cudaFree(mortonCodes);
-		cudaFree(internalNodes);
+		cudaFree(leafNodes);
 		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
 		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "cub: temporary storage alocation");
+	}
+
+	// Run sort
+	//Note: why do I need to sort the particles themselves?
+	//The code I found does nothing of the kind.
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numberOfPrimitives);
+	if (cudaStatus != cudaSuccess)
+	{
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
 		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "second call to DeviceRadixSort");
+	}
+	
+	//sort seems to be working properly
+
+	Particle* internalNodes;	
+	cudaStatus = cudaMalloc((void**)&internalNodes, (numberOfPrimitives - 1) * sizeof(Particle));
+	//cudaStatus = cudaMemset(internalNodes, 0, sizeof(Particle) * numberOfPrimitives);
+	if (cudaStatus != cudaSuccess) {
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
 		return cudaFail(cudaStatus, "cudaMalloc_internalNodes");
 	}
-	cudaStatus = generateHierarchy(internalNodes, sortValues.Current(), sortKeys.Current(), numObjects);
+	cudaStatus = generateHierarchy(internalNodes, sortValues.Current(), sortKeys.Current(), numberOfPrimitives);
 	if (cudaStatus != cudaSuccess){
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
 		cudaFree(mortonCodes);
-		//cudaFree(collisions);
 		cudaFree(leafNodes);
 		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
 		g_allocator.DeviceFree(sortValues.d_buffers[1]);
-		cudaFree(leafNodes);
 		return cudaFail(cudaStatus, "bvh_generateHierarchy");
 	}
-	/*unsigned int *sortedMortonCodes;
-	cudaStatus = cudaMalloc((void**)&sortedMortonCodes, numObjects * sizeof(unsigned int));
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc_detectCollisions failed!");
-		goto Error;
-	}*/
+
+	handleCollisions << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, numberOfPrimitives);
+	// Check for any errors launching the kernel
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "constructLeafNodes_cudaGetLastError");
+	}
+
+	// cudaDeviceSynchronize waits for the kernel to finish, and returns
+	// any errors encountered during the launch.
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "constructLeafNodes_cudaDeviceSynchronize");
+	}
+	//cleaning up
+	cudaFree(internalNodes);
+	cudaFree(d_temp_storage);
+	cudaFree(mortonCodes);
+	cudaFree(leafNodes);
+	g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+	g_allocator.DeviceFree(sortValues.d_buffers[1]);
+	//g_allocator.DeviceFree(sortKeys.d_buffers[0]);
+	//g_allocator.DeviceFree(sortValues.d_buffers[0]);
 	return cudaSuccess;
 }
 

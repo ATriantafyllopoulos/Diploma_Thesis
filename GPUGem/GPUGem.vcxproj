@@ -138,7 +138,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
-      <CodeGeneration>compute_12,sm_12</CodeGeneration>
+      <CodeGeneration>compute_20,sm_20</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,6 +167,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <CudaCompile Include="addKernel.cu" />
     <CudaCompile Include="CollisionDetectionCUDA.cu" />
+    <CudaCompile Include="CollisionHandlingCUDA.cu" />
     <CudaCompile Include="customBlockRadixSort.cu" />
     <CudaCompile Include="generateBVH.cu" />
     <CudaCompile Include="physicsKernels.cu" />

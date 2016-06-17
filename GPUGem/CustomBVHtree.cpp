@@ -32,12 +32,12 @@ Particle* CustomBVHtree::getRightChild(Particle* node)
 
 Particle* CustomBVHtree::getRightmostLeafInLeftSubtree(Particle* node)
 {
-	return node->leftmost;
+	return node;
 }
 
 Particle* CustomBVHtree::getRightmostLeafInRightSubtree(Particle* node)
 {
-	return node->rightmost;
+	return node;
 }
 
 bool CustomBVHtree::isLeaf(Particle* node)

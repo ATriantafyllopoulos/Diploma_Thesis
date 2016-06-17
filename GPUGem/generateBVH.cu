@@ -25,28 +25,36 @@ __device__ inline int MAX(int x, int y)
 {
 	return x > y ? x : y;
 }
+
+inline __device__ int longestCommonPrefix(int i, int j, int len) {
+	if (0 <= j && j < len) {
+		return __clz(i ^ j);
+	}
+	else {
+		return -1;
+	}
+}
 __device__ int2 determineRange(int numObjects, int idx)
 {
-	int d;
-	//int d1 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + 1]);
-	//int d2 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - 1]);
-	int d1 = __clz(idx ^ (idx + 1));
-	int d2 = __clz(idx ^ (idx - 1));
-	d = d1 > d2 ? 1 : -1;
+	//int d1 = __clz(idx ^ (idx + 1));
+	//int d2 = __clz(idx ^ (idx - 1));
+	//int d = d1 > d2 ? 1 : -1;
+	int d = longestCommonPrefix(idx, idx + 1, numObjects + 1) -
+		longestCommonPrefix(idx, idx - 1, numObjects + 1) > 0 ? 1 : -1;
 
 
-	//int dmin = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - d]);
-	int dmin = __clz(idx ^ (idx-d));
+	//int dmin = __clz(idx ^ (idx-d));
+	int dmin = longestCommonPrefix(idx, idx - d, numObjects + 1);
 	int lmax = 2;
-	//while (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 2;
-	while (__clz(idx ^ (idx + lmax*d)) > dmin) lmax <<= 1;
-
+	//while (__clz(idx ^ (idx + lmax * d)) > dmin) lmax <<= 1;
+	while (longestCommonPrefix(idx, idx + lmax * d, numObjects + 1) > dmin) lmax <<= 1;
+	
 	int l = 0;
 	int t = lmax >> 1;
 	while (t >= 1) //at last iteration 1 >> 1 = 0 (integers)
 	{
-		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin)
-		if (__clz(idx ^ (idx + (l + t) *d)) > dmin)
+		//if (__clz(idx ^ (idx + (l + t) * d)) > dmin)
+		if (longestCommonPrefix(idx, idx + (l + t) * d, numObjects + 1) > dmin)
 			l += t;
 		t >>= 1;
 	}
@@ -65,129 +73,28 @@ __device__ int2 determineRange(int numObjects, int idx)
 	}*/
 
 	//from now on we search for the split position
-	//int dnode = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[j]);
-	int dnode = __clz(idx ^ j);
+	//int dnode = __clz(idx ^ j);
+	int dnode = longestCommonPrefix(idx, j, numObjects + 1);
 
 	int s = 0;
-	t = lmax >> 1;
-	while (t > 0) //at last iteration 1 >> 2 = 0 (integers)
+	int divider = 2; //now l is not an integer so we need proper integer arithmetic
+	t = (l + (divider - 1)) / divider;
+	while (t >= 1) //at last iteration 1 >> 2 = 0 (integers)
 	{
 
-		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + (s+t) * d]) > dnode)
-		if (__clz(idx ^ (idx + (s + t) * d)) > dnode)
+		//if (__clz(idx ^ (idx + (s + t) * d)) > dnode)
+		if (longestCommonPrefix(idx, idx + (s + t) * d, numObjects + 1) > dnode)
 			s += t;
-		t >> 1;
+		divider <<= 1;
+		t = (l + (divider - 1)) / divider;
 	}
-	int gamma = idx + s*d + MIN(d, 0);
+
+	int gamma = idx + s * d + MIN(d, 0);
 	int2 range;
 	range.x = j;
 	range.y = gamma;
 	return range;
 
-}
-//determine range using Terro Karras' algorithm presented in
-//Maximizing Parallelism in the Construction of BVHs, Octrees and k-d Trees
-/*__device__ int2 determineRange(unsigned int* sortedMortonCodes, int numObjects, int idx)
-{
-	int d;
-	//int d1 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + 1]);
-	//int d2 = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - 1]);
-	int d1 = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + 1]);
-	int d2 = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx - 1]);
-	d = d1 > d2 ? 1 : -1;
-	
-	
-	//int dmin = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx - d]);
-	int dmin = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx - d]);
-	int lmax = 2;
-	//while (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 2;
-	while (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + lmax * d]) > dmin) lmax << 1;
-
-	int l = 0;
-	int t = lmax >> 1;
-	while (t >= 1) //at last iteration 1 >> 1 = 0 (integers)
-	{
-		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + lmax * d]) > dmin)
-		if (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + (l+t) *d]) > dmin)
-			l += t;
-		t >> 1;
-	}
-	int j = idx + l*d; //found range's other end (I think)
-	//this is the point where we need to check for duplicate keys
-	//we use findSplit function as a guide
-	//corresponding to (first, last)
-	//is this all that's necessary to deal with duplicate keys?
-	/*if (sortedMortonCodes[idx] == sortedMortonCodes[j])
-	{
-		int2 range;
-		range.x = d > 0 ? idx : (idx + j) / 2; //if d positive then start at idx
-		range.y = d < 0 ? idx : (idx + j) / 2; //if d negative then stop at idx
-		return range; //is a return needed?
-	}*/
-
-	//from now on we search for the split position
-	//int dnode = bitCount(sortedMortonCodes[idx] & sortedMortonCodes[j]);
-	/*int dnode = __clz(sortedMortonCodes[idx] ^ sortedMortonCodes[j]);
-
-	int s = 0;
-	t = lmax >> 1;
-	while (t > 0) //at last iteration 1 >> 2 = 0 (integers)
-	{
-		
-		//if (bitCount(sortedMortonCodes[idx] & sortedMortonCodes[idx + (s+t) * d]) > dnode)
-		if (__clz(sortedMortonCodes[idx] ^ sortedMortonCodes[idx + (s + t) * d]) > dnode)
-			s += t;
-		t >> 1;
-	}
-	int gamma = idx + s*d + MIN(d, 0);
-	int2 range;
-	range.x = j;
-	range.y = gamma;
-	return range;
-	//(internalNodes + idx)->left = MIN(idx, j) == gamma ? (leafnodes + gamma) : (internalNodes + gamma);
-	//(internalNodes + idx)->right = MAX(idx, j) == gamma + 1 ? (leafnodes + gamma + 1) : (internalNodes + gamma + 1);
-
-}*/
-
-int findSplit(unsigned int* sortedMortonCodes, int first, int last)
-{
-	// Identical Morton codes => split the range in the middle.
-
-	unsigned int firstCode = sortedMortonCodes[first];
-	unsigned int lastCode = sortedMortonCodes[last];
-
-	if (firstCode == lastCode)
-		return (first + last) >> 1;
-
-	// Calculate the number of highest bits that are the same
-	// for all objects, using the count-leading-zeros intrinsic.
-
-	//int commonPrefix = __clz(firstCode ^ lastCode);
-	int commonPrefix = 31 - floor(log2(firstCode ^ lastCode));
-
-	// Use binary search to find where the next bit differs.
-	// Specifically, we are looking for the highest object that
-	// shares more than commonPrefix bits with the first one.
-
-	int split = first; // initial guess
-	int step = last - first;
-
-	do
-	{
-		step = (step + 1) >> 1; // exponential decrease
-		int newSplit = split + step; // proposed new position
-
-		if (newSplit < last)
-		{
-			unsigned int splitCode = sortedMortonCodes[newSplit];
-			//int splitPrefix = __clz(firstCode ^ splitCode);
-			int splitPrefix = 31 - floor(log2(firstCode ^ splitCode));
-			if (splitPrefix > commonPrefix)
-				split = newSplit; // accept proposal
-		}
-	} while (step > 1);
-
-	return split;
 }
 
 __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNodes, unsigned int* sortedMortonCodes, int numObjects)
@@ -200,118 +107,138 @@ __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNo
 	//This way the index of every internal node coincides with either its first
 	//or its last key
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx > numObjects) return;
+	if (idx >= numObjects) return;
 	int2 range = determineRange(numObjects, idx);
 	int j = range.x;
 	int gamma = range.y;
 
-	if (MIN(idx, j) == gamma)
-	{
-		 (internalNodes + idx)->left = (leafNodes + gamma);
-		 (leafNodes + gamma)->parent = (internalNodes + idx);
-	}
-	else
-	{
-		(internalNodes + idx)->left = (internalNodes + gamma);
-		(internalNodes + gamma)->parent = (internalNodes + idx);
+	/*Particle *current = internalNodes + idx;
 
-	}
-	if (MAX(idx, j) == gamma + 1)
-	{
-		(internalNodes + idx)->left = (leafNodes + gamma + 1);
-		(leafNodes + gamma + 1)->parent = (internalNodes + idx);
-	}
-	else
-	{
-		(internalNodes + idx)->left = (internalNodes + gamma + 1);
-		(internalNodes + gamma + 1)->parent = (internalNodes + idx);
 
+	if (MIN(idx, j) == gamma) {
+		current->left = leafNodes + gamma;
+		(leafNodes + gamma)->parent = current;
 	}
-	/*Particle *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
+	else {
+		current->left = internalNodes + gamma;
+		(internalNodes + gamma)->parent = current;
+	}
+
+	if (MAX(idx, j) == gamma + 1) {
+		current->right = leafNodes + gamma + 1;
+		(leafNodes + gamma + 1)->parent = current;
+	}
+	else {
+		current->right = internalNodes + gamma + 1;
+		(internalNodes + gamma + 1)->parent = current;
+	}
+
+	current->leftmost = MIN(idx, j);
+	current->rightmost = MAX(idx, j);*/
+	Particle *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
 	(internalNodes + idx)->left = leftChild;
 	leftChild->parent = (internalNodes + idx);
 
 	Particle *rightChild = (MAX(idx, j) == gamma + 1 ? (leafNodes + gamma + 1) : (internalNodes + gamma + 1));
 	(internalNodes + idx)->right = rightChild;
 	rightChild->parent = (internalNodes + idx);
-	*/
+
 	internalNodes[idx].isLeaf = false;
 
-	//Update by Andreas:
-	//No need to explicitly find split
-	//determineRange returns indices of left and right childs (sort of)
-
-	// Determine where to split the range.
-	//int split = findSplit(sortedMortonCodes, first, last);
-
-	// Select childA.
-
-	/*Particle* childA;
-	if (split == first)
-		childA = &leafNodes[split];
-	else
-		childA = &internalNodes[split];
-
-	// Select childB.
-
-	Particle* childB;
-	if (split + 1 == last)
-		childB = &leafNodes[split + 1];
-	else
-		childB = &internalNodes[split + 1];
-
-	// Record parent-child relationships.
-
-	internalNodes[idx].left = childA;
-	internalNodes[idx].right = childB;
-	childA->parent = &internalNodes[idx];
-	childB->parent = &internalNodes[idx];*/
+	(internalNodes + idx)->leftmost = MIN(idx, j);
+	(internalNodes + idx)->rightmost = MAX(idx, j);
 }
 
-__global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, int numObjects)
+/*
+[SOLVED]
+Known issue: this kernel fails and returns cudaError(4): cudaErrorLaunchFailure.
+Common causes include dereferencing an invalid pointer and accessing out of bounds
+memory.
+Notes: 
+a)	Is it possible that not all leaf nodes are assigned a parent?
+An if (node == NULL) return; should resolve that question.
+Make sure to initialize all leafnodes with a null parent.
+
+Update: Intuition was correct. It appears that not all leaf nodes are assigned
+a parent during tree construction. There must be a bug or a mistake in my algorithm.
+I need to re-check radix tree creation.
+
+New update: I was partially wrong. Apparently leaf nodes DO have a parent. But not
+all INTERNAL nodes do (removing the checkpoint at the begining does not cause pro-
+blems but doing so inside the recursive loop does). Apparently using that guy's
+function, which includes simple error-checking did the trick.
+
+Note: I will also stick with atomics since they seem to be working and it is what 
+Karras recommends.
+*/
+__global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, int numObjects, int *nodeCounter)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < numObjects)
+	if (idx >= numObjects)return;
+	Particle *node = (leafNodes + idx); //start at each leaf
+	node = node->parent;
+	//if (node == NULL) return;
+	int currentIndex = node - internalNodes;
+	int res = atomicAdd(nodeCounter + currentIndex, 1);
+	while (1)
 	{
-		Particle *node = (leafNodes + idx);
-		while (node != internalNodes)
+		//attempting to use atomics instead of propagating only right childs
+		//Update: using atomics did not solve the bug. Will only attempt reverting to
+		//previous hack after resolving the issue.
+		/*if (res == 0) {
+			return;
+		}*/
+		//if this is a left child and a right child does indeed exist
+		//this is used because only right childs should access their parent
+		//to avoid read write conflicts
+		//Karras proposes that this is done using atomic add
+		//if errors persist then I will change this to recommended version
+		/*if (node == node->parent->left && node->parent->right != NULL)
 		{
-			//if this is a left child and a right child does indeed exist
-			if (node == node->parent->left && node->parent->right != NULL)
-			{
-				break;
-			}
-			node = node->parent;
-			//if either of the children is NULL then the parent will have the same
-			//primitive its only child
-			Particle *lChild = node->left != NULL ? node->left : node->right;
-			Particle *rChild = node->right != NULL ? node->right : node->left;
-			//centroid is mid point between centroids of children
-			//this is only true for sphere-modeled particles
-			//needs to be updated if I use other primitives
-			node->centroid.x = (lChild->centroid.x + rChild->centroid.x) / 2;
-			node->centroid.y = (lChild->centroid.y + rChild->centroid.y) / 2;
-			node->centroid.z = (lChild->centroid.z + rChild->centroid.z) / 2;
-			//__fsqrt_rd is a CUDA builtin function which computes the root square of a
-			//number rounding down
-			float r1 = lChild->radius + __fsqrt_rd((lChild->centroid.x - node->centroid.x)*(lChild->centroid.x - node->centroid.x) +
-				(lChild->centroid.y - node->centroid.z)*(lChild->centroid.y - node->centroid.y) +
-				(lChild->centroid.y - node->centroid.z)*(lChild->centroid.z - node->centroid.z));
-			float r2 = rChild->radius + __fsqrt_rd((rChild->centroid.x - node->centroid.x)*(rChild->centroid.x - node->centroid.x) +
-				(rChild->centroid.y - node->centroid.z)*(rChild->centroid.y - node->centroid.y) +
-				(rChild->centroid.y - node->centroid.z)*(rChild->centroid.z - node->centroid.z));
+			return;
+		}*/
 
-			node->radius = MAX(r1, r2);
+		//after this point only right childs should continue
+		//or left childs only when no right child exists
+		//node = node->parent;
+		//if either of the children is NULL then the parent will have the same
+		//primitive as its only child
+		Particle *lChild = node->left != NULL ? node->left : node->right;
+		Particle *rChild = node->right != NULL ? node->right : node->left;
+		//centroid is mid point between centroids of children
+		//this is only true for sphere-modeled particles
+		//needs to be updated if I use other primitives
+		node->centroid.x = (lChild->centroid.x + rChild->centroid.x) / 2;
+		node->centroid.y = (lChild->centroid.y + rChild->centroid.y) / 2;
+		node->centroid.z = (lChild->centroid.z + rChild->centroid.z) / 2;
+		//__fsqrt_rd is a CUDA builtin function which computes the root square of a
+		//number rounding down
+		float r1 = lChild->radius + 
+			__fsqrt_rd( (lChild->centroid.x - node->centroid.x) * (lChild->centroid.x - node->centroid.x) +
+			(lChild->centroid.y - node->centroid.z) * (lChild->centroid.y - node->centroid.y) +
+			(lChild->centroid.y - node->centroid.z) * (lChild->centroid.z - node->centroid.z) );
+		float r2 = rChild->radius + 
+			__fsqrt_rd( (rChild->centroid.x - node->centroid.x) * (rChild->centroid.x - node->centroid.x) +
+			(rChild->centroid.y - node->centroid.z) * (rChild->centroid.y - node->centroid.y) +
+			(rChild->centroid.y - node->centroid.z) * (rChild->centroid.z - node->centroid.z) );
 
-			//after assigning primitives we also need to compute rightmost leafs for each subtree
-			//if I am to use this configuration (i.e. assigning the rightmost leaf of each child)
-			//then I will have to make sure that leafnodes report their rightmost leaf as themselves
-			//Done. What about NULLs, i.e. when no children exist
-			//if either of the children are NULL then that subtree is also NULL
-			//will need to check that when I check for subtrees
-			node->rightmost = node->right != NULL ? node->right->rightmost : NULL;
-			node->leftmost = node->left != NULL ? node->left->rightmost : NULL;
-		}
+		node->radius = MAX(r1, r2);
+
+		//after assigning primitives we also need to compute rightmost leafs for each subtree
+		//if I am to use this configuration (i.e. assigning the rightmost leaf of each child)
+		//then I will have to make sure that leafnodes report their rightmost leaf as themselves
+		//Done. What about NULLs, i.e. when no children exist
+		//if either of the children are NULL then that subtree is also NULL
+		//will need to check that when I check for subtrees
+		node->rightmost = node->right != NULL ? node->right->rightmost : 0;
+		node->leftmost = node->left != NULL ? node->left->rightmost : 0;
+		
+		if (node == internalNodes)
+			return; //return after handling root
+		node = node->parent;
+		//if (node == NULL) return;
+		currentIndex = node - internalNodes;
+		res = atomicAdd(nodeCounter + currentIndex, 1);
 	}
 
 }
@@ -322,21 +249,8 @@ cudaError_t generateHierarchy(Particle *internalNodes,
 	int           numObjects)
 {
 	//these are to be allocated on the GPU
-	//LeafNode* leafNodes = new LeafNode[numObjects];
-	//InternalNode* internalNodes = new InternalNode[numObjects - 1];
 	cudaError_t cudaStatus;
-
-	/*cudaStatus = cudaMalloc((void**)&internalNodes, numObjects * sizeof(Particle));
-	if (cudaStatus != cudaSuccess) {
-		cudaFree(internalNodes);
-		return cudaFail(cudaStatus, "cudaMalloc_internalNodes");
-	}*/
-	// Construct leaf nodes.
-	// Note: This step can be avoided by storing
-	// the tree in a slightly different way.
-	//for (int idx = 0; idx < numObjects; idx++) // in parallel
-	//leafNodes[idx].id = sortedObjectIDs[idx];
-	int numOfThreads = 512;
+	int numOfThreads = 512; //platform dependent - 512 for laptop, 1024 for pc
 
 	//launch for numobjects - 1
 	//total number of internal nodes for a bvh with N leaves is N-1
@@ -345,7 +259,6 @@ cudaError_t generateHierarchy(Particle *internalNodes,
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		cudaFree(internalNodes);
 		return cudaFail(cudaStatus, "constructInternalNodes_cudaGetLastError");
 	}
 
@@ -353,20 +266,25 @@ cudaError_t generateHierarchy(Particle *internalNodes,
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
-		cudaFree(internalNodes);
-		exit(1);
 		return cudaFail(cudaStatus, "constructInternalNodes_cudaDeviceSynchronize");
 	}
-	exit(1);
+	
+	int *nodeCounter;
+	cudaStatus = cudaMalloc(&nodeCounter, sizeof(int) * numObjects);
+	cudaStatus = cudaMemset(nodeCounter, 0, sizeof(int) * numObjects);
+	if (cudaStatus != cudaSuccess) {
+		cudaFree(nodeCounter);
+		return cudaFail(cudaStatus, "malloc_nodeCounter");
+	}
 	//assign primitives to internal nodes
 	//launch kernel for each leaf node
 	//each thread works each way recursively to the top
-	assignPrimitives << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(internalNodes, leafNodes, numObjects);
+	assignPrimitives << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(internalNodes, leafNodes, numObjects, nodeCounter);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
-		cudaFree(internalNodes);
+		cudaFree(nodeCounter);
 		return cudaFail(cudaStatus, "assignPrimitives_cudaGetLastError");
 	}
 
@@ -374,18 +292,11 @@ cudaError_t generateHierarchy(Particle *internalNodes,
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
-		cudaFree(internalNodes);
+		cudaFree(nodeCounter);
 		return cudaFail(cudaStatus, "assignPrimitives_cudaDeviceSynchronize");
 	}
-
-	// Construct internal nodes.
-
-	/*for (int idx = 0; idx < numObjects - 1; idx++) // in parallel
-	{
-		// Find out which range of objects the node corresponds to.
-		// (This is where the magic happens!)
-	}*/
-
+	//exit(1);
+	cudaFree(nodeCounter);
 	// Node 0 is the root.
 	return cudaSuccess;
 }

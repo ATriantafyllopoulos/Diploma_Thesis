@@ -153,8 +153,9 @@ void Viewer_GL3::init(void)
 
 	glGenVertexArrays(1, &testingVAO);
 	glBindVertexArray(testingVAO);
-	numOfParticles = 1024;
-	GLfloat *vertices_position = new GLfloat[3 * 1024]; //changed from static to dynamic allocation
+	//131072
+	numOfParticles = 2 << 10;
+	GLfloat *vertices_position = new GLfloat[3 * (2 << 10)]; //changed from static to dynamic allocation
 
 	//Create a Vector Buffer Object that will store the vertices on video memory
 	GLuint vbo;

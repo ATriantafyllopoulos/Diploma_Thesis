@@ -9,6 +9,7 @@ PhysicsEngineCUDA::PhysicsEngineCUDA()
 
 PhysicsEngineCUDA::~PhysicsEngineCUDA()
 {
+	cudaFree(linearMomenta);
 }
 
 cudaError_t PhysicsEngineCUDA::registerResources(GLuint &GLvao, int number, size_t sz)
@@ -48,7 +49,7 @@ cudaError_t PhysicsEngineCUDA::initialize()
 		return error("initialize_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	dummyInitialization(positions, numOfParticles);
+	dummyInitialization(positions, linearMomenta, numOfParticles);
 	if (cudaStatus != cudaSuccess)
 		return error("initialize_dummyInitialization");
 	
@@ -65,6 +66,13 @@ cudaError_t PhysicsEngineCUDA::initialize()
 	return cudaStatus;
 }
 
+/*
+TODO:
+a) Investigate the comment that morton3D works for points inside the unit cube [0, 1].
+b) Stress test collision detection after adding primitive creation. [barely acceptable for 2 >> 18 particles]
+c) Implement tree traversal.
+d) Add collisions properly.
+*/
 cudaError_t PhysicsEngineCUDA::collisionDetection()
 {
 	float3* positions;
@@ -77,26 +85,7 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_cudaGraphicsResourceGetMappedPointer");
 
-	/*float d = 0.1; //grid size
-	float3 s; //smallest grid coordinates
-	s.x = -10.f;
-	s.y = -10.f;
-	s.z = -10.f;
-
-	cudaExtent volumeSizeBytes = make_cudaExtent(sizeof(float4) * 10, 10, 10);
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess)
-		return error("collisionDetection_make_cudaExtent");
-
-	cudaPitchedPtr grid; //3D grid texture
-	cudaStatus = cudaMalloc3D(&grid, volumeSizeBytes);
-	if (cudaStatus != cudaSuccess)
-		return error("collisionDetection_cudaMalloc3D");
-
-	// Launch a kernel on the GPU with one thread for each element.
-	dummyMeshCreation(positions, grid, s, d, numOfParticles);
-	*/
-	cudaStatus = detectCollisions(positions, numOfParticles);
+	cudaStatus = detectCollisions(positions, linearMomenta, numOfParticles);
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_detectCollisions");
 
