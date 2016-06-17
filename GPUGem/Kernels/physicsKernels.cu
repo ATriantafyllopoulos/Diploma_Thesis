@@ -21,25 +21,6 @@ __global__ void initializeKernel(float3* positions, float3* linearMomenta)
 	linearMomenta[index] = make_float3(0.f, 0.f, 0.f);
 }
 
-__global__ void meshCreationKernel(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, float d)
-{
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-	float4 *g = (float4 *)gridCoordinates.ptr;
-	size_t    pitch = gridCoordinates.pitch;
-	size_t    slicePitch = pitch * 10;
-
-	int xPos = (positions[index].x - smallestCoords.x) / d;
-	int yPos = (positions[index].y - smallestCoords.y) / d;
-	int zPos = (positions[index].z - smallestCoords.z) / d;
-
-	//zPos * 10 * 10 + yPos * 10 + xPos
-	int gridIndex = zPos * slicePitch + yPos * pitch + xPos;
-	
-	g[gridIndex].x = index;
-}
-
-
 cudaError_t dummyInitialization(float3* positions, float3* linearMomenta, const int &numberOfPrimitives)
 {
 	int numOfThreads = 512;
@@ -69,17 +50,6 @@ cudaError_t dummyAnimation(float3* positions, const double &offset, const int &n
 	if (cudaStatus != cudaSuccess)
 		return cudaFail(cudaStatus, "dummyAnimation");
 	//std::cout << "CUDA animation was successful." << std::endl;
-	return cudaSuccess;
-}
-
-cudaError_t dummyMeshCreation(float3 *positions, cudaPitchedPtr gridCoordinates, float3 smallestCoords, const float &d, const int &numberOfPrimitives)
-{
-	int numOfThreads = 512;
-	meshCreationKernel << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, gridCoordinates, smallestCoords, d);
-	// Check for any errors launching the kernel
-	cudaError_t cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess)
-		return cudaFail(cudaStatus, "dummyMeshCreation");
 	return cudaSuccess;
 }
 

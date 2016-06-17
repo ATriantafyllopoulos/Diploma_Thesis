@@ -59,9 +59,11 @@
     <Import Project="..\PropertySheets\Debug\FREEIMAGE_DEBUG_32.props" />
     <Import Project="..\PropertySheets\Debug\OPENGL_3_3_DEBUG_32.props" />
     <Import Project="..\PropertySheets\Debug\CUB_DEBUG.props" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -69,9 +71,11 @@
     <Import Project="..\PropertySheets\Release\Cub_Release.props" />
     <Import Project="..\PropertySheets\Release\OpenGL_3_2_Release.props" />
     <Import Project="..\PropertySheets\Release\FreeImage_Release.props" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -165,47 +169,47 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="addKernel.cu" />
-    <CudaCompile Include="CollisionDetectionCUDA.cu" />
-    <CudaCompile Include="CollisionHandlingCUDA.cu" />
-    <CudaCompile Include="customBlockRadixSort.cu" />
-    <CudaCompile Include="generateBVH.cu" />
-    <CudaCompile Include="physicsKernels.cu" />
+    <CudaCompile Include="Kernels\addKernel.cu" />
+    <CudaCompile Include="Kernels\CollisionDetectionCUDA.cu" />
+    <CudaCompile Include="Kernels\CollisionHandlingCUDA.cu" />
+    <CudaCompile Include="Kernels\customBlockRadixSort.cu" />
+    <CudaCompile Include="Kernels\generateBVH.cu" />
+    <CudaCompile Include="Kernels\physicsKernels.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CustomBVHtree.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="objModel.cpp" />
-    <ClCompile Include="PhysicsEngineCUDA.cpp" />
-    <ClCompile Include="Renderable.cpp" />
-    <ClCompile Include="Renderable_GL3.cpp" />
-    <ClCompile Include="RigidBody.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="texture.cpp" />
-    <ClCompile Include="vertexBufferObject.cpp" />
-    <ClCompile Include="Viewer.cpp" />
-    <ClCompile Include="Viewer_GL3.cpp" />
-    <ClCompile Include="VirtualWorld.cpp" />
-    <ClCompile Include="WindowsHandler.cpp" />
+    <ClCompile Include="Source\CustomBVHtree.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\objModel.cpp" />
+    <ClCompile Include="Source\PhysicsEngineCUDA.cpp" />
+    <ClCompile Include="Source\Renderable.cpp" />
+    <ClCompile Include="Source\Renderable_GL3.cpp" />
+    <ClCompile Include="Source\RigidBody.cpp" />
+    <ClCompile Include="Source\Shader.cpp" />
+    <ClCompile Include="Source\texture.cpp" />
+    <ClCompile Include="Source\vertexBufferObject.cpp" />
+    <ClCompile Include="Source\Viewer.cpp" />
+    <ClCompile Include="Source\Viewer_GL3.cpp" />
+    <ClCompile Include="Source\VirtualWorld.cpp" />
+    <ClCompile Include="Source\WindowsHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common_header.h" />
-    <ClInclude Include="CustomBVHtree.h" />
-    <ClInclude Include="objModel.h" />
-    <ClInclude Include="PhysicsEngine.h" />
-    <ClInclude Include="PhysicsEngineCUDA.h" />
-    <ClInclude Include="Primitives.h" />
-    <ClInclude Include="Renderable.h" />
-    <ClInclude Include="Renderable_GL3.h" />
-    <ClInclude Include="RigidBody.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="texture.h" />
-    <ClInclude Include="vertexBufferObject.h" />
-    <ClInclude Include="Viewer.h" />
-    <ClInclude Include="Viewer_GL3.h" />
-    <ClInclude Include="VirtualObject.h" />
-    <ClInclude Include="VirtualWorld.h" />
-    <ClInclude Include="WindowsHandler.h" />
+    <ClInclude Include="Headers\common_header.h" />
+    <ClInclude Include="Headers\CustomBVHtree.h" />
+    <ClInclude Include="Headers\objModel.h" />
+    <ClInclude Include="Headers\PhysicsEngine.h" />
+    <ClInclude Include="Headers\PhysicsEngineCUDA.h" />
+    <ClInclude Include="Headers\Primitives.h" />
+    <ClInclude Include="Headers\Renderable.h" />
+    <ClInclude Include="Headers\Renderable_GL3.h" />
+    <ClInclude Include="Headers\RigidBody.h" />
+    <ClInclude Include="Headers\Shader.h" />
+    <ClInclude Include="Headers\texture.h" />
+    <ClInclude Include="Headers\vertexBufferObject.h" />
+    <ClInclude Include="Headers\Viewer.h" />
+    <ClInclude Include="Headers\Viewer_GL3.h" />
+    <ClInclude Include="Headers\VirtualObject.h" />
+    <ClInclude Include="Headers\VirtualWorld.h" />
+    <ClInclude Include="Headers\WindowsHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
