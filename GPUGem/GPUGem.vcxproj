@@ -169,13 +169,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="animationKernel.cu" />
-    <CudaCompile Include="cleanupKernel.cu" />
+    <CudaCompile Include="Kernels\animationKernel.cu" />
+    <CudaCompile Include="Kernels\cleanupKernel.cu" />
     <CudaCompile Include="Kernels\CollisionDetectionCUDA.cu" />
     <CudaCompile Include="Kernels\CollisionHandlingCUDA.cu" />
     <CudaCompile Include="Kernels\generateBVH.cu" />
     <CudaCompile Include="Kernels\initializationKernel.cu" />
-    <CudaCompile Include="updateKernel.cu" />
+    <CudaCompile Include="Kernels\updateKernel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
