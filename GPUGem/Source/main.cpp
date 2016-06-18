@@ -6,7 +6,6 @@
 #include "WindowsHandler.h"
 #include "Viewer_GL3.h"
 #include "objModel.h"
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
 bool modelCreation(VirtualWorld &world);
 
@@ -42,24 +41,6 @@ int main()
 
 	ShowWindow(GLwindow, nCmdShow); //show window
 	ShowCursor(FALSE);
-
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << "Testing CUDA functionality..." << std::endl;
-	const int arraySize = 5;
-	const int a[arraySize] = { 1, 2, 3, 4, 5 };
-	const int b[arraySize] = { 10, 20, 30, 40, 50 };
-	int c[arraySize] = { 0 };
-
-	// Add vectors in parallel.
-	cudaStatus = addWithCuda(c, a, b, arraySize);
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "addWithCuda failed!");
-		return 1;
-	}
-
-	printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-		c[0], c[1], c[2], c[3], c[4]);
 
 	GLwin.Run(); //static_cast<int>( msg.wParam );
 

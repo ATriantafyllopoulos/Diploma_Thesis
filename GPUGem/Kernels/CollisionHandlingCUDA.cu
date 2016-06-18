@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include "cudaAuxiliary.h"
+
 __device__ float3 operator+(const float3 &a, const float3 &b)
 {
 
@@ -46,10 +48,10 @@ __device__ float dot(const float3 &a, const float3 &b)
 }
 
 /*
-This should be wrapped in a class. This is only for particle - particle collision and not generic.
+This should be wrapped in a class. This is only for primitive - primitive collision and not generic.
 Parameters include k, d, h. They should be given as input.
 */
-__global__ void handleCollisions(Particle *leafNodes, int numberOfPrimitives)
+__global__ void handleCollisions(Primitive *leafNodes, int numberOfPrimitives)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= numberOfPrimitives)
@@ -59,10 +61,10 @@ __global__ void handleCollisions(Particle *leafNodes, int numberOfPrimitives)
 	float h = 0.1;
 	float kt = 0.1;
 	float dt = 0.1;
-	Particle *current = leafNodes + index; 
+	Primitive *current = leafNodes + index; 
 	while (current->collisionCounter)
 	{
-		Particle *colliding = current->collisions[current->collisionCounter];
+		Primitive *colliding = current->collisions[current->collisionCounter];
 		float3 distance = current->centroid - colliding->centroid;
 		
 		float distanceNorm = norm(distance);

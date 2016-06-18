@@ -1,29 +1,29 @@
 #include "PhysicsEngineCUDA.h"
 __global__ void initializeKernel(float3* positions, float3* linearMomenta);
 
-PhysicsEngineCUDA::PhysicsEngineCUDA()
+PhysicsEngineCUDA::PhysicsEngineCUDA(int numThreads)
 {
+	numberOfThreads = numThreads;
 	offset = 0.1; //remove in future versions - only used for animation
 }
 
 
 PhysicsEngineCUDA::~PhysicsEngineCUDA()
 {
-	cudaFree(linearMomenta);
 }
 
 cudaError_t PhysicsEngineCUDA::registerResources(GLuint &GLvao, int number, size_t sz)
 {
 	cudaStatus = cudaSetDevice(0);
 	if (cudaStatus != cudaSuccess)
-		return error("registerResources");
+		return error("registerResources_cudaSetDevice");
 	cudaStatus = cudaGLSetGLDevice(0);
 	if (cudaStatus != cudaSuccess)
-		return error("registerResources");
+		return error("registerResources_cudaGLSetGLDevice");
 	cudaStatus = cudaGraphicsGLRegisterBuffer(&cudaVAO, GLvao, cudaGraphicsMapFlagsWriteDiscard);
 	if (cudaStatus != cudaSuccess)
-		return error("registerResources");
-	numOfParticles = number;
+		return error("registerResources_cudaGraphicsGLRegisterBuffer");
+	numberOfParticles = number;
 	numBytes = sz;
 	return cudaStatus;
 }
@@ -49,9 +49,9 @@ cudaError_t PhysicsEngineCUDA::initialize()
 		return error("initialize_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	dummyInitialization(positions, linearMomenta, numOfParticles);
+	initialization(positions, &linearMomenta, numberOfParticles, numberOfThreads);
 	if (cudaStatus != cudaSuccess)
-		return error("initialize_dummyInitialization");
+		return error("initialize_launchKernel");
 	
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
@@ -66,13 +66,6 @@ cudaError_t PhysicsEngineCUDA::initialize()
 	return cudaStatus;
 }
 
-/*
-TODO:
-a) Investigate the comment that morton3D works for points inside the unit cube [0, 1].
-b) Stress test collision detection after adding primitive creation. [barely acceptable for 2 >> 18 particles]
-c) Implement tree traversal.
-d) Add collisions properly.
-*/
 cudaError_t PhysicsEngineCUDA::collisionDetection()
 {
 	float3* positions;
@@ -85,7 +78,7 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_cudaGraphicsResourceGetMappedPointer");
 
-	cudaStatus = detectCollisions(positions, linearMomenta, numOfParticles);
+	cudaStatus = detectCollisions(positions, &linearMomenta, numberOfParticles, numberOfThreads);
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_detectCollisions");
 
@@ -104,6 +97,7 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 
 cudaError_t PhysicsEngineCUDA::update()
 {
+
 	return cudaStatus;
 }
 
@@ -120,7 +114,7 @@ cudaError_t PhysicsEngineCUDA::animate()
 		return error("animate_cudaGraphicsResourceGetMappedPointer");
 
 	// Launch a kernel on the GPU with one thread for each element.
-	cudaStatus = dummyAnimation(positions, offset, numOfParticles);
+	cudaStatus = animation(positions, offset, numberOfParticles, numberOfThreads);
 	if (cudaStatus != cudaSuccess)
 		return error("initialize_dummyAnimation");
 	// Check for any errors launching the kernel
@@ -150,5 +144,15 @@ cudaError_t PhysicsEngineCUDA::error(char *func)
 	std::cout << "Enter random character to continue..." << std::endl;
 	int x;
 	std::cin >> x;
+	cleanUp();
 	return cudaStatus;
+}
+
+cudaError_t PhysicsEngineCUDA::cleanUp()
+{
+	cudaError_t temp;
+	temp = cudaSuccess;
+	if (linearMomenta)
+		temp = cleanup((void**)&linearMomenta);
+	return temp;
 }

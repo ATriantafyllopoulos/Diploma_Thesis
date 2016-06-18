@@ -19,17 +19,21 @@
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/test/test_util.h>
 
+cudaError_t update(Primitive* leafNodes, const float &timeStep, const int &numberOfPrimitives, const int &numberOfThreads);
 /*
 This particular file is a mess. I definitely need to clean it up on the weekend.
 It's decided. The weekend will be dedicated to cleaning up the code.
 This will need to be part of a class.
 */
-__global__ void handleCollisions(Particle *leafNodes, int numberOfPrimitives);
+__global__ void handleCollisions(Primitive *leafNodes, int numberOfPrimitives);
+
 cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
-cudaError_t generateHierarchy(Particle *internalNodes,
-	Particle* leafNodes,
+
+cudaError_t generateHierarchy(Primitive *internalNodes,
+	Primitive* leafNodes,
 	unsigned int* sortedMortonCodes,
 	int           numberOfPrimitives);
+
 __device__ inline float MIN(float x, float y)
 {
 	return x < y ? x : y;
@@ -64,7 +68,7 @@ __device__ unsigned int morton3D(float x, float y, float z)
 	return xx * 4 + yy * 2 + zz;
 }
 
-__device__ inline bool checkOverlap(Particle *query, Particle *node)
+__device__ inline bool checkOverlap(Primitive *query, Primitive *node)
 {
 	float dist = __fsqrt_rd((node->centroid.x - query->centroid.x) * (node->centroid.x - query->centroid.x) +
 		(node->centroid.y - query->centroid.y) * (node->centroid.y - query->centroid.y) +
@@ -72,24 +76,23 @@ __device__ inline bool checkOverlap(Particle *query, Particle *node)
 	return dist < node->radius + query->radius;
 }
 
-__device__ void traverseIterative(CollisionList& list,
-	Particle *root,
-	Particle* queryLeaf)
+__device__ void traverseIterative(Primitive *root,
+	Primitive* queryLeaf)
 {
 	// Allocate traversal stack from thread-local memory,
 	// and push NULL to indicate that there are no postponed nodes.
-	Particle* stack[64]; //AT: Is 64 the correct size to use?
-	Particle** stackPtr = stack;
+	Primitive* stack[64]; //AT: Is 64 the correct size to use?
+	Primitive** stackPtr = stack;
 	//when stack is empty thread will return
 	*stackPtr++ = NULL; // push NULL at beginning
 
 	// Traverse nodes starting from the root.
-	Particle* node = root;
+	Primitive* node = root;
 	do
 	{
 		// Check each child node for overlap.
-		Particle* childL = node->left;
-		Particle* childR = node->right;
+		Primitive* childL = node->left;
+		Primitive* childR = node->right;
 		bool overlapL = (checkOverlap(queryLeaf, childL));
 		bool overlapR = (checkOverlap(queryLeaf, childR));
 
@@ -98,14 +101,16 @@ __device__ void traverseIterative(CollisionList& list,
 
 		if (node->rightmost <= queryLeaf->id)
 			overlapR = false;
+		
 		// Query overlaps a leaf node => report collision.
 		if (overlapL && childL->isLeaf)
 			queryLeaf->collisions[queryLeaf->collisionCounter++] = childL;
-			//list.add(queryLeaf->id, childL->id);
 		queryLeaf->collisionCounter = queryLeaf->collisionCounter > 7 ? 0 : queryLeaf->collisionCounter; //avoid overflow
+		
 		if (overlapR && childR->isLeaf)
 			queryLeaf->collisions[queryLeaf->collisionCounter++] = childR;
 		queryLeaf->collisionCounter = queryLeaf->collisionCounter > 7 ? 0 : queryLeaf->collisionCounter; //avoid overflow
+		
 		// Query overlaps an internal node => traverse.
 		bool traverseL = (overlapL && !childL->isLeaf);
 		bool traverseR = (overlapR && !childR->isLeaf);
@@ -131,14 +136,14 @@ __global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes
 	mortonCodes[index] = morton3D(positions[index].x, positions[index].y, positions[index].z);
 }
 
-__global__ void findPotentialCollisions(CollisionList list, Particle *internalNodes, Particle *leafNodes, int numOfLeaves)
+__global__ void findPotentialCollisions(Primitive *internalNodes, Primitive *leafNodes, int numOfLeaves)
 {
 	int index = threadIdx.x + blockDim.x * blockIdx.x;
 	if (index >= numOfLeaves)
 		return;
 
-	Particle *leaf = leafNodes + index;
-	traverseIterative(list, internalNodes, leaf);
+	Primitive *leaf = leafNodes + index;
+	traverseIterative(internalNodes, leaf);
 }
 
 /*
@@ -147,8 +152,9 @@ leaf node primitives are yet unsorted
 radius and mass are currently hard-coded -> 1 [OPEN]
 Make radius parametric. Design interface to input parameters. [OPEN]
 */
-__global__ void constructLeafNodes(Particle* leafNodes,
+__global__ void constructLeafNodes(Primitive* leafNodes,
 	float3 *positions,
+	float *linearMomenta,
 	int numberOfPrimitives)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -180,48 +186,24 @@ __global__ void constructLeafNodes(Particle* leafNodes,
 	float z = *(float*)(linearMomenta + index + 64);
 
 	leafNodes[index].linearMomentum = make_float3(x, y, z);*/
-	/*int idx = 3 * blockIdx.x * blockDim.x + threadIdx.x;
+	int idx = 3 * blockIdx.x * blockDim.x + threadIdx.x;
 	__shared__ float sMomenta[512 * 3];
 	sMomenta[threadIdx.x] = linearMomenta[idx];
 	sMomenta[threadIdx.x + 512] = linearMomenta[idx + 512];
 	sMomenta[threadIdx.x + 1024] = linearMomenta[idx + 1024];
-	__syncthreads();*/
+	__syncthreads();
 
-	//leafNodes[idx].linearMomentum.x = (sMomenta)[threadIdx.x];
-	//leafNodes[idx + 512].linearMomentum.y = (sMomenta)[threadIdx.x + 512];
-	//leafNodes[idx + 1024].linearMomentum.z = (sMomenta)[threadIdx.x + 1024];
+	leafNodes[idx].linearMomentum.x = (sMomenta)[threadIdx.x];
+	leafNodes[idx + 512].linearMomentum.y = (sMomenta)[threadIdx.x + 512];
+	leafNodes[idx + 1024].linearMomentum.z = (sMomenta)[threadIdx.x + 1024];
 	//leafNodes[index].angularMomentum = angularMomentums[index];
 	//leafNodes[index].quaternion = quaternions[index];
 }
 
-__global__ void testingMemoryAccess(float *input, float *output, int numberOfPrimitives)
-{
-	/*int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= numberOfPrimitives) return;
-	output[index] = input[index];*/
-	int idx = 3 * blockIdx.x * blockDim.x + threadIdx.x;
-	__shared__ float sMomenta[512 * 3];
-	sMomenta[threadIdx.x] = input[idx];
-	sMomenta[threadIdx.x + 512] = input[idx + 512];
-	sMomenta[threadIdx.x + 1024] = input[idx + 1024];
-	__syncthreads();
-
-	output[idx] = (sMomenta)[threadIdx.x];
-	output[idx + 512] = (sMomenta)[threadIdx.x + 512];
-	output[idx + 1024] = (sMomenta)[threadIdx.x + 1024];
-}
-
-__global__ void assignMomenta(Particle *leafNodes, float3 *linearMomenta, int numberOfPrimitives)
-{
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= numberOfPrimitives)
-		return;
-	leafNodes[index].linearMomentum = linearMomenta[index];
-}
 /*
 Potential error: sorting the leaf nodes by value, using Morton codes as keys, is not done on the code I found. [OPEN]
 */
-cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numberOfPrimitives)
+cudaError_t detectCollisions(float3 *positions, float3 **linearMomenta, const int &numberOfPrimitives, const int &numberOfThreads)
 {
 	unsigned int *mortonCodes;
 	cudaError_t cudaStatus = cudaMalloc((void**)&mortonCodes, numberOfPrimitives * sizeof(unsigned int));
@@ -231,10 +213,9 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 		return cudaFail(cudaStatus, "cudaMalloc_mortonCodes");
 	}
 
-	int numOfThreads = 512; //maximum amount of threads supported by laptop
 	//assign a Morton code to each primitive
 	//launch all objects
-	generateMortonCodes << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(positions, mortonCodes, numberOfPrimitives);
+	generateMortonCodes << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(positions, mortonCodes, numberOfPrimitives);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
@@ -254,32 +235,15 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 	//create leaf nodes here
 	//then sort them using their morton codes as keys
 	//and pass them as argument to the BVH hierarchy creation routine
-	Particle *leafNodes;
-	cudaStatus = cudaMalloc((void**)&leafNodes, numberOfPrimitives * sizeof(Particle));
-	//cudaStatus = cudaMemset(leafNodes, 0, sizeof(Particle) * numberOfPrimitives);
+	Primitive *leafNodes;
+	cudaStatus = cudaMalloc((void**)&leafNodes, numberOfPrimitives * sizeof(Primitive));
+	//cudaStatus = cudaMemset(leafNodes, 0, sizeof(Primitive) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess){
 		cudaFree(mortonCodes);
 		cudaFree(leafNodes);
 		return cudaFail(cudaStatus, "cudaMalloc_leafNodes");
 	}
 
-	float3 *temp;
-	cudaStatus = cudaMalloc((void**)&temp, numberOfPrimitives * sizeof(float3));
-	//cudaStatus = cudaMemset(leafNodes, 0, sizeof(Particle) * numberOfPrimitives);
-	if (cudaStatus != cudaSuccess){
-		cudaFree(mortonCodes);
-		cudaFree(leafNodes);
-		return cudaFail(cudaStatus, "cudaMalloc_temp");
-	}
-
-	testingMemoryAccess << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >((float*)linearMomenta, (float*)temp, numberOfPrimitives);
-	// Check for any errors launching the kernel
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess){
-		cudaFree(mortonCodes);
-		cudaFree(leafNodes);
-		return cudaFail(cudaStatus, "testingMemoryAccess_cudaGetLastError");
-	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
@@ -292,7 +256,7 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 
 
 
-	constructLeafNodes << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, positions, numberOfPrimitives);	
+	constructLeafNodes << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(leafNodes, positions, (float*)(*linearMomenta), numberOfPrimitives);	
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess){
@@ -310,27 +274,10 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 		return cudaFail(cudaStatus, "constructLeafNodes_cudaDeviceSynchronize");
 	}
 
-	assignMomenta << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, linearMomenta, numberOfPrimitives);
-	// Check for any errors launching the kernel
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess){
-		cudaFree(mortonCodes);
-		cudaFree(leafNodes);
-		return cudaFail(cudaStatus, "assignMomenta_cudaGetLastError");
-	}
-
-	// cudaDeviceSynchronize waits for the kernel to finish, and returns
-	// any errors encountered during the launch.
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess){
-		cudaFree(mortonCodes);
-		cudaFree(leafNodes);
-		return cudaFail(cudaStatus, "assignMomenta_cudaDeviceSynchronize");
-	}
-	exit(1);
+	//exit(1);
 	//sorting procedure using cub (currently building)
 	cub::DoubleBuffer<unsigned int> sortKeys; //keys to sort by - Morton codes
-	cub::DoubleBuffer<Particle> sortValues; //also sort corresponding particles by key
+	cub::DoubleBuffer<Primitive> sortValues; //also sort corresponding particles by key
 	
 	//presumambly, there is no need to allocate space for the current buffers
 	sortKeys.d_buffers[0] = mortonCodes;
@@ -347,7 +294,7 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 		return cudaFail(cudaStatus, "sortKeys_gAllocate");
 	}
 	
-	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Particle) * numberOfPrimitives);
+	cudaStatus = g_allocator.DeviceAllocate((void**)&sortValues.d_buffers[1], sizeof(Primitive) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess)
 	{
 		cudaFree(mortonCodes);
@@ -396,9 +343,9 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 	
 	//sort seems to be working properly
 
-	Particle* internalNodes;	
-	cudaStatus = cudaMalloc((void**)&internalNodes, (numberOfPrimitives - 1) * sizeof(Particle));
-	//cudaStatus = cudaMemset(internalNodes, 0, sizeof(Particle) * numberOfPrimitives);
+	Primitive* internalNodes;	
+	cudaStatus = cudaMalloc((void**)&internalNodes, (numberOfPrimitives - 1) * sizeof(Primitive));
+	//cudaStatus = cudaMemset(internalNodes, 0, sizeof(Primitive) * numberOfPrimitives);
 	if (cudaStatus != cudaSuccess) {
 		cudaFree(internalNodes);
 		cudaFree(d_temp_storage);
@@ -419,7 +366,7 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 		return cudaFail(cudaStatus, "bvh_generateHierarchy");
 	}
 
-	handleCollisions << <(numberOfPrimitives + numOfThreads - 1) / numOfThreads, numOfThreads >> >(leafNodes, numberOfPrimitives);
+	handleCollisions << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(leafNodes, numberOfPrimitives);
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess){
@@ -444,6 +391,27 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 		g_allocator.DeviceFree(sortValues.d_buffers[1]);
 		return cudaFail(cudaStatus, "constructLeafNodes_cudaDeviceSynchronize");
 	}
+
+	cudaStatus = update(leafNodes, 0.1, numberOfPrimitives, numberOfThreads);
+	if (cudaStatus != cudaSuccess){
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "update_cudaGetLastError");
+	}
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess){
+		cudaFree(internalNodes);
+		cudaFree(d_temp_storage);
+		cudaFree(mortonCodes);
+		cudaFree(leafNodes);
+		g_allocator.DeviceFree(sortKeys.d_buffers[1]);
+		g_allocator.DeviceFree(sortValues.d_buffers[1]);
+		return cudaFail(cudaStatus, "update_cudaDeviceSynchronize");
+	}
 	//cleaning up
 	cudaFree(internalNodes);
 	cudaFree(d_temp_storage);
@@ -456,3 +424,10 @@ cudaError_t detectCollisions(float3 *positions, float3 *linearMomenta, int numbe
 	return cudaSuccess;
 }
 
+cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName)
+{
+	std::cout << "Callback function: " << funcName << std::endl;
+	std::cout << "Error code: " << cudaStatus << std::endl;
+	std::cout << "Error type: " << cudaGetErrorString(cudaStatus) << std::endl;
+	return cudaStatus;
+}

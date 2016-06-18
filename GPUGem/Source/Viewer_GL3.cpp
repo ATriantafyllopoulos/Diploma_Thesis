@@ -232,11 +232,12 @@ void Viewer_GL3::render(void)
 	shader.unbind();
 	cameraUpdate();
 	UpdateTimer();
-	cudaError_t cudaStatus = physicsEngine.animate();
+	cudaError_t cudaStatus;
+	/*cudaStatus = physicsEngine.animate();
 	if (cudaStatus != cudaSuccess)
 	{
 		MessageBox(hwnd, "Animating particles with CUDA failed.", "Error", MB_ICONINFORMATION);
-	}
+	}*/
 	cudaStatus = physicsEngine.collisionDetection();
 	if (cudaStatus != cudaSuccess)
 	{

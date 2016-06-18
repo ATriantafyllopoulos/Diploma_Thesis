@@ -97,7 +97,7 @@ __device__ int2 determineRange(int numObjects, int idx)
 
 }
 
-__global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNodes, unsigned int* sortedMortonCodes, int numObjects)
+__global__ void constructInternalNodes(Primitive* internalNodes, Primitive* leafNodes, unsigned int* sortedMortonCodes, int numObjects)
 {
 	//root is located at internalNodes[0]
 	//The indices of each particular node's children are assigned
@@ -112,7 +112,7 @@ __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNo
 	int j = range.x;
 	int gamma = range.y;
 
-	/*Particle *current = internalNodes + idx;
+	/*Primitive *current = internalNodes + idx;
 
 
 	if (MIN(idx, j) == gamma) {
@@ -135,11 +135,11 @@ __global__ void constructInternalNodes(Particle* internalNodes, Particle* leafNo
 
 	current->leftmost = MIN(idx, j);
 	current->rightmost = MAX(idx, j);*/
-	Particle *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
+	Primitive *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
 	(internalNodes + idx)->left = leftChild;
 	leftChild->parent = (internalNodes + idx);
 
-	Particle *rightChild = (MAX(idx, j) == gamma + 1 ? (leafNodes + gamma + 1) : (internalNodes + gamma + 1));
+	Primitive *rightChild = (MAX(idx, j) == gamma + 1 ? (leafNodes + gamma + 1) : (internalNodes + gamma + 1));
 	(internalNodes + idx)->right = rightChild;
 	rightChild->parent = (internalNodes + idx);
 
@@ -171,11 +171,11 @@ function, which includes simple error-checking did the trick.
 Note: I will also stick with atomics since they seem to be working and it is what 
 Karras recommends.
 */
-__global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, int numObjects, int *nodeCounter)
+__global__ void assignPrimitives(Primitive *internalNodes, Primitive *leafNodes, int numObjects, int *nodeCounter)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= numObjects)return;
-	Particle *node = (leafNodes + idx); //start at each leaf
+	Primitive *node = (leafNodes + idx); //start at each leaf
 	node = node->parent;
 	//if (node == NULL) return;
 	int currentIndex = node - internalNodes;
@@ -203,8 +203,8 @@ __global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, i
 		//node = node->parent;
 		//if either of the children is NULL then the parent will have the same
 		//primitive as its only child
-		Particle *lChild = node->left != NULL ? node->left : node->right;
-		Particle *rChild = node->right != NULL ? node->right : node->left;
+		Primitive *lChild = node->left != NULL ? node->left : node->right;
+		Primitive *rChild = node->right != NULL ? node->right : node->left;
 		//centroid is mid point between centroids of children
 		//this is only true for sphere-modeled particles
 		//needs to be updated if I use other primitives
@@ -243,8 +243,8 @@ __global__ void assignPrimitives(Particle *internalNodes, Particle *leafNodes, i
 
 }
 
-cudaError_t generateHierarchy(Particle *internalNodes,
-	Particle* leafNodes,
+cudaError_t generateHierarchy(Primitive *internalNodes,
+	Primitive* leafNodes,
 	unsigned int* sortedMortonCodes,
 	int           numObjects)
 {

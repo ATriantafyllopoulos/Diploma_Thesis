@@ -40,9 +40,6 @@ Currently dependent on .NET
 
 Update 10.4.2016: adding camera control functionality
 */
-cudaError_t initializeWithCuda(struct cudaGraphicsResource* testingVBO_CUDA, size_t *num_bytes);
-cudaError_t animateWithCuda(struct cudaGraphicsResource* testingVBO_CUDA, size_t *num_bytes, double offset);
-
 class Viewer_GL3 :
 	public Viewer
 {

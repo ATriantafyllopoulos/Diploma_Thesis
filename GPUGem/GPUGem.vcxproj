@@ -169,15 +169,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="Kernels\addKernel.cu" />
+    <CudaCompile Include="animationKernel.cu" />
+    <CudaCompile Include="cleanupKernel.cu" />
     <CudaCompile Include="Kernels\CollisionDetectionCUDA.cu" />
     <CudaCompile Include="Kernels\CollisionHandlingCUDA.cu" />
-    <CudaCompile Include="Kernels\customBlockRadixSort.cu" />
     <CudaCompile Include="Kernels\generateBVH.cu" />
-    <CudaCompile Include="Kernels\physicsKernels.cu" />
+    <CudaCompile Include="Kernels\initializationKernel.cu" />
+    <CudaCompile Include="updateKernel.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CustomBVHtree.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\objModel.cpp" />
     <ClCompile Include="Source\PhysicsEngineCUDA.cpp" />
@@ -193,8 +193,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\WindowsHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cudaAuxiliary.h" />
     <ClInclude Include="Headers\common_header.h" />
-    <ClInclude Include="Headers\CustomBVHtree.h" />
     <ClInclude Include="Headers\objModel.h" />
     <ClInclude Include="Headers\PhysicsEngine.h" />
     <ClInclude Include="Headers\PhysicsEngineCUDA.h" />
