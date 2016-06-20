@@ -3,12 +3,6 @@
 #include "device_launch_parameters.h"
 #include "Primitives.h"
 
-/*__device__ inline float3 operator+(const float3 &a, const float3 &b);
-__device__ inline float3 operator-(const float3 &a, const float3 &b);
-__device__ inline float3 operator*(const float3 &a, const float &b);
-__device__ inline float3 operator/(const float3 &a, const float &b);
-__device__ inline float norm(const float3 &a);
-__device__ inline float dot(const float3 &a, const float3 &b);*/
 __device__ inline float3 operator+(const float3 &a, const float3 &b)
 {
 

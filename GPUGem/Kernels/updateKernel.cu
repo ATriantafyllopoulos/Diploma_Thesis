@@ -1,18 +1,16 @@
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "Primitives.h"
-#include "cudaAuxiliary.h"
+#include "auxiliaryKernels.cuh"
 
-__global__ void updateStateVector(Primitive* leafNodes, const float3 &gravityVector, const float &timeStep,  const int &numberOfPrimitives)
+__global__ void updateStateVector(Primitive* leafNodes, const float3 gravityVector, const float timeStep, const int numberOfPrimitives)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= numberOfPrimitives) 
 		return;
-
-	Primitive *current = leafNodes + index;
 	
+	Primitive *current = leafNodes + index;
+	if (current->centroid.y <= -30)
+		return;
 	//gravity effect
-	current->linearMomentum = current->linearMomentum + gravityVector * current->mass * timeStep;
+	current->linearMomentum = current->linearMomentum + gravityVector * current->mass;
 	current->centroid = current->centroid + current->linearMomentum / current->mass * timeStep;
 }
 
@@ -22,5 +20,8 @@ cudaError_t update(Primitive* leafNodes, const float &timeStep, const int &numbe
 	updateStateVector << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(leafNodes, gravityVector, timeStep, numberOfPrimitives);
 	// Check for any errors launching the kernel
 	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+		return cudaSuccess;
+	cudaStatus = cudaDeviceSynchronize();
 	return cudaStatus;
 }

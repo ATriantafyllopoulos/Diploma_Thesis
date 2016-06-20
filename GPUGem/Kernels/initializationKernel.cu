@@ -23,9 +23,9 @@ cudaError_t initialization(float3* positions, float3** linearMomenta, const int 
 	cudaError_t cudaStatus = cudaMalloc((void**)linearMomenta, numberOfPrimitives * sizeof(float3));
 	if (cudaStatus != cudaSuccess)
 		return cudaStatus;
-
+	int numberOfBlocks = (numberOfPrimitives + numberOfThreads - 1) / numberOfThreads;
 	//if allocation was successful, launch initialization kernel
-	initializeKernel << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(positions, *linearMomenta);
+	initializeKernel << <numberOfBlocks, numberOfThreads >> >(positions, *linearMomenta);
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
 	return cudaStatus;

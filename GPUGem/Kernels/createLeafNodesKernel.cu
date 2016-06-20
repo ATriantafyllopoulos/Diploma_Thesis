@@ -5,10 +5,10 @@ leaf node primitives are yet unsorted
 radius and mass are currently hard-coded -> 1 [OPEN]
 Make radius parametric. Design interface to input parameters. [OPEN]
 */
-__global__ void constructLeafNodes(Primitive* leafNodes,
+__global__ void constructLeafNodesKernel(Primitive* leafNodes,
 	float3 *positions,
 	float3 *linearMomenta,
-	int numberOfPrimitives)
+	const int numberOfPrimitives)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= numberOfPrimitives)
@@ -51,4 +51,19 @@ __global__ void constructLeafNodes(Primitive* leafNodes,
 	leafNodes[idx + 1024].linearMomentum.z = (sMomenta)[threadIdx.x + 1024];*/
 	//leafNodes[index].angularMomentum = angularMomentums[index];
 	//leafNodes[index].quaternion = quaternions[index];
+}
+
+cudaError_t constructLeafNodes(Primitive* leafNodes,
+	float3 *positions,
+	float3 *linearMomenta,
+	const int &numberOfPrimitives,
+	const int &numberOfThreads)
+{
+	const int numberOfBlocks = (numberOfPrimitives + numberOfThreads - 1) / numberOfThreads;
+	constructLeafNodesKernel << < numberOfBlocks, numberOfThreads >> >(leafNodes, positions, linearMomenta, numberOfPrimitives);
+	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+		return cudaSuccess;
+	cudaStatus = cudaDeviceSynchronize();
+	return cudaStatus;
 }

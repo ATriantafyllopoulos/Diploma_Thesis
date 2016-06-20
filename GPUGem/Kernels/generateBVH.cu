@@ -3,18 +3,6 @@
 #include "Primitives.h"
 #include <stdio.h>
 #include <iostream>
-cudaError_t cudaFail(cudaError_t cudaStatus, char *funcName);
-//custom __popc implementation because __popc requires 
-//compute capability 5+ (sm 20)
-__device__ inline int bitCount(int a)
-{
-	int numBits = 0;
-	while (a != 0) {
-		if (a & 0x1)  numBits++;
-		a = a >> 1;
-	}
-	return numBits;
-}
 
 __device__ inline int MIN(int x, int y)
 {
@@ -26,7 +14,7 @@ __device__ inline int MAX(int x, int y)
 	return x > y ? x : y;
 }
 
-inline __device__ int longestCommonPrefix(int i, int j, int len) {
+__device__ inline int longestCommonPrefix(int i, int j, int len) {
 	if (0 <= j && j < len) {
 		return __clz(i ^ j);
 	}
@@ -34,27 +22,28 @@ inline __device__ int longestCommonPrefix(int i, int j, int len) {
 		return -1;
 	}
 }
-__device__ int2 determineRange(int numObjects, int idx)
+
+__device__ int2 determineRange(int numberOfPrimitives, int idx)
 {
 	//int d1 = __clz(idx ^ (idx + 1));
 	//int d2 = __clz(idx ^ (idx - 1));
 	//int d = d1 > d2 ? 1 : -1;
-	int d = longestCommonPrefix(idx, idx + 1, numObjects + 1) -
-		longestCommonPrefix(idx, idx - 1, numObjects + 1) > 0 ? 1 : -1;
+	int d = longestCommonPrefix(idx, idx + 1, numberOfPrimitives + 1) -
+		longestCommonPrefix(idx, idx - 1, numberOfPrimitives + 1) > 0 ? 1 : -1;
 
 
 	//int dmin = __clz(idx ^ (idx-d));
-	int dmin = longestCommonPrefix(idx, idx - d, numObjects + 1);
+	int dmin = longestCommonPrefix(idx, idx - d, numberOfPrimitives + 1);
 	int lmax = 2;
 	//while (__clz(idx ^ (idx + lmax * d)) > dmin) lmax <<= 1;
-	while (longestCommonPrefix(idx, idx + lmax * d, numObjects + 1) > dmin) lmax <<= 1;
+	while (longestCommonPrefix(idx, idx + lmax * d, numberOfPrimitives + 1) > dmin) lmax <<= 1;
 	
 	int l = 0;
 	int t = lmax >> 1;
 	while (t >= 1) //at last iteration 1 >> 1 = 0 (integers)
 	{
 		//if (__clz(idx ^ (idx + (l + t) * d)) > dmin)
-		if (longestCommonPrefix(idx, idx + (l + t) * d, numObjects + 1) > dmin)
+		if (longestCommonPrefix(idx, idx + (l + t) * d, numberOfPrimitives + 1) > dmin)
 			l += t;
 		t >>= 1;
 	}
@@ -74,7 +63,7 @@ __device__ int2 determineRange(int numObjects, int idx)
 
 	//from now on we search for the split position
 	//int dnode = __clz(idx ^ j);
-	int dnode = longestCommonPrefix(idx, j, numObjects + 1);
+	int dnode = longestCommonPrefix(idx, j, numberOfPrimitives + 1);
 
 	int s = 0;
 	int divider = 2; //now l is not an integer so we need proper integer arithmetic
@@ -83,7 +72,7 @@ __device__ int2 determineRange(int numObjects, int idx)
 	{
 
 		//if (__clz(idx ^ (idx + (s + t) * d)) > dnode)
-		if (longestCommonPrefix(idx, idx + (s + t) * d, numObjects + 1) > dnode)
+		if (longestCommonPrefix(idx, idx + (s + t) * d, numberOfPrimitives + 1) > dnode)
 			s += t;
 		divider <<= 1;
 		t = (l + (divider - 1)) / divider;
@@ -97,7 +86,7 @@ __device__ int2 determineRange(int numObjects, int idx)
 
 }
 
-__global__ void constructInternalNodes(Primitive* internalNodes, Primitive* leafNodes, unsigned int* sortedMortonCodes, int numObjects)
+__global__ void constructInternalNodes(Primitive* internalNodes, Primitive* leafNodes, unsigned int* sortedMortonCodes, int numberOfPrimitives)
 {
 	//root is located at internalNodes[0]
 	//The indices of each particular node's children are assigned
@@ -107,34 +96,14 @@ __global__ void constructInternalNodes(Primitive* internalNodes, Primitive* leaf
 	//This way the index of every internal node coincides with either its first
 	//or its last key
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= numObjects) return;
-	int2 range = determineRange(numObjects, idx);
+
+	if (idx >= numberOfPrimitives - 1)
+		return;
+
+	int2 range = determineRange(numberOfPrimitives, idx);
 	int j = range.x;
 	int gamma = range.y;
 
-	/*Primitive *current = internalNodes + idx;
-
-
-	if (MIN(idx, j) == gamma) {
-		current->left = leafNodes + gamma;
-		(leafNodes + gamma)->parent = current;
-	}
-	else {
-		current->left = internalNodes + gamma;
-		(internalNodes + gamma)->parent = current;
-	}
-
-	if (MAX(idx, j) == gamma + 1) {
-		current->right = leafNodes + gamma + 1;
-		(leafNodes + gamma + 1)->parent = current;
-	}
-	else {
-		current->right = internalNodes + gamma + 1;
-		(internalNodes + gamma + 1)->parent = current;
-	}
-
-	current->leftmost = MIN(idx, j);
-	current->rightmost = MAX(idx, j);*/
 	Primitive *leftChild = (MIN(idx, j) == gamma ? (leafNodes + gamma) : (internalNodes + gamma));
 	(internalNodes + idx)->left = leftChild;
 	leftChild->parent = (internalNodes + idx);
@@ -171,10 +140,11 @@ function, which includes simple error-checking did the trick.
 Note: I will also stick with atomics since they seem to be working and it is what 
 Karras recommends.
 */
-__global__ void assignPrimitives(Primitive *internalNodes, Primitive *leafNodes, int numObjects, int *nodeCounter)
+__global__ void assignPrimitives(Primitive *internalNodes, Primitive *leafNodes, int numberOfPrimitives, int *nodeCounter)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx >= numObjects)return;
+	if (idx >= numberOfPrimitives)
+		return;
 	Primitive *node = (leafNodes + idx); //start at each leaf
 	node = node->parent;
 	//if (node == NULL) return;
@@ -246,57 +216,52 @@ __global__ void assignPrimitives(Primitive *internalNodes, Primitive *leafNodes,
 cudaError_t generateHierarchy(Primitive *internalNodes,
 	Primitive* leafNodes,
 	unsigned int* sortedMortonCodes,
-	int           numObjects)
+	const int& numberOfPrimitives,
+	const int& numberOfThreads)
 {
 	//these are to be allocated on the GPU
 	cudaError_t cudaStatus;
-	int numOfThreads = 512; //platform dependent - 512 for laptop, 1024 for pc
 
-	//launch for numobjects - 1
+	//launch for numberOfPrimitives - 1
 	//total number of internal nodes for a bvh with N leaves is N-1
-	constructInternalNodes << <(numObjects - 1 + numOfThreads - 1) / numOfThreads, numOfThreads >> >(internalNodes, leafNodes, sortedMortonCodes, numObjects);
+	constructInternalNodes << <(numberOfPrimitives - 1 + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(internalNodes, leafNodes, sortedMortonCodes, numberOfPrimitives);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		return cudaFail(cudaStatus, "constructInternalNodes_cudaGetLastError");
-	}
+	if (cudaStatus != cudaSuccess) 
+		goto Error;
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		return cudaFail(cudaStatus, "constructInternalNodes_cudaDeviceSynchronize");
-	}
+	if (cudaStatus != cudaSuccess) 
+		goto Error;
 	
 	int *nodeCounter;
-	cudaStatus = cudaMalloc(&nodeCounter, sizeof(int) * numObjects);
-	cudaStatus = cudaMemset(nodeCounter, 0, sizeof(int) * numObjects);
-	if (cudaStatus != cudaSuccess) {
-		cudaFree(nodeCounter);
-		return cudaFail(cudaStatus, "malloc_nodeCounter");
-	}
+	cudaStatus = cudaMalloc(&nodeCounter, sizeof(int) * numberOfPrimitives);
+	cudaStatus = cudaMemset(nodeCounter, 0, sizeof(int) * numberOfPrimitives);
+	if (cudaStatus != cudaSuccess) 
+		goto Error;
 	//assign primitives to internal nodes
 	//launch kernel for each leaf node
 	//each thread works each way recursively to the top
-	assignPrimitives << <(numObjects + numOfThreads - 1) / numOfThreads, numOfThreads >> >(internalNodes, leafNodes, numObjects, nodeCounter);
+	assignPrimitives << <(numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, numberOfThreads >> >(internalNodes, leafNodes, numberOfPrimitives, nodeCounter);
 
 	// Check for any errors launching the kernel
 	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		cudaFree(nodeCounter);
-		return cudaFail(cudaStatus, "assignPrimitives_cudaGetLastError");
-	}
+	if (cudaStatus != cudaSuccess) 
+		goto Error;
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		cudaFree(nodeCounter);
-		return cudaFail(cudaStatus, "assignPrimitives_cudaDeviceSynchronize");
-	}
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+
+Error:
 	//exit(1);
-	cudaFree(nodeCounter);
+	if (nodeCounter)
+		cudaFree(nodeCounter);
 	// Node 0 is the root.
 	return cudaSuccess;
 }

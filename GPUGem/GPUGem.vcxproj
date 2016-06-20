@@ -143,6 +143,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <CodeGeneration>compute_20,sm_20</CodeGeneration>
+      <Include>$(SolutionDir)Libs;Headers\;</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,8 +174,12 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="Kernels\cleanupKernel.cu" />
     <CudaCompile Include="Kernels\CollisionDetectionCUDA.cu" />
     <CudaCompile Include="Kernels\CollisionHandlingCUDA.cu" />
+    <CudaCompile Include="Kernels\createLeafNodesKernel.cu" />
+    <CudaCompile Include="Kernels\createMortonCodesKernel.cu" />
     <CudaCompile Include="Kernels\generateBVH.cu" />
     <CudaCompile Include="Kernels\initializationKernel.cu" />
+    <CudaCompile Include="Kernels\minmaxKernel.cu" />
+    <CudaCompile Include="Kernels\sortKernel.cu" />
     <CudaCompile Include="Kernels\updateKernel.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -193,7 +198,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\WindowsHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cudaAuxiliary.h" />
+    <ClInclude Include="Headers\auxiliaryKernels.cuh" />
     <ClInclude Include="Headers\common_header.h" />
     <ClInclude Include="Headers\objModel.h" />
     <ClInclude Include="Headers\PhysicsEngine.h" />

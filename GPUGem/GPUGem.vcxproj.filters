@@ -10,16 +10,28 @@
     <CudaCompile Include="Kernels\generateBVH.cu">
       <Filter>Kernels</Filter>
     </CudaCompile>
-    <CudaCompile Include="animationKernel.cu">
-      <Filter>Kernels</Filter>
-    </CudaCompile>
     <CudaCompile Include="Kernels\initializationKernel.cu">
       <Filter>Kernels</Filter>
     </CudaCompile>
-    <CudaCompile Include="cleanupKernel.cu">
+    <CudaCompile Include="Kernels\animationKernel.cu">
       <Filter>Kernels</Filter>
     </CudaCompile>
-    <CudaCompile Include="updateKernel.cu">
+    <CudaCompile Include="Kernels\cleanupKernel.cu">
+      <Filter>Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\updateKernel.cu">
+      <Filter>Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\createLeafNodesKernel.cu">
+      <Filter>Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\createMortonCodesKernel.cu">
+      <Filter>Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\sortKernel.cu">
+      <Filter>Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\minmaxKernel.cu">
       <Filter>Kernels</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -113,7 +125,9 @@
     <ClInclude Include="Headers\PhysicsEngineCUDA.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="cudaAuxiliary.h" />
+    <ClInclude Include="Headers\auxiliaryKernels.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">

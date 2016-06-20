@@ -24,7 +24,7 @@ __device__ unsigned int morton3D(float x, float y, float z)
 	return xx * 4 + yy * 2 + zz;
 }
 
-__global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes, int numberOfPrimitives)
+__global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes, const int numberOfPrimitives)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -32,4 +32,18 @@ __global__ void generateMortonCodes(float3 *positions, unsigned int *mortonCodes
 		return;
 
 	mortonCodes[index] = morton3D(positions[index].x, positions[index].y, positions[index].z);
+}
+
+cudaError_t createMortonCodes(float3 *positions, 
+	unsigned int *mortonCodes,
+	const int &numberOfPrimitives,
+	const int &numberOfThreads)
+{
+	const int numberOfBlocks = (numberOfPrimitives + numberOfThreads - 1) / numberOfThreads;
+	generateMortonCodes << < numberOfBlocks, numberOfThreads >> >(positions, mortonCodes, numberOfPrimitives);
+	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+		return cudaStatus;
+	cudaStatus = cudaDeviceSynchronize();
+	return cudaStatus;
 }

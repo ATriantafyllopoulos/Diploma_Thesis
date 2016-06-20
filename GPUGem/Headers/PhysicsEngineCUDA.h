@@ -11,7 +11,7 @@
 //use wrapper functions instead of kernels because kernels can only be invoked in .cu files
 cudaError_t initialization(float3* positions, float3** linearMomenta, const int &numberOfPrimitives, const int &numberOfThreads);
 cudaError_t animation(float3* positions, const double &offset, const int &numberOfPrimitives, const int &numberOfThreads);
-cudaError_t detectCollisions(float3 *positions, float3 **linearMomenta, const int &numberOfPrimitives, const int &numberOfThreads);
+cudaError_t detectCollisions(float3 *positions, float3 **linearMomenta, const float &timeStep, const int &numberOfPrimitives, const int &numberOfThreads);
 cudaError_t cleanup(void** pt);
 /**
 CUDA functionality wrapper class
@@ -47,7 +47,7 @@ public:
 private:
 	struct cudaGraphicsResource *cudaVAO; //CUDA-OpenGL shared memory
 	
-	
+	float timeStep;
 	float3 *linearMomenta; //use a double pointer so that the device pointer can remain valid for all calls
 	size_t numBytes; //number of bytes in VAO
 	int numberOfThreads; //number of threads to use, input by user, default is GPU dependent

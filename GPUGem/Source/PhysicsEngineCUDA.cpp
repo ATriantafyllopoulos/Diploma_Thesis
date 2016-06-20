@@ -1,10 +1,9 @@
 #include "PhysicsEngineCUDA.h"
-__global__ void initializeKernel(float3* positions, float3* linearMomenta);
-
 PhysicsEngineCUDA::PhysicsEngineCUDA(int numThreads)
 {
 	numberOfThreads = numThreads;
 	offset = 0.1; //remove in future versions - only used for animation
+	timeStep = 0.0001;
 }
 
 
@@ -78,7 +77,7 @@ cudaError_t PhysicsEngineCUDA::collisionDetection()
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_cudaGraphicsResourceGetMappedPointer");
 
-	cudaStatus = detectCollisions(positions, &linearMomenta, numberOfParticles, numberOfThreads);
+	cudaStatus = detectCollisions(positions, &linearMomenta, timeStep, numberOfParticles, numberOfThreads);
 	if (cudaStatus != cudaSuccess)
 		return error("collisionDetection_detectCollisions");
 
@@ -141,9 +140,9 @@ cudaError_t PhysicsEngineCUDA::error(char *func)
 	std::cout << "CUDA engine failed!" << std::endl;
 	std::cout << "callback function: " << func << std::endl;
 	std::cout << "Error type: " << cudaStatus << std::endl;
-	std::cout << "Enter random character to continue..." << std::endl;
+	/*std::cout << "Enter random character to continue..." << std::endl;
 	int x;
-	std::cin >> x;
+	std::cin >> x;*/
 	cleanUp();
 	return cudaStatus;
 }
