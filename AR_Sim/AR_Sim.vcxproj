@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BVHSource\BVHAuxiliary.cuh" />
+    <ClInclude Include="BVHSource\BVHcreation.h" />
+    <ClInclude Include="Headers\Menu.h" />
+    <ClInclude Include="Headers\objModel.h" />
+    <ClInclude Include="Headers\PhysicsEngine.h" />
+    <ClInclude Include="Headers\Platform.h" />
+    <ClInclude Include="Headers\Primitives.h" />
+    <ClInclude Include="Headers\Renderable.h" />
+    <ClInclude Include="Headers\Renderable_GL3.h" />
+    <ClInclude Include="Headers\RigidBody.h" />
+    <ClInclude Include="Headers\Shader.h" />
+    <ClInclude Include="Headers\shaders.h" />
+    <ClInclude Include="Headers\texture.h" />
+    <ClInclude Include="Headers\vertexBufferObject.h" />
+    <ClInclude Include="Headers\Viewer.h" />
+    <ClInclude Include="Headers\Viewer_GL3.h" />
+    <ClInclude Include="Headers\VirtualObject.h" />
+    <ClInclude Include="Headers\VirtualWorld.h" />
+    <ClInclude Include="Headers\WindowsHandler.h" />
+    <ClInclude Include="Kernels\particleSystem.cuh" />
+    <ClInclude Include="Particles\ParticleAuxiliaryFunctions.h" />
+    <ClInclude Include="Particles\particleSystem.h" />
+    <ClInclude Include="Particles\renderParticles.h" />
+    <ClInclude Include="RigidBodies\rigidBodyKernelWrappers.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="BVHSource\BVHcreation.cu" />
+    <CudaCompile Include="BVHSource\BVHkernels.cu" />
+    <CudaCompile Include="BVHSource\BVHkernelWrappers.cu" />
+    <CudaCompile Include="BVHSource\BVHSoAKernels.cu" />
+    <CudaCompile Include="BVHSource\BVHSoAKernelWrappers.cu" />
+    <CudaCompile Include="BVHSource\createMortonCodes.cu" />
+    <CudaCompile Include="Kernels\customRangeImageLoader.cu" />
+    <CudaCompile Include="Kernels\particleKernels.cu" />
+    <CudaCompile Include="Kernels\particleKernelWrappers.cu" />
+    <CudaCompile Include="Kernels\RB_BVHKernels.cu" />
+    <CudaCompile Include="Kernels\RB_UniformGridKernels.cu" />
+    <CudaCompile Include="Kernels\rigidBodyKernels.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Misc\main.cpp" />
+    <ClCompile Include="Misc\objModel.cpp" />
+    <ClCompile Include="Misc\playground.cpp" />
+    <ClCompile Include="Misc\Renderable.cpp" />
+    <ClCompile Include="Misc\Renderable_GL3.cpp" />
+    <ClCompile Include="Misc\RigidBody.cpp" />
+    <ClCompile Include="Misc\Shader.cpp" />
+    <ClCompile Include="Misc\shaders.cpp" />
+    <ClCompile Include="Misc\texture.cpp" />
+    <ClCompile Include="Misc\vertexBufferObject.cpp" />
+    <ClCompile Include="Misc\Viewer.cpp" />
+    <ClCompile Include="Misc\Viewer_GL3.cpp" />
+    <ClCompile Include="Misc\VirtualWorld.cpp" />
+    <ClCompile Include="Misc\WindowsHandler.cpp" />
+    <ClCompile Include="Particles\CPU_Engine.cpp" />
+    <ClCompile Include="Particles\loadRangeDataFromFile.cpp" />
+    <ClCompile Include="Particles\particleSystem.cpp" />
+    <ClCompile Include="Particles\renderParticles.cpp" />
+    <ClCompile Include="Particles\sphereAddition.cpp" />
+    <ClCompile Include="Particles\updateFunctions.cpp" />
+    <ClCompile Include="RigidBodies\BVHUpdate.cpp" />
+    <ClCompile Include="RigidBodies\UniformGridUpdate.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C0EEF654-C96A-435C-847C-5A18B8ADE29A}</ProjectGuid>
+    <RootNamespace>AR_Sim</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
+    <Import Project="..\PropertySheets\Debug\Assimp_3_1_1.props" />
+    <Import Project="..\PropertySheets\Debug\Cub_Debug.props" />
+    <Import Project="..\PropertySheets\Debug\OpenGL_3_3_Debug_32.props" />
+    <Import Project="..\PropertySheets\Debug\Glfw_Debug.props" />
+    <Import Project="..\..\..\..\..\PropertySheets\OPENCV_DEBUG_32_2013.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
+    <Import Project="..\PropertySheets\Release\Cub_Release.props" />
+    <Import Project="..\PropertySheets\Release\OpenGL_3_2_Release.props" />
+    <Import Project="..\PropertySheets\Release\Assimp_3_1_1_Release.props" />
+    <Import Project="..\PropertySheets\Release\Glfw_Release.props" />
+    <Import Project="..\..\..\..\..\PropertySheets\OPENCV_3.2_RELEASE_32.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\PropertySheets\CodeHierarchy.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
+copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 7.5.targets" />
+  </ImportGroup>
+</Project>
