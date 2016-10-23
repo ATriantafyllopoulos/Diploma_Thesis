@@ -4,7 +4,9 @@
 #include "thrust/iterator/zip_iterator.h"
 #include "thrust/sort.h"
 
+#ifndef GLM_FORCE_CUDA
 #define GLM_FORCE_CUDA
+#endif
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 

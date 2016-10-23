@@ -293,6 +293,7 @@ protected:
 	void staticUpdateRigidBodies(float deltaTime);
 
 	void updateGrid(float deltaTime);
+	void updateGridExperimental(float deltaTime);
 	void updateStaticParticles(float deltaTime);
 
 	void reallocGridAuxiliaries();
@@ -549,6 +550,7 @@ private:
 	float bunnyMass;
 	glm::mat3 bunnyInertia;
 public:
+	void setSceneAABB(const float3 &minP, const float3 &maxP) { minPos = minP; maxPos = maxP; }
 	void addMolecule(glm::vec3 pos, glm::vec3 vel);
 };
 

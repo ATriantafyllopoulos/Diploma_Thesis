@@ -198,4 +198,20 @@ void ReduceRigidBodyARVariables(
 		int numThreads, //number of threads to use
 		int numParticles, //total number of virtual particles
 		bool *toExit);
+
+void WallCollisionWrapper(
+	float4 *particlePos, // particle positions
+	float4 *rbPos, // rigid body center of mass
+	float3 minPos, // scene AABB's smallest coordinates
+	float3 maxPos, // scene AABB's largest coordinates
+	float4 *rbVel, // rigid body linear velocity
+	float4 *rbAng, // rigid body angular velocity
+	glm::mat3 *Iinv, // current rigid body inverse inertia tensor
+	float *rbMass, // rigid body mass
+	int *rbIndices, // index showing where each particle belongs
+	int *particlesPerRB, // number of particles per rigid body
+	int numRigidBodies, // total number of scene's rigid bodies
+	int numParticles, // number of particles to test
+	int numThreads, // number of threads to use
+	SimParams params);
 #endif

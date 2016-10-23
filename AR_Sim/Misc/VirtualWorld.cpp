@@ -202,10 +202,12 @@ void VirtualWorld::initDemoMode()
 //				psystem->addMolecule(worldSpaceCoordinates, velocity);
 //			}
 	psystem->initCPU();
+	psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
 }
 
 void VirtualWorld::DemoMode()
 {
+	
 	psystem->setIterations(iterations);
 	psystem->setDamping(damping);
 	psystem->setGravity(-gravity);

@@ -1106,9 +1106,10 @@ void ParticleSystem::update(float deltaTime)
 	{
 		if (collisionMethod == M_UNIFORM_GRID)
         {
-			updateGrid(deltaTime);
+			//updateGrid(deltaTime);
+			updateGridExperimental(deltaTime);
 			//flushAndPrintRigidBodyParameters();
-			if (simulateAR)
+		/*	if (simulateAR)
             {
 				m_params.spring = 0.12f;
 				m_params.damping = 0.02f;
@@ -1118,7 +1119,7 @@ void ParticleSystem::update(float deltaTime)
 				m_params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
 				m_params.globalDamping = 1.f;
 				updateStaticParticles(deltaTime);
-			}
+			}*/
 		}
 		else if (collisionMethod == M_BVH)
 		{

@@ -57,6 +57,7 @@
     <CudaCompile Include="Kernels\RB_BVHKernels.cu" />
     <CudaCompile Include="Kernels\RB_UniformGridKernels.cu" />
     <CudaCompile Include="Kernels\rigidBodyKernels.cu" />
+    <CudaCompile Include="WallCollisions.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Misc\main.cpp" />
@@ -204,6 +205,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Command>echo copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_50,sm_50</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
