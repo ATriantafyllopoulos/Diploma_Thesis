@@ -725,3 +725,158 @@ void ARcollisionsUniformGridWrapper(
 		numParticles,
 		params);
 }
+
+
+__device__
+void FindRigidBodyCollisionsUniformGridCell(
+int3 gridPos,
+uint index,
+uint originalIndex,
+float3 pos,
+float4 *oldPos,
+uint *cellStart,
+uint *cellEnd,
+uint *gridParticleIndex,//sorted particle indices
+int rigidBodyIndex, //rigid body index corresponding to current particle
+int *rbIndices, //index of the rigid body each particle belongs to
+int *collidingRigidBodyIndex, // index of rigid body of contact
+int *collidingParticleIndex, // index of particle of contact
+float *contactDistance, // penetration distance
+int *numCollisions,
+SimParams params)
+{
+	uint gridHash = calcGridHashAuxil(gridPos, params);
+
+	// get start of bucket for this cell
+	uint startIndex = FETCH(cellStart, gridHash);
+
+	float3 force = make_float3(0.0f);
+	float3 torque = make_float3(0.0f);
+
+	// contact distance is unsorted
+	float maxDistance = contactDistance[originalIndex]; // maximum contact distance up until now
+
+	float collisionThreshold = 2 * params.particleRadius; // assuming all particles have the same radius
+
+	if (startIndex != 0xffffffff)          // cell is not empty
+	{
+		// iterate over particles in this cell
+		uint endIndex = FETCH(cellEnd, gridHash);
+
+		for (uint j = startIndex; j<endIndex; j++)
+		{
+			int originalIndex_2 = gridParticleIndex[j];
+			int rigidBodyIndex_2 = rbIndices[originalIndex_2];
+			if (j != index && (rigidBodyIndex != rigidBodyIndex_2))// check not colliding with self and not of the same rigid body
+			{
+				float3 pos2 = make_float3(FETCH(oldPos, j));
+				float dist = length(pos - pos2); // distance between two particles
+				if (collisionThreshold - dist > maxDistance)
+				{
+					maxDistance = dist;
+					contactDistance[originalIndex] = maxDistance;
+					collidingParticleIndex[originalIndex] = originalIndex_2;
+					collidingRigidBodyIndex[originalIndex] = rigidBodyIndex_2;
+					*numCollisions++;
+				}
+			}
+		}
+	}
+}
+
+/*
+* Kernel function to perform rigid body collision detection and handling
+*/
+__global__
+void FindRigidBodyCollisionsUniformGridKernel(
+int *rbIndices, // index of the rigid body each particle belongs to
+int *collidingRigidBodyIndex, // index of rigid body of contact
+int *collidingParticleIndex, // index of particle of contact
+float *contactDistance, // penetration distance
+float4 *color, // particle color
+float4 *oldPos,  // sorted positions
+uint   *gridParticleIndex, // sorted particle indices
+uint   *cellStart,
+uint   *cellEnd,
+uint    numParticles,
+SimParams params)
+{
+	uint index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numParticles) return;
+
+	// read particle data from sorted arrays
+	float3 pos = make_float3(FETCH(oldPos, index));
+
+	// get address in grid
+	int3 gridPos = calcGridPosAuxil(pos, params);
+
+	// examine neighbouring cells
+	float3 force = make_float3(0.0f);
+	float3 torque = make_float3(0.0f);
+	int numCollisions = 0;
+	uint originalIndex = gridParticleIndex[index];
+	int rigidBodyIndex = rbIndices[originalIndex];
+	for (int z = -1; z <= 1; z++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			for (int x = -1; x <= 1; x++)
+			{
+				int3 neighbourPos = gridPos + make_int3(x, y, z);
+				FindRigidBodyCollisionsUniformGridCell(
+					neighbourPos,
+					index,
+					originalIndex,
+					pos,
+					oldPos,
+					cellStart,
+					cellEnd,
+					gridParticleIndex,//sorted particle indices
+					rigidBodyIndex, //rigid body index corresponding to current particle
+					rbIndices, //index of the rigid body each particle belongs to
+					collidingRigidBodyIndex, // index of rigid body of contact
+					collidingParticleIndex, // index of particle of contact
+					contactDistance, // penetration distance
+					&numCollisions, // counting number of collisions
+					params);
+			}
+		}
+	}
+
+	if (numCollisions)
+		color[originalIndex] = make_float4(1, 0, 0, 0);
+	else
+		color[originalIndex] = make_float4(0, 0, 1, 0);
+}
+
+void FindRigidBodyCollisionsUniformGridWrapper(
+	int *rbIndices, // index of the rigid body each particle belongs to
+	int *collidingRigidBodyIndex, // index of rigid body of contact
+	int *collidingParticleIndex, // index of particle of contact
+	float *contactDistance, // penetration distance
+	float4 *color, // particle color
+	float4 *oldPos,  // sorted positions
+	uint   *gridParticleIndex, // sorted particle indices
+	uint   *cellStart,
+	uint   *cellEnd,
+	uint    numParticles,
+	SimParams params,
+	int numThreads)
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+
+	FindRigidBodyCollisionsUniformGridKernel << < gridDim, blockDim >> >(
+		rbIndices, // index of the rigid body each particle belongs to
+		collidingRigidBodyIndex, // index of rigid body of contact
+		collidingParticleIndex, // index of particle of contact
+		contactDistance, // penetration distance
+		color, // particle color
+		oldPos, // sorted positions
+		gridParticleIndex, // sorted particle indices
+		cellStart,
+		cellEnd,
+		numParticles,
+		params);
+}

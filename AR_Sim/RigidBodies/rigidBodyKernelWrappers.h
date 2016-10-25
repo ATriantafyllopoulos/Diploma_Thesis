@@ -206,6 +206,8 @@ void WallCollisionWrapper(
 	float3 maxPos, // scene AABB's largest coordinates
 	float4 *rbVel, // rigid body linear velocity
 	float4 *rbAng, // rigid body angular velocity
+	float4 *rbLinMom, // rigid body linear momentum
+	float4 *rbAngMom, // rigid body angular momentum
 	glm::mat3 *Iinv, // current rigid body inverse inertia tensor
 	float *rbMass, // rigid body mass
 	int *rbIndices, // index showing where each particle belongs
@@ -214,4 +216,38 @@ void WallCollisionWrapper(
 	int numParticles, // number of particles to test
 	int numThreads, // number of threads to use
 	SimParams params);
+
+void FindRigidBodyCollisionsUniformGridWrapper(
+	int *rbIndices, // index of the rigid body each particle belongs to
+	int *collidingRigidBodyIndex, // index of rigid body of contact
+	int *collidingParticleIndex, // index of particle of contact
+	float *contactDistance, // penetration distance
+	float4 *color, // particle color
+	float4 *oldPos,  // sorted positions
+	uint   *gridParticleIndex, // sorted particle indices
+	uint   *cellStart,
+	uint   *cellEnd,
+	uint    numParticles,
+	SimParams params,
+	int numThreads);
+
+void HandleRigidBodyCollisionWrapper(
+	float4 *particlePos, // particle positions
+	float4 *rbPos, // rigid body center of mass
+	float4 *rbVel, // rigid body linear velocity
+	float4 *rbAng, // rigid body angular velocity
+	float4 *rbLinMom, // rigid body linear momentum
+	float4 *rbAngMom, // rigid body angular momentum
+	glm::mat3 *Iinv, // current rigid body inverse inertia tensor
+	float *rbMass, // rigid body mass
+	int *rbIndices, // index showing where each particle belongs
+	int *particlesPerRB, // number of particles per rigid body.
+	int *collidingRigidBodyIndex, // index of rigid body of contact
+	int *collidingParticleIndex, // index of particle of contact
+	float *contactDistance, // penetration distance
+	int numRigidBodies, // total number of scene's rigid bodies
+	int numParticles, // number of particles to test
+	int numThreads, // number of threads to use
+	SimParams params); // simulation parameters
+
 #endif

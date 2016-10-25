@@ -208,7 +208,7 @@ void ParticleSystem::addRigidBody(
 void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel)
 {
 	std::string line;
-	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_1_0.txt");
+	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_2_0.txt");
 	if (myfile.is_open())
 	{
 		bool initializedNow = false;

@@ -1,296 +1,123 @@
 #include "particleSystem.h"
 #include "ParticleAuxiliaryFunctions.h"
 #include "BVHcreation.h"
-#define USE_RUNGE_KUTTA
 
-#define USE_QUATERNIONS
-
-
-float* evaluate(float u [], float dt, int n, float derivative [], glm::mat3 Iinv, float massInv)
+void integrateRigidBodyCPU(float4 *CMs, //rigid body center of mass
+	float4 *vel, //velocity of rigid body
+	float4 *force, //force applied to rigid body due to previous collisions
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	float4 *rbTorque, //torque applied to rigid body due to previous collisions
+	float4 *rbAngularMomentum, //cumulative angular momentum of the rigid body
+	float4 *rbLinearMomentum, //cumulative linear momentum of the rigid body
+	glm::mat3 *rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	glm::vec3 *rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
+	float deltaTime, //dt
+	float *rbRadii, //radius chosen for each rigid body sphere
+	float *rbMass, //inverse of total mass of rigid body
+	float3 minPos, //smallest coordinate of scene's bounding box
+	float3 maxPos, //largest coordinate of scene's bounding box
+	int numBodies, //number of rigid bodies
+	SimParams params) //simulation parameters
 {
-	float *state = new float[n];
-
-	//x = x + xdot * dt
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-
-	//q = q + qdot * dt?
-
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-
-	//P = P + F * dt
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-
-	//L = L + tau * dt
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-	*state++ = (*u++) + (*derivative++) * dt;
-
-	//reset pointers to origin
-	state -= n;
-	derivative -=n;
-	u -= n;
-	//compute auxiliary variables for current iteration
-
-	//v = P / m
-	glm::vec3 v(state[7] * massInv, state[8] * massInv, state[9] * massInv);
-	//w = Iinv * L
-	glm::vec3 w = Iinv * glm::vec3(state[10], state[11], state[12]);
-	glm::quat q(state[3], state[4], state[5], state[6]);
-
-	float *x_dot = new float[n];
-	//x_dot = u
-	*x_dot++ = v.x;
-	*x_dot++ = v.y;
-	*x_dot++ = v.z;
-	//q_dot = 1 / 2 * w * q;
-	glm::quat w_hat(0, w.x, w.y, w.z);
-	glm::quat q_dot = (w_hat * q) / 2.f;
-	*x_dot++ = q_dot.x;
-	*x_dot++ = q_dot.y;
-	*x_dot++ = q_dot.z;
-	*x_dot++ = q_dot.w;
-	//P_dot = f - no force for now
-	*x_dot++ = 0;
-	*x_dot++ = 0;
-	*x_dot++ = 0;
-	//L_dot = tau - no torque for now
-	*x_dot++ = 0;
-	*x_dot++ = 0;
-	*x_dot++ = 0;
-
-	x_dot -= n;
-	return x_dot;
-}
-
-float* integrate(int n, float u0 [], float step, float f [], glm::mat3 Iinv, float massInv)
-{
-    int i;
-    float *k1, *k2, *k3;
-    float *u1, *u2, *u3;
-    float *u = new float[n];
-
-    u1 = new float[n];
-    u2 = new float[n];
-    u3 = new float[n];
-
-    k1 = evaluate(u0, step / 2.0f, n, f, Iinv, massInv);
-    k2 = evaluate(u0, step / 2.0f, n, k1, Iinv, massInv);
-    k3 = evaluate(u0, step, n, k2, Iinv, massInv);
-
-    //
-    //  Combine them to estimate the solution.
-    //
-    for (i = 0; i < n; i++)
-    {
-        u[i] = u0[i] + step * (f[i] + 2.0f * k1[i] + 2.0f * k2[i] + k3[i]) / 6.0f;
-    }
-
-
-    delete k1;
-    delete k2;
-    delete k3;
-    delete u1;
-    delete u2;
-    delete u3;
-    return u;
-}
-
-void ParticleSystem::integrateRigidBodyCPU_RK(float deltaTime) //simulation parameters
-{
-	int STATES = 13;
-	float *dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
-
-	static float totalTime = 0;
-	std::cout << "Integrating rigid bodies on the CPU" << std::endl;
-	float4 *CMs_CPU = new float4[numRigidBodies]; //rigid body center of mass
-	float4 *vel_CPU = new float4[numRigidBodies];  //velocity of rigid body
-	float4 *force_CPU = new float4[numRigidBodies];  //force applied to rigid body due to previous collisions
-	float4 *rbAngularVelocity_CPU = new float4[numRigidBodies];  //contains angular velocities for each rigid body
-	glm::quat *rbQuaternion_CPU = new glm::quat[numRigidBodies]; //contains current quaternion for each rigid body
-	float4 *rbTorque_CPU = new float4[numRigidBodies];  //torque applied to rigid body due to previous collisions
-	float4 *rbAngularMomentum_CPU = new float4[numRigidBodies];  //cumulative angular momentum of the rigid body
-	float4 *rbLinearMomentum_CPU = new float4[numRigidBodies];  //cumulative linear momentum of the rigid body
-	glm::mat3 *rbInertia_CPU = new glm::mat3[numRigidBodies];  //original moment of inertia for each rigid body - 9 values per RB
-	glm::mat3 *rbCurrentInertia_CPU = new glm::mat3[numRigidBodies];  //current moment of inertia for each rigid body - 9 values per RB
-	glm::vec3 *rbAngularAcceleration_CPU = new glm::vec3[numRigidBodies];  //current angular acceleration due to misaligned angular momentum and velocity
-	float *rbRadii_CPU = new float[numRigidBodies];  //radius chosen for each rigid body sphere
-	float *rbMass_CPU = new float[numRigidBodies];  //inverse of total mass of rigid body
+	float4 *CMs_CPU = new float4[numBodies]; //rigid body center of mass
+	float4 *vel_CPU = new float4[numBodies];  //velocity of rigid body
+	float4 *force_CPU = new float4[numBodies];  //force applied to rigid body due to previous collisions
+	float4 *rbAngularVelocity_CPU = new float4[numBodies];  //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion_CPU = new glm::quat[numBodies]; //contains current quaternion for each rigid body
+	float4 *rbTorque_CPU = new float4[numBodies];  //torque applied to rigid body due to previous collisions
+	float4 *rbAngularMomentum_CPU = new float4[numBodies];  //cumulative angular momentum of the rigid body
+	float4 *rbLinearMomentum_CPU = new float4[numBodies];  //cumulative linear momentum of the rigid body
+	glm::mat3 *rbInertia_CPU = new glm::mat3[numBodies];  //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia_CPU = new glm::mat3[numBodies];  //current moment of inertia for each rigid body - 9 values per RB
+	glm::vec3 *rbAngularAcceleration_CPU = new glm::vec3[numBodies];  //current angular acceleration due to misaligned angular momentum and velocity
+	float *rbRadii_CPU = new float[numBodies];  //radius chosen for each rigid body sphere
+	float *rbMass_CPU = new float[numBodies];  //inverse of total mass of rigid body
 
 
 
-	checkCudaErrors(cudaMemcpy(CMs_CPU, dPos, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(vel_CPU, m_dVel, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(force_CPU, rbForces, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbAngularVelocity_CPU, rbAngularVelocity, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbQuaternion_CPU, rbQuaternion, numRigidBodies * sizeof(glm::quat), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbTorque_CPU, rbTorque, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbAngularMomentum_CPU, rbAngularMomentum, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbLinearMomentum_CPU, rbLinearMomentum, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbInertia_CPU, rbInertia, numRigidBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbCurrentInertia_CPU, rbCurrentInertia, numRigidBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbAngularAcceleration_CPU, rbAngularAcceleration, numRigidBodies * sizeof(glm::vec3), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbRadii_CPU, rbRadii, numRigidBodies * sizeof(float), cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(rbMass_CPU, rbMass, numRigidBodies * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(CMs_CPU, CMs, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(vel_CPU, vel, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(force_CPU, force, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity_CPU, rbAngularVelocity, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbQuaternion_CPU, rbQuaternion, numBodies * sizeof(glm::quat), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbTorque_CPU, rbTorque, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbAngularMomentum_CPU, rbAngularMomentum, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbLinearMomentum_CPU, rbLinearMomentum, numBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbInertia_CPU, rbInertia, numBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia_CPU, rbCurrentInertia, numBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbAngularAcceleration_CPU, rbAngularAcceleration, numBodies * sizeof(glm::vec3), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbRadii_CPU, rbRadii, numBodies * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbMass_CPU, rbMass, numBodies * sizeof(float), cudaMemcpyDeviceToHost));
 
-	for (int index = 0; index < numRigidBodies; index++)
+	for (int index = 0; index < numBodies; index++)
 	{
-		float4 locLinearMomentum = rbLinearMomentum_CPU[index];
 
-		maxPos.x = maxPos.x + 0.1;
-		maxPos.y = maxPos.y + 0.1;
-		maxPos.z = maxPos.z + 0.1;
-
-		minPos.x = minPos.x - 0.1;
-		minPos.y = minPos.y - 0.1;
-		minPos.z = minPos.z - 1;
+		//rbAngularMomentum_CPU[index] *= 0.99;
+		//rbLinearMomentum_CPU[index] *= 0.99;
 
 		float4 locPos = CMs_CPU[index];
-		float sphereRadius = rbRadii_CPU[index];
-		//handle wall collisions
-		if (locPos.x > maxPos.x - sphereRadius)
+		float locMass = rbMass_CPU[index];
+		glm::quat quaternion = rbQuaternion_CPU[index];
+		glm::mat3 inertia = rbInertia_CPU[index];
+		glm::mat3 currentInertia = rbCurrentInertia_CPU[index];
+		float4 locVel = vel_CPU[index];
+		float4 locAng = rbAngularVelocity_CPU[index];
+
+		//float4 locVel = rbLinearMomentum_CPU[index] / locMass;
+		//float4 locMomentum = rbAngularMomentum_CPU[index];
+		//glm::vec3 glmMomentum(locMomentum.x, locMomentum.y, locMomentum.z);
+		//glm::vec3 glmAng = currentInertia * glmMomentum;
+		//float4 locAng = make_float4(glmAng.x, glmAng.y, glmAng.z, 0);
+
+		locPos += locVel * deltaTime;
+
+		glm::vec3 newVelocity(locAng.x, locAng.y, locAng.z);
+		glm::vec3 normalizedVel = normalize(newVelocity);
+
+		float theta = glm::length(newVelocity);
+		if (theta > 0.00001)
 		{
-			locPos.x = maxPos.x - sphereRadius;
-			locLinearMomentum.x *= m_params.boundaryDamping;
+			quaternion.w = cos(theta / 2.f);
+			quaternion.x = sin(theta / 2.f) * normalizedVel.x;
+			quaternion.y = sin(theta / 2.f) * normalizedVel.y;
+			quaternion.z = sin(theta / 2.f) * normalizedVel.z;
+		}
+		else
+		{
+			quaternion.w = 1.f;
+			quaternion.x = 0.f;
+			quaternion.y = 0.f;
+			quaternion.z = 0.f;
 		}
 
-		if (locPos.x < minPos.x + sphereRadius)
-		{
-			locPos.x = minPos.x + sphereRadius;
-			locLinearMomentum.x *= m_params.boundaryDamping;
-		}
+		quaternion = normalize(quaternion);
+		glm::mat3 rot = mat3_cast(quaternion);
+		currentInertia = rot * inertia * transpose(rot);
 
-		if (locPos.y > maxPos.y - sphereRadius && locLinearMomentum.y > 0)
-		{
-			locPos.y = maxPos.y - 2 * sphereRadius;
-			locLinearMomentum.y *= m_params.boundaryDamping;
-		}
-
-		if (locPos.y < minPos.y + sphereRadius)
-		{
-			locPos.y = minPos.y + sphereRadius;
-			locLinearMomentum.y *= m_params.boundaryDamping;
-		}
-
-		if (locPos.z > maxPos.z - sphereRadius)
-		{
-			locPos.z = maxPos.z - sphereRadius;
-			locLinearMomentum.z *= m_params.boundaryDamping;
-		}
-
-		if (locPos.z < minPos.z + sphereRadius)
-		{
-			locPos.z = minPos.z + sphereRadius;
-			locLinearMomentum.z *= m_params.boundaryDamping;
-		}
-
-		locLinearMomentum *= m_params.globalDamping;
-		rbLinearMomentum_CPU[index] = locLinearMomentum;
-		locPos.w = 0.f;
 		CMs_CPU[index] = locPos;
-
-		//xdot
-		float* x_dot = new float[STATES];
-		//x_dot = u
-		*x_dot++ = vel_CPU[index].x;
-		*x_dot++ = vel_CPU[index].y;
-		*x_dot++ = vel_CPU[index].z;
-		//q_dot = 1 / 2 * w * q;
-		glm::vec3 w = rbCurrentInertia_CPU[index] * glm::vec3(rbAngularMomentum_CPU[index].x, rbAngularMomentum_CPU[index].y, rbAngularMomentum_CPU[index].z);
-		glm::quat w_hat(0, w.x, w.y, w.z);
-		glm::quat q_dot = (w_hat * rbQuaternion_CPU[index]) / 2.f;
-		*x_dot++ = q_dot.x;
-		*x_dot++ = q_dot.y;
-		*x_dot++ = q_dot.z;
-		*x_dot++ = q_dot.w;
-		//P_dot = f
-		*x_dot++ = force_CPU[index].x;
-		*x_dot++ = force_CPU[index].y;
-		*x_dot++ = force_CPU[index].z;
-		//L_dot = tau
-		*x_dot++ = rbTorque_CPU[index].x;
-		*x_dot++ = rbTorque_CPU[index].y;
-		*x_dot++ = rbTorque_CPU[index].z;
-		x_dot -= STATES;
-
-		//get state
-	    float* state = new float[STATES];
-	    *state++ = CMs_CPU[index].x;
-	    *state++ = CMs_CPU[index].y;
-	    *state++ = CMs_CPU[index].z;
-	    *state++ = rbQuaternion_CPU[index].x;
-	    *state++ = rbQuaternion_CPU[index].y;
-	    *state++ = rbQuaternion_CPU[index].z;
-	    *state++ = rbQuaternion_CPU[index].w;
-	    *state++ = rbLinearMomentum_CPU[index].x;
-	    *state++ = rbLinearMomentum_CPU[index].y;
-	    *state++ = rbLinearMomentum_CPU[index].z;
-	    *state++ = rbAngularMomentum_CPU[index].x;
-	    *state++ = rbAngularMomentum_CPU[index].y;
-	    *state++ = rbAngularMomentum_CPU[index].z;
-	    state -= STATES;
-
-	    float* newState = new float[STATES];
-	    newState = integrate(STATES, state, deltaTime, x_dot, rbCurrentInertia_CPU[index], rbMass_CPU[index]);
-
-		//set state
-	    CMs_CPU[index].x = *newState++;
-	    CMs_CPU[index].y = *newState++;
-	    CMs_CPU[index].z = *newState++;
-	    rbQuaternion_CPU[index].x = (*newState++);
-	    rbQuaternion_CPU[index].y = (*newState++);
-	    rbQuaternion_CPU[index].z = (*newState++);
-	    rbQuaternion_CPU[index].w = (*newState++);
-	    rbLinearMomentum_CPU[index].x = *newState++;
-	    rbLinearMomentum_CPU[index].y = *newState++;
-	    rbLinearMomentum_CPU[index].z = *newState++;
-	    rbAngularMomentum_CPU[index].x = *newState++;
-	    rbAngularMomentum_CPU[index].y = *newState++;
-	    rbAngularMomentum_CPU[index].z = *newState++;
-	    newState -= STATES;
-
-	    //momentum
-	    vel_CPU[index] = rbLinearMomentum_CPU[index] * rbMass_CPU[index];
-	    rbQuaternion_CPU[index] = glm::normalize(rbQuaternion_CPU[index]);
-	    glm::mat3 R = glm::mat3_cast(rbQuaternion_CPU[index]);
-	    rbCurrentInertia_CPU[index] = R * rbCurrentInertia_CPU[index] * glm::transpose(R);
-	    //angular momentum
-	    glm::vec3 newVel = rbCurrentInertia_CPU[index] * glm::vec3(rbAngularMomentum_CPU[index].x,
-	    		rbAngularMomentum_CPU[index].y, rbAngularMomentum_CPU[index].z);
-	    rbAngularVelocity_CPU[index] = make_float4(newVel.x, newVel.y, newVel.z, 0);
-	    rbTorque_CPU[index] = make_float4(0);
-	    force_CPU[index] = make_float4(0);
-
-
-	    if (newState)
-	    delete newState;
-	    if (x_dot)
-	    delete x_dot;
-	    if (state)
-	    delete state;
-
+		vel_CPU[index] = locVel;
+		rbCurrentInertia_CPU[index] = currentInertia;
+		rbQuaternion_CPU[index] = quaternion;
+		rbAngularVelocity_CPU[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0);
+		rbTorque_CPU[index] = make_float4(0, 0, 0, 0); //reset torque to zero
 
 	}
 
-	checkCudaErrors(cudaMemcpy(dPos, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(m_dVel, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbForces, force_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbQuaternion, rbQuaternion_CPU, numRigidBodies * sizeof(glm::quat), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbTorque, rbTorque_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbAngularMomentum, rbAngularMomentum_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbLinearMomentum, rbLinearMomentum_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbInertia, rbInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbAngularAcceleration, rbAngularAcceleration_CPU, numRigidBodies * sizeof(glm::vec3), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbRadii, rbRadii_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(CMs, CMs_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(vel, vel_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(force, force_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbQuaternion, rbQuaternion_CPU, numBodies * sizeof(glm::quat), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbTorque, rbTorque_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularMomentum, rbAngularMomentum_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbLinearMomentum, rbLinearMomentum_CPU, numBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbInertia, rbInertia_CPU, numBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularAcceleration, rbAngularAcceleration_CPU, numBodies * sizeof(glm::vec3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbRadii, rbRadii_CPU, numBodies * sizeof(float), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numBodies * sizeof(float), cudaMemcpyHostToDevice));
 
 	delete CMs_CPU;
 	delete vel_CPU;
@@ -305,66 +132,7 @@ void ParticleSystem::integrateRigidBodyCPU_RK(float deltaTime) //simulation para
 	delete rbAngularAcceleration_CPU;
 	delete rbRadii_CPU;
 	delete rbMass_CPU;
-
-	totalTime += deltaTime;
-	unmapGLBufferObject(m_cuda_posvbo_resource);
 }
-
-glm::vec3 getWdot(glm::vec3 w, glm::mat3 I_inv)
-{
-	return I_inv * glm::cross(transpose(I_inv) * w, w);
-}
-//		static int iterations = 0;
-//		static std::ofstream myfile ("velocity.txt");
-//		static std::ofstream myfileQuat ("myQuaternion.txt");
-//		if (myfile.is_open())
-//		{
-//			myfile << newVelocity.x << " " << newVelocity.y << " " << newVelocity.z << '\n';
-//		}
-
-//		glm::vec3 undistortedVelocity = glm::vec3(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
-//		glm::vec3 angularAcceleration = currentInertia * glm::cross(currentMomentum, undistortedVelocity);
-////		glm::vec3 newVelocity = currentInertia * currentMomentum - angularAcceleration * deltaTime;
-//		glm::vec3 w;
-//		w = currentInertia * L;
-//		glm::vec3 wdot = currentInertia * (Ldot - glm::cross(w, Ldot));
-//		glm::vec3 wXwdot = glm::cross(w, wdot);
-//		glm::vec3 wdotXL = glm::cross(wdot, L);
-//		glm::vec3 wXLdot = glm::cross(w, Ldot);
-//		glm::vec3 wXL = glm::cross(w, L);
-//		glm::vec3 wXwXL = glm::cross(w, wXL);
-//		glm::vec3 wddot = wXwdot + currentInertia * ( -wdotXL -  wXLdot * 2.f + glm::cross(w, wXL) );
-//		glm::vec3 superVec = -glm::cross(wdot, Ldot) * 3.f - glm::cross(wddot, L) + glm::cross(wdot, wXL) +
-//				glm::cross(w, wdotXL) * 2.f + glm::cross(w, wdotXL) - glm::cross( w, wXwXL );
-//		glm::vec3 wdddot = glm::cross(w, wddot) * 2.f - glm::cross(w, wXwdot) + currentInertia * superVec;
-//		float h = deltaTime;
-//		glm::vec3 newVelocity = w + wdot * (h / 2.f) + wddot * (h * h / 6.f) + glm::cross(wdot, w) * (h * h / 12.f) +
-//				wdddot * (h * h * h / 24.f) + glm::cross(wddot, w) * (h * h * h / 24.f);
-//		currentMomentum *= 0.9f;
-//		newVelocity *= 0.9f;
-//		glm::vec3 k1 = getWdot(newVelocity, currentInertia);
-//		glm::vec3 k2 = getWdot(newVelocity + k1 * 0.5f , currentInertia);
-//		glm::vec3 k3 = getWdot(newVelocity + k2 * 0.5f, currentInertia);
-//		glm::vec3 k4 = getWdot(newVelocity + k3, currentInertia);
-//		newVelocity += (k1 + k2 * 2.f + k3 * 3.f + k4) * (deltaTime / 6.f);
-		//	correct angular drift
-//		glm::vec3 currentTorque(torque.x, torque.y, torque.z);
-//		glm::vec3 angularAcceleration = currentInertia * glm::cross(currentMomentum, newVelocity);
-//		std::cout << "Velocity before correction: " << newVelocity.x << " " <<
-//				newVelocity.y << " " << newVelocity.z  << ")" << std::endl;
-//		newVelocity -= angularAcceleration * deltaTime;
-//
-//		angularAcceleration = currentInertia * glm::cross(currentMomentum, newVelocity);
-//		newVelocity -= angularAcceleration * deltaTime;
-//		std::cout << "Velocity after correction: " << newVelocity.x << " " <<
-//				newVelocity.y << " " << newVelocity.z  << ")" << std::endl;
-//		std::cout << std::endl;
-	//	newVelocity = glm::vec3(0.001, 0.004, 0.001);
-//		glm::quat qdot = glm::quat(0, newVelocity.x, newVelocity.y, newVelocity.z) * quaternion;
-//		qdot /= 2.f;
-//		quaternion += qdot * deltaTime;
-
-
 
 void ParticleSystem::flushAndPrintRigidBodyParameters()
 {
@@ -444,8 +212,188 @@ void ParticleSystem::flushAndPrintRigidBodyParameters()
 	delete quatTest;
 }
 
+void ParticleSystem::Handle_Wall_Collisions()
+{
+	WallCollisionWrapper(
+		(float4 *)dPos, // particle positions
+		(float4 *)rbPositions, // rigid body center of mass
+		minPos, // scene AABB's smallest coordinates
+		maxPos, // scene AABB's largest coordinates
+		(float4 *)rbVelocities, // rigid body linear velocity
+		(float4 *)rbAngularVelocity, // rigid body angular velocity
+		(float4 *)rbLinearMomentum, // rigid body linear momentum
+		(float4 *)rbAngularMomentum, // rigid body angular momentum
+		rbCurrentInertia, // current rigid body inverse inertia tensor
+		rbMass, // rigid body mass
+		rbIndices, // index showing where each particle belongs
+		particlesPerObjectThrown, // number of particles per rigid body
+		numRigidBodies, // total number of scene's rigid bodies
+		m_numParticles, // number of particles to test
+		numThreads, // number of threads to use
+		m_params);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
+		(float4 *)rbVelocities, //rigid body's velocity
+		(float4 *)relativePos, //particle's relative position
+		(float4 *)dPos, //particle's global position
+		(float4 *)m_dVel, //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbIndices, //index of associated rigid body
+		m_numParticles, //number of particles
+		numThreads);
+}
+
+void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
+{
+
+	// copy rigid body variables to CPU
+	float4 *CMs_CPU = new float4[numRigidBodies]; //rigid body center of mass
+	float4 *vel_CPU = new float4[numRigidBodies];  //velocity of rigid body
+	float4 *rbAngularVelocity_CPU = new float4[numRigidBodies];  //contains angular velocities for each rigid body
+	glm::mat3 *rbCurrentInertia_CPU = new glm::mat3[numRigidBodies];  //current moment of inertia for each rigid body - 9 values per RB
+	float *rbMass_CPU = new float[numRigidBodies];  //inverse of total mass of rigid body
+	
+	checkCudaErrors(cudaMemcpy(CMs_CPU, rbPositions, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(vel_CPU, rbVelocities, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity_CPU, rbAngularVelocity, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia_CPU, rbCurrentInertia, numRigidBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbMass_CPU, rbMass, numRigidBodies * sizeof(float), cudaMemcpyDeviceToHost));
+
+	// copy particle variables to CPU
+	float4 *relative_CPU = new float4[m_numParticles];
+	checkCudaErrors(cudaMemcpy(relative_CPU, relativePos, m_numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
 
 
+	// copy contact info to CPU - one contact per particle
+	float *contactDistance_CPU = new float[m_numParticles];
+	int *collidingRigidBodyIndex_CPU = new int[m_numParticles];
+	int *collidingParticleIndex_CPU = new int[m_numParticles];
+
+	checkCudaErrors(cudaMemcpy(contactDistance_CPU, contactDistance, m_numParticles * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(collidingRigidBodyIndex_CPU, collidingRigidBodyIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(collidingParticleIndex_CPU, collidingParticleIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
+
+	int current_particle = 0;
+	for (int index = 0; index < numRigidBodies; index++)
+	{
+		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
+		{
+			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
+			{
+				int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
+				int particleIndex = collidingParticleIndex_CPU[current_particle];
+				
+				if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
+					CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
+					m_params.particleRadius,
+					m_params.particleRadius,
+					CMs_CPU[index]) && index < rigidBodyIndex)
+				{
+					float4 cp, cn;
+					findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
+						CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
+						m_params.particleRadius,
+						m_params.particleRadius,
+						cp, cn);
+					float4 r1 = cp - CMs_CPU[index];
+					float4 r2 = cp - CMs_CPU[rigidBodyIndex];
+
+					glm::mat3 IinvA = rbCurrentInertia_CPU[index];
+					glm::mat3 IinvB = rbCurrentInertia_CPU[rigidBodyIndex];
+					float mA = rbMass_CPU[index];
+					float mB = rbMass_CPU[rigidBodyIndex];
+					float impulse = computeImpulseMagnitude(
+						vel_CPU[index], vel_CPU[rigidBodyIndex],
+						rbAngularVelocity_CPU[index], rbAngularVelocity_CPU[rigidBodyIndex],
+						r1, r2,	IinvA, IinvB, mA, mB, cn);
+
+					float4 impulseVector = cn * impulse;
+					
+					// apply linear impulse
+					vel_CPU[index] += impulseVector / mA;
+					vel_CPU[rigidBodyIndex] -= impulseVector / mB;
+
+					// compute auxiliaries for angular impulse
+					glm::vec3 rA(r1.x, r1.y, r1.z);
+					glm::vec3 rB(r2.x, r2.y, r2.z);
+					glm::vec3 impulseVectorGLM(impulseVector.x, impulseVector.y, impulseVector.z);
+
+					// apply angular impulse
+					glm::vec3 AngularImpulse = IinvA *
+						(glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
+					rbAngularVelocity_CPU[index] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
+
+					AngularImpulse = IinvB *
+						(glm::cross(glm::vec3(r2.x, r2.y, r2.z), impulseVectorGLM * (-1.f)));
+					rbAngularVelocity_CPU[rigidBodyIndex] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
+
+
+				}
+			}
+			current_particle++;
+		}
+		
+	}
+
+	checkCudaErrors(cudaMemcpy(rbPositions, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbVelocities, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
+
+	delete CMs_CPU;
+	delete vel_CPU;
+	delete rbAngularVelocity_CPU;
+	delete rbCurrentInertia_CPU;
+	delete rbMass_CPU;
+
+	delete relative_CPU;
+
+	delete contactDistance_CPU;
+	delete collidingRigidBodyIndex_CPU;
+	delete collidingParticleIndex_CPU;
+
+	// cudaFree contact info variables
+	checkCudaErrors(cudaFree(collidingRigidBodyIndex));
+	checkCudaErrors(cudaFree(collidingParticleIndex));
+	checkCudaErrors(cudaFree(contactDistance));
+
+}
+
+void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff()
+{
+
+
+	HandleRigidBodyCollisionWrapper(
+		(float4 *)dPos, // particle positions
+		(float4 *)rbPositions, // rigid body center of mass
+		(float4 *)rbVelocities, // rigid body linear velocity
+		(float4 *)rbAngularVelocity, // rigid body angular velocity
+		(float4 *)rbLinearMomentum, // rigid body linear momentum
+		(float4 *)rbAngularMomentum, // rigid body angular momentum
+		rbCurrentInertia, // current rigid body inverse inertia tensor
+		rbMass, // rigid body mass
+		rbIndices, // index showing where each particle belongs
+		particlesPerObjectThrown, // number of particles per rigid body.
+		collidingRigidBodyIndex, // index of rigid body of contact
+		collidingParticleIndex, // index of particle of contact
+		contactDistance, // penetration distance
+		numRigidBodies, // total number of scene's rigid bodies
+		m_numParticles, // number of particles to test
+		numThreads, // number of threads to use
+		m_params); // simulation parameters
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	// cudaFree contact info variables
+	checkCudaErrors(cudaFree(collidingRigidBodyIndex));
+	checkCudaErrors(cudaFree(collidingParticleIndex));
+	checkCudaErrors(cudaFree(contactDistance));
+}
 
 
 /*
@@ -1142,4 +1090,52 @@ void ParticleSystem::update(float deltaTime)
     	updateFrame();
 
     }
+}
+
+void ParticleSystem::Integrate_RB_System(float deltaTime)
+{
+	integrateRigidBodyCPU((float4 *)rbPositions, //rigid body center of mass
+		(float4 *)rbVelocities, //velocity of rigid body
+		(float4 *)rbForces, //total force applied to rigid body due to previous collisions
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbTorque, //torque applied to rigid body due to previous collisions
+		(float4 *)rbAngularMomentum, //cumulative angular momentum of the rigid body
+		(float4 *)rbLinearMomentum, //cumulative linear momentum of the rigid body
+		rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+		rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+		rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
+		deltaTime, //dt
+		rbRadii, //radius chosen for each rigid body sphere
+		rbMass, //total mass of rigid body
+		minPos, //smallest coordinate of scene's bounding box
+		maxPos, //largest coordinate of scene's bounding box
+		numRigidBodies, //number of rigid bodies
+		m_params); //simulation parameters
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
+		(float4 *)rbVelocities, //rigid body's velocity
+		(float4 *)relativePos, //particle's relative position
+		(float4 *)dPos, //particle's global position
+		(float4 *)m_dVel, //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbIndices, //index of associated rigid body
+		m_numParticles, //number of particles
+		numThreads);
+
+	//integrate
+	integrateSystem(
+		dPos,
+		m_dVel,
+		deltaTime,
+		minPos,
+		maxPos,
+		rbIndices,
+		m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 }

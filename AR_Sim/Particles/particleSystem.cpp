@@ -40,7 +40,7 @@ m_gridSize(gridSize),
 m_timer(NULL),
 m_solverIterations(1),
 numRigidBodies(0),
-numThreads(512)
+numThreads(128)
 {
     std::cout << "Attempting to initialize particle system." << std::endl;
 	rbRadii = NULL;

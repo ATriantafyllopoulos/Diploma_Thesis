@@ -549,6 +549,32 @@ private:
 	float bunnyRadius;
 	float bunnyMass;
 	glm::mat3 bunnyInertia;
+
+private:
+	// GPU physics engine
+	void Integrate_RB_System(float deltaTime);
+	void Handle_Wall_Collisions();
+	void Find_Rigid_Body_Collisions_Uniform_Grid();
+	void Handle_Rigid_Body_Collisions_Baraff();
+	void Handle_Rigid_Body_Collisions_Baraff_CPU();
+	// make these part of the class so they can be used between functions
+	// compatible with old code as they will be overriden locally
+	float *dPos;
+	float *dCol;
+
+	// contact info
+
+	// per particle auxiliaries
+	// ATM: one per particle
+	// (most important contact only)
+
+	// index of rigid body of contact
+	int *collidingRigidBodyIndex;
+	// index of particle of contact
+	int *collidingParticleIndex;
+	// penetration distance
+	float *contactDistance;
+
 public:
 	void setSceneAABB(const float3 &minP, const float3 &maxP) { minPos = minP; maxPos = maxP; }
 	void addMolecule(glm::vec3 pos, glm::vec3 vel);

@@ -213,7 +213,7 @@ void ParticleSystem::findWallCollisions()
 					Iinv, CM_CPU[index], F_CPU[index]))
 				{
 					COL_CPU[i] = make_float4(1, 1, 1, 0);
-					continue;
+					break;
 				}
 			}
 		}
@@ -372,7 +372,7 @@ void ParticleSystem::collisionsCPU()
 		POS_CPU[particle] = CM_CPU[indexRB[particle]] + displacement[particle];
 	}
 
-	findParticleCollisions();
+	//findParticleCollisions();
 
 	for (int particle = 0; particle < m_numParticles; particle++)
 	{

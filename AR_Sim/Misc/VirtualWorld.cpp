@@ -184,10 +184,12 @@ void VirtualWorld::initDemoMode()
 			for (float z = 0.1; z < 0.9; z += 0.4)
 			{
 				glm::vec3 worldSpaceCoordinates(x, y, z);
+
 				glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
 						(float)std::rand() / (float)RAND_MAX / 10.f,
 						(float)std::rand() / (float)RAND_MAX / 10.f);
-//				glm::vec3 velocity(0.1, 0, 0);
+
+				//glm::vec3 velocity(0, 0, 0);
 				psystem->addBunny(worldSpaceCoordinates, velocity);
 			}
 //	for (float x = -1; x < 1; x += 0.4)
