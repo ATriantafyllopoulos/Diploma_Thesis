@@ -296,6 +296,7 @@ void ParticleSystem::integrateRigidBody(
 	glm::mat3 &IinvOriginal,
 	glm::quat &quaternion)
 {
+	//linearVelocity += make_float4(0, -0.981, 0, 0) * dt;
 	massCenter += linearVelocity * dt;
 	glm::vec3 w(angularVelocity.x, angularVelocity.y, angularVelocity.z);
 	glm::vec3 normalizedW = normalize(w);

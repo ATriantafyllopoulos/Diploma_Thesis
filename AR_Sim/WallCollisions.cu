@@ -253,7 +253,7 @@ __global__ void HandleWallCollisionKernelUnmapped(
 		(glm::cross(glm::vec3(r.x, r.y, r.z),
 		glm::vec3(LinearImpulse.x, LinearImpulse.y, LinearImpulse.z)));
 
-	// change rigid body position
+	// correct rigid body position
 	//pos[index] = newCM;
 
 	// apply impulses to rigid body

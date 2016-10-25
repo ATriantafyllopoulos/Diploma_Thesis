@@ -65,6 +65,8 @@ void integrateRigidBodyCPU(float4 *CMs, //rigid body center of mass
 		float4 locVel = vel_CPU[index];
 		float4 locAng = rbAngularVelocity_CPU[index];
 
+		//locVel += make_float4(0, -0.981, 0, 0) * deltaTime;
+
 		//float4 locVel = rbLinearMomentum_CPU[index] / locMass;
 		//float4 locMomentum = rbAngularMomentum_CPU[index];
 		//glm::vec3 glmMomentum(locMomentum.x, locMomentum.y, locMomentum.z);
