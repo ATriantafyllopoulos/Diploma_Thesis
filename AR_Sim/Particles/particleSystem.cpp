@@ -94,6 +94,14 @@ numThreads(128)
 	r_CMs = NULL;
 	r_radii = NULL;
 
+	collidingRigidBodyIndex = NULL;
+	collidingParticleIndex = NULL;
+	contactDistance = NULL;
+
+	m_hVel = NULL;
+	m_hCellStart = NULL;
+	m_hCellEnd = NULL;
+
 	minPos.x = 10000.f;
 	minPos.y = 10000.f;
 	minPos.z = 10000.f;
@@ -332,11 +340,11 @@ void
 ParticleSystem::_finalize()
 {
 	assert(m_bInitialized);
-
-	delete[] m_hPos;
-	delete[] m_hVel;
-	delete[] m_hCellStart;
-	delete[] m_hCellEnd;
+	
+	if (m_hPos)delete[] m_hPos;
+	if (m_hVel)delete[] m_hVel;
+	if (m_hCellStart)delete[] m_hCellStart;
+	if (m_hCellEnd)delete[] m_hCellEnd;
 
 	if (m_dVel)cudaFree(m_dVel);
 	if(m_dSortedPos)checkCudaErrors(cudaFree(m_dSortedPos));

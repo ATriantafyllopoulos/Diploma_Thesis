@@ -45,8 +45,10 @@ bool ParticleSystem::readRangeData()
 	//if (!openDepthImage(std::string("Data/RangeImages/banana/banana_1/banana_1_1_1_depth.png"))) return false;
 	if (!openDepthImage(std::string("Data/RangeImages/rgbd_dataset_freiburg1_xyz/depth/Depth (1).png"))) return false;
 	if (!openImage(std::string("Data/RangeImages/rgbd_dataset_freiburg1_xyz/rgb/Texture (1).png"))) return false;
-    //std::cout << "Depth image loaded successfully." << std::endl;
-
+	
+	/*if (!openDepthImage(std::string("Data/OSD/disparity/learn10.png"))) return false;
+	if (!openImage(std::string("Data/OSD/image_color/learn10.png"))) return false;
+*/
     //std::cout << "Attempting to load RGB image." << std::endl;
 	//if (!openImage(std::string("Data/RangeImages/banana/banana_1/banana_1_1_1.png"))) return false;
     //std::cout << "RGB image loaded successfully." << std::endl;

@@ -555,8 +555,14 @@ private:
 	void Integrate_RB_System(float deltaTime);
 	void Handle_Wall_Collisions();
 	void Find_Rigid_Body_Collisions_Uniform_Grid();
-	void Handle_Rigid_Body_Collisions_Baraff();
+	void Handle_Rigid_Body_Collisions_Baraff_GPU();
 	void Handle_Rigid_Body_Collisions_Baraff_CPU();
+
+	// augmented reality engine
+	void Find_Augmented_Reality_Collisions_Uniform_Grid();
+	void Handle_Augmented_Reality_Collisions_Baraff_GPU();
+	void Handle_Augmented_Reality_Collisions_Baraff_CPU();
+
 	// make these part of the class so they can be used between functions
 	// compatible with old code as they will be overriden locally
 	float *dPos;

@@ -180,6 +180,16 @@ void ParticleSystem::addRigidBody(
 	checkCudaErrors(cudaDeviceSynchronize());
 	initializeVirtualSoA(); //initialize SoA variables for virtual particles
 
+	// free collision detection buffers
+	checkCudaErrors(cudaFree(collidingRigidBodyIndex));
+	checkCudaErrors(cudaFree(collidingParticleIndex));
+	checkCudaErrors(cudaFree(contactDistance));
+
+	// allocate collision detection buffers
+	checkCudaErrors(cudaMalloc((void**)&collidingRigidBodyIndex, sizeof(int) * m_numParticles));
+	checkCudaErrors(cudaMalloc((void**)&collidingParticleIndex, sizeof(int) * m_numParticles));
+	checkCudaErrors(cudaMalloc((void**)&contactDistance, sizeof(float) * m_numParticles));
+
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	//free all unnecessary device allocations
@@ -208,7 +218,7 @@ void ParticleSystem::addRigidBody(
 void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel)
 {
 	std::string line;
-	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_2_0.txt");
+	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_1_5.txt");
 	if (myfile.is_open())
 	{
 		bool initializedNow = false;

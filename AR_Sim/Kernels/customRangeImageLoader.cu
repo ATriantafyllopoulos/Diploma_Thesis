@@ -46,6 +46,7 @@ __global__ void RGBDloader(	unsigned short *image,
 
 	float posZ = image[y*imageWidth + x];// / 1000.f;
 	posZ /= 5000.f;
+	//posZ /= 5000.f;
 	staticRadii[index] = particleRadius;// * posZ;
 
 	if (posZ < 0.01)

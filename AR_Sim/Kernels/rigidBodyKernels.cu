@@ -31,6 +31,9 @@
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_reduce.cuh>
 
+template<typename valueType, typename keyType>
+void Cub_Sort_By_Key_Wrapper(valueType **value, const keyType *const *const key, const int &arraySize);
+
 /*
 * Integrates each rigid body. Moves center of mass only.
 */
@@ -1175,7 +1178,7 @@ void HandleRigidBodyCollisionWrapper(
 	glm::mat3 *Iinv, // current rigid body inverse inertia tensor
 	float *rbMass, // rigid body mass
 	int *rbIndices, // index showing where each particle belongs
-	int *particlesPerRB, // number of particles per rigid body.
+	int *particlesPerRB, // number of particles per rigid body
 	int *collidingRigidBodyIndex, // index of rigid body of contact
 	int *collidingParticleIndex, // index of particle of contact
 	float *contactDistance, // penetration distance
@@ -1249,6 +1252,217 @@ void HandleRigidBodyCollisionWrapper(
 		rbIndices, // Input: index showing where each particle belongs
 		particlePos, // Input: particle position
 		collidingRigidBodyIndex, // Input: index of rigid body of contact
+		collidingParticleIndex, // Input: index of particle of contact
+		contactDistance, // Input: contact distance
+		particleIndicesGPU, // Input: sorted array of contacts (by distance)
+		cum_sum_indices_GPU, // Input: cumulative sum of rigid body particles
+		numRigidBodies);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	// clean-up stray pointers
+	if (particleIndicesGPU)
+		checkCudaErrors(cudaFree(particleIndicesGPU));
+	if (rigid_body_flags_GPU)
+		checkCudaErrors(cudaFree(rigid_body_flags_GPU));
+	if (rigid_body_flags_CPU)
+		delete rigid_body_flags_CPU;
+	if (cum_sum_indices_GPU)
+		checkCudaErrors(cudaFree(cum_sum_indices_GPU));
+	if (cum_sum_indices_CPU)
+		delete cum_sum_indices_CPU;
+
+}
+
+
+__device__ float ComputeImpulseMagnitudeKernelAuxil(
+	float4 vel, float4 ang, float4 disp,
+	glm::mat3 Iinv, float m, float4 n)
+{
+	glm::vec3 v(vel.x, vel.y, vel.z);
+
+	glm::vec3 w(ang.x, ang.y, ang.z);
+
+	glm::vec3 r(disp.x, disp.y, disp.z);
+
+	glm::vec3 norm(n.x, n.y, n.z);
+
+	glm::vec3 velA = v + glm::cross(w, r);
+	float epsilon = 1;
+	float numerator = -(1 + epsilon) * (glm::dot(velA, norm));
+	float a = 1.f / m;
+	float b = glm::dot(glm::cross(Iinv * glm::cross(r, norm), r), norm);
+	float denominator = a + b;
+	float j = numerator / denominator;
+
+	return j;
+}
+__global__ void HandleAugmentedRealityCollisionKernelUnmapped(
+	float radius, // Input: particle radius - assuming uniform radius over all virtual particles
+	float4 *pos, // Input: rigid body position
+	float4 *vel, // Input: rigid body velocity
+	float4 *ang, // Input: rigid body angular velocity
+	float4 *linMom, // Input: rigid body linear momentum
+	float4 *angMom, // Input: rigid body angular momentum
+	glm::mat3 *Iinv, // Input: rigid body inverse inertia matrix
+	float *mass, // Input: rigid body mass
+	int *rbIndices, // Input: index showing where each particle belongs
+	float4 *particlePos, // Input: particle position
+	float4 *scenePos, // Input: scene particle position
+	int *collidingParticleIndex, // Input: index of particle of contact
+	float *contactDistance, // Input: contact distance
+	int *contactID, // Input: sorted array of contacts (by distance)
+	int *cumulative_particles, // Input: cumulative sum of rigid body particles
+	int numRigidBodies)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numRigidBodies)
+		return;
+
+	int contact_index = contactID[cumulative_particles[index] - 1];
+	for (int collision = contact_index; collision > contact_index - 4; collision--) // handle four most important collisions
+	{
+		float d = contactDistance[contact_index];
+		if (d <= 0)
+			return;
+
+		int collidingParticle = collidingParticleIndex[contact_index];
+
+		float4 p1 = particlePos[contact_index];
+
+		float4 CM1 = pos[index];
+		float4 p2 = scenePos[collidingParticle];
+
+		float4 cp, cn; // exact contact point and contact normal
+
+		float4 displacement = p1 - CM1;
+
+		float4 displacementVector = p2 - p1;
+		float displacementDistance = length(displacementVector);
+		float dr = (2 * radius - displacementDistance) / 2;
+		displacementVector = normalize(displacementVector);
+		
+		CM1 -= displacementVector * dr;
+
+		p1 = CM1 + displacement;
+
+		FindExactContactPointKernelAuxil(p1, p2, radius, radius, &cp, &cn);
+
+		float4 velA = vel[index]; 
+
+		float4 angA = ang[index];
+		glm::mat3 IinvA = Iinv[index];
+		float4 dispA = CM1 - cp;
+		float mA = mass[index];
+
+		float impulse = ComputeImpulseMagnitudeKernelAuxil(velA, angA, dispA, IinvA, mA, cn);
+
+		// compute linear and angular impulses using Baraff's method
+		float4 LinearImpulse = cn * impulse;
+		glm::vec3 AngularImpulse = IinvA *
+			(glm::cross(glm::vec3(dispA.x, dispA.y, dispA.z),
+			glm::vec3(LinearImpulse.x, LinearImpulse.y, LinearImpulse.z)));
+
+		// apply impulses to rigid body
+		vel[index] += LinearImpulse / mA;
+		ang[index] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
+
+		// correct rigid body position
+		//pos[index] = CM1;
+	}
+
+}
+
+void HandleAugmentedRealityCollisionWrapper(
+	float4 *particlePos, // particle positions
+	float4 *scenePos, // scene particle positions
+	float4 *rbPos, // rigid body center of mass
+	float4 *rbVel, // rigid body linear velocity
+	float4 *rbAng, // rigid body angular velocity
+	float4 *rbLinMom, // rigid body linear momentum
+	float4 *rbAngMom, // rigid body angular momentum
+	glm::mat3 *Iinv, // current rigid body inverse inertia tensor
+	float *rbMass, // rigid body mass
+	int *rbIndices, // index showing where each particle belongs
+	int *particlesPerRB, // number of particles per rigid body
+	int *collidingParticleIndex, // index of particle of contact
+	float *contactDistance, // penetration distance
+	int numRigidBodies, // total number of scene's rigid bodies
+	int numParticles, // number of particles to test
+	int numThreads, // number of threads to use
+	SimParams params) // simulation parameters
+{
+	// kernel invocation auxiliaries
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+
+	// we have successfully detected collisions between particles and
+	// all scene particles
+	// for each particle we have kept only the most important contact
+	// i.e. the one that presents the largest penetration distance
+	// now we need to sort contacts based on their penetration distance
+	// for each rigid body
+	// for augmented reality simulations we will only use the four most
+	// important contacts for each rigid body
+	// if their penetration distance is positive
+	// we will handle the collision using Baraff's method
+
+	int *particleIndicesGPU;
+	checkCudaErrors(cudaMalloc((void**)&particleIndicesGPU, sizeof(int) * numParticles));
+	CreateIndexKernel << < gridDim, blockDim >> >(particleIndicesGPU, numParticles);
+
+	int *rigid_body_flags_CPU = new int[numParticles]; // assuming all particles belong to a rigid body
+	int total_particles_processed = 0;
+	for (int index = 0; index < numRigidBodies; index++)
+	{
+		for (int particle = 0; particle < particlesPerRB[index]; particle++)
+		{
+			rigid_body_flags_CPU[total_particles_processed++] = index;
+		}
+	}
+	int *rigid_body_flags_GPU;
+	checkCudaErrors(cudaMalloc((void**)&rigid_body_flags_GPU, sizeof(int) * numParticles));
+	checkCudaErrors(cudaMemcpy(rigid_body_flags_GPU, rigid_body_flags_CPU, sizeof(int) * numParticles, cudaMemcpyHostToDevice));
+
+	Cub_Sort_By_Key_Wrapper<int, float>(&particleIndicesGPU, &contactDistance, numParticles);
+
+	Cub_Sort_By_Key_Wrapper<int, float>(&rigid_body_flags_GPU, &contactDistance, numParticles);
+
+	Cub_Sort_By_Key_Wrapper<int, int>(&particleIndicesGPU, &rigid_body_flags_GPU, numParticles);
+
+
+	int *cum_sum_indices_CPU = new int[numRigidBodies];
+	cum_sum_indices_CPU[0] = particlesPerRB[0];
+	for (int index = 1; index < numRigidBodies; index++)
+	{
+		cum_sum_indices_CPU[index] = cum_sum_indices_CPU[index - 1] + particlesPerRB[index];
+	}
+	int *cum_sum_indices_GPU;
+	checkCudaErrors(cudaMalloc((void**)&cum_sum_indices_GPU, sizeof(int) * numRigidBodies));
+	checkCudaErrors(cudaMemcpy(cum_sum_indices_GPU, cum_sum_indices_CPU, sizeof(int) * numRigidBodies, cudaMemcpyHostToDevice));
+
+
+	// we have now found the most important contacts for
+	// all the rigid bodies in the scene
+	// kernel invocation auxiliaries
+	blockDim = dim3(numThreads, 1);
+	gridDim = dim3((numRigidBodies + numThreads - 1) / numThreads, 1);
+	if (gridDim.x < 1)
+		gridDim.x = 1;
+
+	HandleAugmentedRealityCollisionKernelUnmapped << < gridDim, blockDim >> >(
+		params.particleRadius, // Input: particle radius - assuming uniform radius over all virtual particles
+		rbPos, // Input: rigid body position
+		rbVel, // Input: rigid body velocity
+		rbAng, // Input: rigid body angular velocity
+		rbLinMom, // Input: rigid body linear momentum
+		rbAngMom, // Input: rigid body angular momentum
+		Iinv, // Input: rigid body inverse inertia matrix
+		rbMass, //Input: rigid body mass
+		rbIndices, // Input: index showing where each particle belongs
+		particlePos, // Input: particle position
+		scenePos, // Input: scene particle position
 		collidingParticleIndex, // Input: index of particle of contact
 		contactDistance, // Input: contact distance
 		particleIndicesGPU, // Input: sorted array of contacts (by distance)

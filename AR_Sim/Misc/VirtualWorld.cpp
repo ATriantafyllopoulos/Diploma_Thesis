@@ -217,8 +217,8 @@ void VirtualWorld::DemoMode()
 	psystem->setCollideDamping(collideDamping);
 	psystem->setCollideShear(collideShear);
 	psystem->setCollideAttraction(collideAttraction);
-	//psystem->update(timestep);
-	psystem->updateCPU(timestep);
+	psystem->update(timestep);
+	//psystem->updateCPU(timestep);
 
 	viewer->setRendererVBO(psystem->getCurrentReadBuffer(), psystem->getNumParticles());
 	viewer->setNumberOfRangeData(psystem->getNumberOfRangeData());

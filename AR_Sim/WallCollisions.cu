@@ -47,6 +47,7 @@ __global__ void DetectWallCollisionKernel(
 	float radius, // Input: particle radius
 	float4 *pos, // Input: particle position
 	int *rigidBodyIndex, // Input: rigid body index for each particle
+	float4 *rigidBodyVel, // Input: rigid body velocity
 	float wallPos, // Input: wall position
 	float4 n, // Input: wall direction
 	float4 *contactNormal, // Output: contact normal
@@ -62,6 +63,7 @@ __global__ void DetectWallCollisionKernel(
 	if (correspondingRigidBody == -1)
 		return; //if this is an independent virtual particle stop
 
+	float4 vel = rigidBodyVel[correspondingRigidBody];
 	float4 p = pos[index];
 	float4 unit = make_float4(1, 1, 1, 1);
 	float sign = dot(n, unit); // 1 if n is positive and -1 if n negative
@@ -75,7 +77,10 @@ __global__ void DetectWallCollisionKernel(
 	// this allows us to test multiple wall collisions
 	// and pick the one that is the most important
 	// ISSUE: how is contactDistance initialized?
-	if (distance > contactDistance[index])
+	// dot(vel, n) must be positive so that the rigid body is heading
+	// towards the wall
+	// otherwise its velocity will carry it inside the scene's AABB
+	if (distance > contactDistance[index] && dot(vel, n) > 0)
 	{
 		contactDistance[index] = distance;
 		contactNormal[index] = n;
@@ -375,6 +380,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,
@@ -395,6 +401,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,
@@ -415,6 +422,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,
@@ -437,6 +445,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,
@@ -458,6 +467,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,
@@ -479,6 +489,7 @@ void WallCollisionWrapper(
 		params.particleRadius,
 		particlePos,
 		rbIndices,
+		rbVel,
 		wallPos,
 		n,
 		contactNormal,

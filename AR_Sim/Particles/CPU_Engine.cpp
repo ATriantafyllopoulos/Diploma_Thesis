@@ -459,12 +459,13 @@ void ParticleSystem::findExactContactPoint(
 bool ParticleSystem::testParticleCollision(const float4 &p1, const float4 &p2, const float &r1, const float &r2, float4 &CM1)
 {
 	float4 displacementVector = p2 - p1;
-	float displacementDistance = length(displacementVector);
+	float displacementDistance = length(make_float3(displacementVector));
 	if (displacementDistance < r1 + r2)
 	{
 		float dr = (r1 + r2 - displacementDistance) / 2;
 		displacementVector = normalize(displacementVector);
 		CM1 -= displacementVector * dr;
+		CM1.w = 0;
 		return true;
 	}
 	return false;
