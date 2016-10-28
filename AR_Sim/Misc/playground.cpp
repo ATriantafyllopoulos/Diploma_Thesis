@@ -54,10 +54,10 @@ int main(void)
 	//std::cout << "Viewer is set up" << std::endl;
     window.setWorld(&virtualWorld); //set rendering window's virtual world
 	//std::cout << "Everything is set up" << std::endl;
-    window.Run();
-    //virtualWorld.initDemoMode();
+    //window.Run();
+    virtualWorld.initDemoMode();
 	//std::cout << "Initializing demo" << std::endl;
-    //window.Demo();
+    window.Demo();
 	//std::cout << "Quitting demo" << std::endl;
     // cudaDeviceReset must be called before exiting in order for profiling and
     // tracing tools such as Nsight and Visual Profiler to show complete traces.
