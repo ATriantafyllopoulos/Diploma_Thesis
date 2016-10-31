@@ -277,9 +277,9 @@ void CAssimpModel::draw(CShaderProgram *shader)
 	//glBindVertexArray(uiVAO);
 	for (int i = 0; i < (int)iMeshSizes.size(); i++)
 	{
-		//int iMatIndex = iMaterialIndices[i];
-		//tTextures[iMatIndex].BindTexture();
-		glBindTexture(GL_TEXTURE_2D, 0);
+		int iMatIndex = iMaterialIndices[i];
+		tTextures[iMatIndex].BindTexture();
+		//glBindTexture(GL_TEXTURE_2D, 0);
 		glDrawArrays(GL_TRIANGLES, iMeshStartIndices[i], iMeshSizes[i]);
 	}
 	//glBindVertexArray(0);

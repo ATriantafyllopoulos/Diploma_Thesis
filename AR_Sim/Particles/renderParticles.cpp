@@ -197,7 +197,7 @@ void ParticleRenderer::renderDepthImage()
 	//staticShader.setUniform("matrices.modelMatrix", glm::mat4(1.0));
 	//staticShader.setUniform("matrices.normalMatrix", normalMatrix);
 	//staticShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));//*/
-
+	glBindTexture(GL_TEXTURE_2D, rangeTexture);
 	glBindVertexArray(rangeVAO); //avoid multiple bind calls
 	//glActiveTexture(rangeTexture);
 	//glBindTexture(GL_TEXTURE_2D, rangeTexture);

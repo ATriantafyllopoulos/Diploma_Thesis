@@ -56,12 +56,6 @@ bool ParticleSystem::readRangeData()
 	checkCudaErrors(findAABBCub((float4 *)staticPos, cpuMin, cpuMax, NULL, NULL, numberOfRangeData));
 	minPos = make_float3(cpuMin);
 	maxPos = make_float3(cpuMax);
-	//m_params.worldOrigin = minPos;
-    //*m_params.gridSize.x = nextpow2(uint((maxPos.x - minPos.x) / m_params.particleRadius + 0.5));
-	//m_params.gridSize.y = nextpow2(uint((maxPos.y - minPos.y) / m_params.particleRadius + 0.5));
-	//m_params.gridSize.z = nextpow2(uint((maxPos.z - minPos.z) / m_params.particleRadius + 0.5));*/
-	//
-    //std::cout << "RGB-D data loaded successfully." << std::endl;
 	return true;
 }
 

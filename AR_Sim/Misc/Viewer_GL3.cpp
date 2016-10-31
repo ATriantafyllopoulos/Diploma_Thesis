@@ -83,8 +83,8 @@ void Viewer_GL3::init(void)
 	glClearDepth(1.0);
 	
 
-	shVertex.loadShader("Shaders/main_shader.vert", GL_VERTEX_SHADER);
-	shFragment.loadShader("Shaders/main_shader.frag", GL_FRAGMENT_SHADER);
+	shVertex.loadShader("Shaders/objShader.vert", GL_VERTEX_SHADER);
+	shFragment.loadShader("Shaders/objShader.frag", GL_FRAGMENT_SHADER);
 
 	shader.createProgram();
 
@@ -93,7 +93,13 @@ void Viewer_GL3::init(void)
 
 	shader.linkProgram();
 
-	//camera init parameters
+	shader.bind();
+	shader.setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
+	shader.setUniform("gSampler", 0);
+	shader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	shader.unbind();
+
+	// camera init parameters
 	vEye = glm::vec3(0.0f, 0.0f, 0.1f);
 	vView = glm::vec3(0.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -157,8 +163,10 @@ void Viewer_GL3::render(void)
 		for (int i = 0; i < number_of_objects; i++)
 		{
 			modelMatrix[i] = glm::scale(modelMatrix[i], glm::vec3(1.0, 1.0, 1.0));
+			glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelMatrix[i]));
+			shader.setUniform("matrices.normalMatrix", normalMatrix);
 			shader.setUniform("matrices.modelMatrix", modelMatrix[i]);
-			objModels[0].draw(&shader);
+			objModels[0].RenderModel();
 		}
 
 		shader.unbind();

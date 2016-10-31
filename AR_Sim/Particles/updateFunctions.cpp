@@ -104,7 +104,7 @@ void integrateRigidBodyCPU(
 		/*glm::quat quatVelocity(0, locAng.x, locAng.y, locAng.z);
 		glm::quat qdot = 0.5f * quatVelocity * quaternion;
 		cumulativeQuaternion[index] += qdot * deltaTime;*/
-		cumulativeQuaternion[index] = cumulativeQuaternion[index] * quaternion;
+		cumulativeQuaternion[index] = quaternion * cumulativeQuaternion[index];
 		cumulativeQuaternion[index] = normalize(cumulativeQuaternion[index]);
 		rot = mat3_cast(cumulativeQuaternion[index]);
 		glm::mat4 modelMatrix = glm::mat4(1.f);
