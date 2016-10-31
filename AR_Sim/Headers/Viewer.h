@@ -58,7 +58,8 @@ public:
 	float getPixelDepth(int x, int y);
 //	virtual void toggleShowRangeData() = 0;
 	void setViewMatrix(const glm::mat4 &x){ renderer->setViewMatrix(x); }
-
+	void setModelMatrixArray(glm::mat4 *x){ modelMatrix = x; }
+	void setObjectNumber(const int &x){ number_of_objects = x; }
 protected:
 
 	int viewMode;
@@ -68,6 +69,8 @@ protected:
 	ParticleRenderer *renderer;
 	glm::vec4 viewport;
 
+	int number_of_objects;
+	glm::mat4 *modelMatrix; // pointer to model matrix array
 public:
 	void setNumberOfRangeData(const int &x) { renderer->setNumberOfRangeData(x); }
 	void setRangeSampler(const GLuint &x) { renderer->setRangeSampler(x); }

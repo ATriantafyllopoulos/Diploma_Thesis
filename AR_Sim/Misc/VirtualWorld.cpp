@@ -89,7 +89,8 @@ void VirtualWorld::update()
 		newViewMatrix[3][2] = -newViewMatrix[3][2];
 		viewer->setViewMatrix(newViewMatrix);
 	}
-
+	viewer->setObjectNumber(psystem->getNumberOfObjects());
+	viewer->setModelMatrixArray(psystem->getModelMatrixArray());
 }
 
 void VirtualWorld::resize(int w, int h)
@@ -173,7 +174,7 @@ void VirtualWorld::initDemoMode()
 	psystem->toggleARcollisions(); //disable AR collisions
 	//camera is static
 //	viewMode = M_VIEW;viewer->viewModeCommand(M_VIEW);
-	viewMode = M_AR;viewer->viewModeCommand(M_AR);
+	viewMode = M_VIEW; viewer->viewModeCommand(M_VIEW);
 	glm::vec3 vEye(0.0f, 0.0f, 3.1f);
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
@@ -190,7 +191,8 @@ void VirtualWorld::initDemoMode()
 						(float)std::rand() / (float)RAND_MAX / 10.f);
 
 				//glm::vec3 velocity(0, 0, 0);
-				psystem->addBunny(worldSpaceCoordinates, velocity);
+				psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
+				//psystem->addBunny(worldSpaceCoordinates, velocity);
 			}
 //	for (float x = -1; x < 1; x += 0.4)
 //		for (float y = -0.8; y < 0.8; y += 0.4)
@@ -219,6 +221,9 @@ void VirtualWorld::DemoMode()
 	psystem->setCollideAttraction(collideAttraction);
 	psystem->update(timestep);
 	//psystem->updateCPU(timestep);
+
+	viewer->setObjectNumber(psystem->getNumberOfObjects());
+	viewer->setModelMatrixArray(psystem->getModelMatrixArray());
 
 	viewer->setRendererVBO(psystem->getCurrentReadBuffer(), psystem->getNumParticles());
 	viewer->setNumberOfRangeData(psystem->getNumberOfRangeData());

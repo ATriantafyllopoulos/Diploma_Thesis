@@ -2,7 +2,10 @@
 #include "ParticleAuxiliaryFunctions.h"
 #include "BVHcreation.h"
 
-void integrateRigidBodyCPU(float4 *CMs, //rigid body center of mass
+void integrateRigidBodyCPU(
+	glm::quat *cumulativeQuaternion,
+	glm::mat4 *modelMatrixArray, // model matrix array used for rendering
+	float4 *CMs, //rigid body center of mass
 	float4 *vel, //velocity of rigid body
 	float4 *force, //force applied to rigid body due to previous collisions
 	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
@@ -62,7 +65,10 @@ void ParticleSystem::updateGrid(float deltaTime)
 	//		m_params, //simulation parameters
 	//		numThreads);
 
-	integrateRigidBodyCPU((float4 *)rbPositions, //rigid body center of mass
+	integrateRigidBodyCPU(
+		cumulativeQuaternion,
+		modelMatrix, // model matrix array used for rendering
+		(float4 *)rbPositions, //rigid body center of mass
 		(float4 *)rbVelocities, //velocity of rigid body
 		(float4 *)rbForces, //total force applied to rigid body due to previous collisions
 		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body

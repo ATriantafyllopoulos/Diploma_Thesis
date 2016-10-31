@@ -351,11 +351,11 @@ public:
 	void initRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel, int r, float spacing);
 	void addRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel, float r, float spacing);
 
-	void addBunny(glm::vec3 pos, glm::vec3 vel);
-	void initBunny(glm::vec3 pos, glm::vec3 vel);
+	void addBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
+	void initBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
 
-	void addTeapot(glm::vec3 pos, glm::vec3 vel);
-	void initTeapot(glm::vec3 pos, glm::vec3 vel);
+	void addTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
+	void initTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
 
 private:
 	void addRigidBody(int previousParticleCount,
@@ -584,6 +584,12 @@ private:
 public:
 	void setSceneAABB(const float3 &minP, const float3 &maxP) { minPos = minP; maxPos = maxP; }
 	void addMolecule(glm::vec3 pos, glm::vec3 vel);
+
+	glm::mat4 *getModelMatrixArray(){ return modelMatrix; }
+	const int &getNumberOfObjects(){ return numRigidBodies; }
+private:
+	glm::mat4 *modelMatrix; // pointer to model matrix array
+	glm::quat *cumulativeQuaternion;
 };
 
 #endif // __PARTICLESYSTEM_H__

@@ -40,5 +40,7 @@ protected:
 
 	glm::vec3 position; //rigid body's position
 	glm::vec3 velocity; //rigid body's velocity
+
+	glm::mat4 rotationMatrix;
 }; 
 

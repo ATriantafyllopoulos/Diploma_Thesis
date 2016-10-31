@@ -1,4 +1,5 @@
-//#pragma once
+#ifndef VIRTUALOBJECT_H
+#define VIRTUALOBJECT_H
 #include "Renderable_GL3.h"
 #include "RigidBody.h"
 
@@ -6,6 +7,7 @@
 Abstract class uniting the two base classes into one entity.
 To be inherited by shape specific classes and to be used by a virtual world object.
 */
+
 class VirtualObject :
 	public Renderable_GL3, public RigidBody
 {
@@ -19,3 +21,4 @@ private:
 	//virtual void createPhysicsContext(void) = 0;
 };
 
+#endif

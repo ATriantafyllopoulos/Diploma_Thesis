@@ -40,7 +40,7 @@ public:
 	int iTexture;
 };
 
-class CAssimpModel : public VirtualObject
+class CAssimpModel
 {
 public:
 	bool LoadModelFromFile(char* sFilePath);
@@ -48,7 +48,8 @@ public:
     void update(void){}
 	static void FinalizeVBO();
 	static void BindModelsVAO();
-	void draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight);
+	//void draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight);
+	void draw(CShaderProgram *shader);
 	void RenderModel();
 	CAssimpModel();
 private:

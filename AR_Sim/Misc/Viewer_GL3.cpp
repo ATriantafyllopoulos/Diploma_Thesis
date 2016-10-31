@@ -10,6 +10,7 @@ Viewer_GL3::Viewer_GL3(GLFWwindow* inWindow)
 	
     viewMode = M_VIEW;
 	callBackInstance = this;
+	modelMatrix = NULL;
 //	showRangeData = true;
 }
 
@@ -118,6 +119,10 @@ void Viewer_GL3::init(void)
 	if (renderer)
 		renderer->setWindowSize(windowWidth, windowHeight);
 
+	objModels[0].LoadModelFromFile("Data/OBjmodels/bunny.obj");
+	number_of_objects = 0;
+	CAssimpModel::FinalizeVBO();
+
 }
 
 /**
@@ -144,8 +149,20 @@ void Viewer_GL3::render(void)
 		renderer->setViewMatrix(viewMatrix);
 	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 
+	if (number_of_objects)
+	{
+		CAssimpModel::BindModelsVAO();
+		shader.bind();
+		shader.setUniform("matrices.viewMatrix", viewMatrix);
+		for (int i = 0; i < number_of_objects; i++)
+		{
+			modelMatrix[i] = glm::scale(modelMatrix[i], glm::vec3(1.0, 1.0, 1.0));
+			shader.setUniform("matrices.modelMatrix", modelMatrix[i]);
+			objModels[0].draw(&shader);
+		}
 
-
+		shader.unbind();
+	}
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

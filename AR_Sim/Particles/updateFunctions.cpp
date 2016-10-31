@@ -2,7 +2,10 @@
 #include "ParticleAuxiliaryFunctions.h"
 #include "BVHcreation.h"
 
-void integrateRigidBodyCPU(float4 *CMs, //rigid body center of mass
+void integrateRigidBodyCPU(
+	glm::quat *cumulativeQuaternion,
+	glm::mat4 *modelMatrixArray, // model matrix array used for rendering
+	float4 *CMs, //rigid body center of mass
 	float4 *vel, //velocity of rigid body
 	float4 *force, //force applied to rigid body due to previous collisions
 	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
@@ -93,17 +96,34 @@ void integrateRigidBodyCPU(float4 *CMs, //rigid body center of mass
 			quaternion.y = 0.f;
 			quaternion.z = 0.f;
 		}
-
 		quaternion = normalize(quaternion);
 		glm::mat3 rot = mat3_cast(quaternion);
 		currentInertia = rot * inertia * transpose(rot);
+
+
+		/*glm::quat quatVelocity(0, locAng.x, locAng.y, locAng.z);
+		glm::quat qdot = 0.5f * quatVelocity * quaternion;
+		cumulativeQuaternion[index] += qdot * deltaTime;*/
+		cumulativeQuaternion[index] = cumulativeQuaternion[index] * quaternion;
+		cumulativeQuaternion[index] = normalize(cumulativeQuaternion[index]);
+		rot = mat3_cast(cumulativeQuaternion[index]);
+		glm::mat4 modelMatrix = glm::mat4(1.f);
+		for (int row = 0; row < 3; row++)
+			for (int col = 0; col < 3; col++)
+				modelMatrix[row][col] = rot[row][col];
+		
+		modelMatrix[3][0] = locPos.x;
+		modelMatrix[3][1] = locPos.y;
+		modelMatrix[3][2] = locPos.z;
+
+		modelMatrixArray[index] = modelMatrix;
 
 		CMs_CPU[index] = locPos;
 		vel_CPU[index] = locVel;
 		rbCurrentInertia_CPU[index] = currentInertia;
 		rbQuaternion_CPU[index] = quaternion;
 		rbAngularVelocity_CPU[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0);
-		rbTorque_CPU[index] = make_float4(0, 0, 0, 0); //reset torque to zero
+		rbTorque_CPU[index] = make_float4(0, 0, 0, 0); // reset torque to zero
 
 	}
 
@@ -1271,7 +1291,10 @@ void ParticleSystem::update(float deltaTime)
 
 void ParticleSystem::Integrate_RB_System(float deltaTime)
 {
-	integrateRigidBodyCPU((float4 *)rbPositions, //rigid body center of mass
+	integrateRigidBodyCPU(
+		cumulativeQuaternion,
+		modelMatrix, // model matrix array used for rendering
+		(float4 *)rbPositions, //rigid body center of mass
 		(float4 *)rbVelocities, //velocity of rigid body
 		(float4 *)rbForces, //total force applied to rigid body due to previous collisions
 		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body

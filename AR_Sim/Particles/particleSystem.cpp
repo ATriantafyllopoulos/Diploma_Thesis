@@ -102,6 +102,9 @@ numThreads(128)
 	m_hCellStart = NULL;
 	m_hCellEnd = NULL;
 
+	modelMatrix = NULL;
+	cumulativeQuaternion = NULL;
+
 	minPos.x = 10000.f;
 	minPos.y = 10000.f;
 	minPos.z = 10000.f;

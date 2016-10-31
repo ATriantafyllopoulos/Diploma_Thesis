@@ -25,6 +25,8 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/trigonometric.hpp>
 
+#include "objModel.h"
+
 #define PI 3.14159265359
 /**
 Viewer implementation based on OpenGL 3.3 version using glew
@@ -52,6 +54,8 @@ public:
 	void toggleShowRangeData(void){showRangeData =  !showRangeData;};
 	glm::mat4 getProjectionMatrix(){ return projectionMatrix; }
 	glm::mat4 getViewMatrix(){ return viewMatrix; }
+	
+
 //	void toggleShowRangeData(){ showRangeData = !showRangeData; }
 private:
 //	bool showRangeData;
@@ -67,7 +71,7 @@ private:
     GLFWwindow *window;
 	glm::mat4 projectionMatrix; // Store the projection matrix  
 	glm::mat4 viewMatrix; // Store the view matrix  
-	glm::mat4 modelMatrix; // Store the model matrix  
+	//glm::mat4 modelMatrix; // Store the model matrix  
 
 	//std::vector<std::shared_ptr<Renderable_GL3>> models; // objects to be drawn on screen
 
@@ -88,6 +92,9 @@ private:
 	int numOfParticles; //total number of particles
     CShader shVertex, shFragment;
 
+	// obj rendering related variables
+	CAssimpModel objModels[1];
+	
 };
 
 #endif

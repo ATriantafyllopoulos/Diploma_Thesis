@@ -242,6 +242,12 @@ __global__ void computeGlobalAttributes(float4 *CMs, //rigid body's center of ma
 	//particle's velocity is the same as its associated rigid body's
 	//for the moment we ignore angular velocity
 	globalVel[index] = rigidVel[correspondingRigidBody] + make_float4(cross(make_float3(rbAngularVelocity[correspondingRigidBody]), make_float3(tempPos)), 0);
+
+	// reset rigid body quaternion
+	// this quaternion corresponds to the last rotation only
+	// since this function is called multiple times during
+	// each update step the rotation must be applied only ones
+	rbQuaternion[correspondingRigidBody] = glm::quat(1, 0, 0, 0);
 }
 
 void computeGlobalAttributesWrapper(float4 *CMs, //rigid body's center of mass

@@ -67,7 +67,8 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 	const int iVertexTotalSize = sizeof(aiVector3D) * 2 + sizeof(aiVector2D);
 
 	int iTotalVertices = 0;
-
+	aiVector3D cm(0, 0, 0);
+	int number_of_vertices = 0;
 	FOR(i, scene->mNumMeshes)
 	{
 		aiMesh* mesh = scene->mMeshes[i];
@@ -81,6 +82,26 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 			FOR(k, 3)
 			{
 				aiVector3D pos = mesh->mVertices[face.mIndices[k]];
+				cm += pos;
+				number_of_vertices++;
+			}
+		}
+	}
+	cm /= (float)number_of_vertices;
+	std::cout << "ASSIMP bunny center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
+	FOR(i, scene->mNumMeshes)
+	{
+		aiMesh* mesh = scene->mMeshes[i];
+		int iMeshFaces = mesh->mNumFaces;
+		iMaterialIndices.push_back(mesh->mMaterialIndex);
+		int iSizeBefore = vboModelData.GetCurrentSize();
+		iMeshStartIndices.push_back(iSizeBefore / iVertexTotalSize);
+		FOR(j, iMeshFaces)
+		{
+			const aiFace& face = mesh->mFaces[j];
+			FOR(k, 3)
+			{
+				aiVector3D pos = mesh->mVertices[face.mIndices[k]] - cm;
 				aiVector3D uv = mesh->mTextureCoords[0][face.mIndices[k]];
 				aiVector3D normal = mesh->HasNormals() ? mesh->mNormals[face.mIndices[k]] : aiVector3D(1.0f, 1.0f, 1.0f);
 				vboModelData.AddData(&pos, sizeof(aiVector3D));
@@ -199,39 +220,68 @@ void CAssimpModel::RenderModel()
 	}
 }
 
-void CAssimpModel::draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight)
+//void CAssimpModel::draw(CShaderProgram *shader, const glm::mat4 &projectionMatrix, const glm::mat4 &viewMatrix, const int &windowWidth, const int &windowHeight)
+//{
+//	if (!bLoaded)
+//		return;
+//
+//	//transformations
+//	//TO BE ADDED: rotation
+//	
+//	modelMatrix = glm::translate(glm::mat4(1.0), position); //translate
+//	modelMatrix = glm::scale(modelMatrix, scale); //scale
+//	normalMatrix = glm::transpose(glm::inverse(modelMatrix)); //normals
+//	
+//
+//	shader->bind();
+//	shader->setUniform("matrices.projMatrix", projectionMatrix);
+//	shader->setUniform("matrices.viewMatrix", viewMatrix);
+//
+//	shader->setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
+//	shader->setUniform("sunLight.vDirection", glm::vec3(sqrt(2.f) / 2.f, -sqrt(2.f) / 2.f, 0.f));
+//	shader->setUniform("sunLight.fAmbient", 0.5f);
+//
+//	shader->setUniform("gSampler", 0);
+//	shader->setUniform("matrices.modelMatrix", modelMatrix);
+//	shader->setUniform("matrices.normalMatrix", normalMatrix);
+//	shader->setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+//
+//	//glBindVertexArray(uiVAO);
+//	for (int i = 0; i < (int)iMeshSizes.size(); i++)
+//	{
+//		//int iMatIndex = iMaterialIndices[i];
+//		//tTextures[iMatIndex].BindTexture();
+//		glBindTexture(GL_TEXTURE_2D, 0);
+//		glDrawArrays(GL_TRIANGLES, iMeshStartIndices[i], iMeshSizes[i]);
+//	}
+//	//glBindVertexArray(0);
+//	shader->unbind();
+//}
+
+void CAssimpModel::draw(CShaderProgram *shader)
 {
 	if (!bLoaded)
 		return;
 
 	//transformations
 	//TO BE ADDED: rotation
-	
-	modelMatrix = glm::translate(glm::mat4(1.0), position); //translate
-	modelMatrix = glm::scale(modelMatrix, scale); //scale
-	normalMatrix = glm::transpose(glm::inverse(modelMatrix)); //normals
-	
 
-	shader->bind();
-	shader->setUniform("matrices.projMatrix", projectionMatrix);
-	shader->setUniform("matrices.viewMatrix", viewMatrix);
+	//modelMatrix = glm::translate(glm::mat4(1.0), position); // translate
+	//modelMatrix = modelMatrix * rotationMatrix; // rotate
+	//modelMatrix = glm::scale(modelMatrix, scale); // scale
+	//normalMatrix = glm::transpose(glm::inverse(modelMatrix)); // pseudo normals
 
-	shader->setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
-	shader->setUniform("sunLight.vDirection", glm::vec3(sqrt(2.f) / 2.f, -sqrt(2.f) / 2.f, 0.f));
-	shader->setUniform("sunLight.fAmbient", 0.5f);
 
-	shader->setUniform("gSampler", 0);
-	shader->setUniform("matrices.modelMatrix", modelMatrix);
-	shader->setUniform("matrices.normalMatrix", normalMatrix);
-	shader->setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-
+	//
+	//shader->setUniform("matrices.modelMatrix", modelMatrix);
 	//glBindVertexArray(uiVAO);
 	for (int i = 0; i < (int)iMeshSizes.size(); i++)
 	{
-		int iMatIndex = iMaterialIndices[i];
-		tTextures[iMatIndex].BindTexture();
+		//int iMatIndex = iMaterialIndices[i];
+		//tTextures[iMatIndex].BindTexture();
+		glBindTexture(GL_TEXTURE_2D, 0);
 		glDrawArrays(GL_TRIANGLES, iMeshStartIndices[i], iMeshSizes[i]);
 	}
 	//glBindVertexArray(0);
-	shader->unbind();
+
 }

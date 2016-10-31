@@ -13,6 +13,7 @@ RigidBody::RigidBody(const double &m, const glm::vec3 &p, const glm::vec3 &v, co
 	position = p;
 	velocity = v;
 	inertia = i;
+	rotationMatrix = glm::mat4(1.f); // initialize rotation with unit matrix
 }
 
 // get functions
