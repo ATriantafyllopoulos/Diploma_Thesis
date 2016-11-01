@@ -879,8 +879,6 @@ __global__ void FindRigidBodyCollisionsBVHKernel(
 		color[queryIndex] = make_float4(1, 1, 1, 0);
 }
 
-	
-
 void FindRigidBodyCollisionsBVHWrapper(
 		float4 *color, // Input: particle's color, only used for testing purposes
 		int *rigidBodyIndex, // Input: index of the rigid body each particle belongs to
@@ -921,4 +919,144 @@ void FindRigidBodyCollisionsBVHWrapper(
 		collidingRigidBodyIndex); // Output: rigid body of most important contact
 
 
+}
+
+__global__ void FindAugmentedRealityCollisionsBVHKernel(
+	float4 *color, // Input: particle's color, only used for testing purposes
+	float4 *position, // Input: virutal particle positions
+	bool *isLeaf, // Input: array containing a flag to indicate whether node is leaf
+	int *leftIndices, // Input:  array containing indices of the left children of each node
+	int *rightIndices, // Input: array containing indices of the right children of each node
+	int *minRange, // Input: array containing minimum (sorted) leaf covered by each node
+	int *maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+	float4 *CMs, // Input: array containing centers of mass for each leaf
+	AABB *bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+	int *sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+	float *radii, // Input: radii of all nodes - currently the same for all particles
+	int numParticles, // Input: number of virtual particles
+	int numRangeData, // Input: number of augmented reality particles
+	SimParams params, // Input: simulation parameters
+	float *contactDistance, // Output: distance between particles presenting largest penetration
+	int *collidingParticleIndex) // Output: particle of most important contact
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x; //handling particle #(index)
+	if (index >= numParticles)
+		return;
+
+	// initialize stack
+	int stack[64]; // using stack of indices
+	int* stackPtr = stack;
+	*stackPtr++ = -1; // push -1 at beginning so that thread will return when stack is empty
+	int SoAindex = numRangeData; // start at root
+	// Traverse nodes starting from the root.
+	// load leaf positions once - better to use this array as successive threads will access successive memory positions
+
+	// load sorted variables
+	float4 queryPos = position[index];
+
+	// load unsorted variables
+	float queryRad = radii[index]; // load particle radius once - currently all particles have the same radius
+	float maxDistance = contactDistance[index];
+
+	do
+	{
+		//Check each child node for overlap
+		int leftChildIndex = leftIndices[SoAindex]; //load left child index once
+		int rightChildIndex = rightIndices[SoAindex]; //load right child index once
+
+		bool overlapL = checkOverlap(queryPos, bounds[leftChildIndex], queryRad); //check overlap with left child
+		bool overlapR = checkOverlap(queryPos, bounds[rightChildIndex], queryRad); //check overlap with right child
+
+		bool isLeftLeaf = isLeaf[leftChildIndex]; //load left child's leaf flag once
+		bool isRightLeaf = isLeaf[rightChildIndex]; //load right child's leaf flag once
+
+		// broad phase collision detection test
+		if (overlapL && isLeftLeaf)
+		{
+			int leftSortedIndex = sortedIndices[leftChildIndex];
+			float dist = length(CMs[leftChildIndex] - queryPos); //distance between two centers
+			float collisionThreshold = queryRad + radii[leftSortedIndex]; //sum of radii
+			if (collisionThreshold - dist > maxDistance)
+			{
+				maxDistance = collisionThreshold - dist;
+				// narrow phase collision detection test
+				color[index] = make_float4(0, 1, 0, 0);
+				// report collision
+				contactDistance[index] = maxDistance;
+				collidingParticleIndex[index] = leftSortedIndex;
+			}
+		}
+		// broad phase collision detection test
+		if (overlapR && isRightLeaf)
+		{
+
+			int rightSortedIndex = sortedIndices[rightChildIndex];
+
+			float dist = length(CMs[rightChildIndex] - queryPos); // distance between two centers
+			float collisionThreshold = queryRad + radii[rightSortedIndex]; // sum of radii
+			if (collisionThreshold - dist > maxDistance)
+			{
+				maxDistance = collisionThreshold - dist;
+				// narrow phase collision detection test
+				color[index] = make_float4(0, 1, 0, 0);
+				// report collision
+				contactDistance[index] = maxDistance;
+				collidingParticleIndex[index] = rightSortedIndex;
+			}
+		}
+
+		// Query overlaps an internal node => traverse
+		bool traverseL = (overlapL && !isLeftLeaf);
+		bool traverseR = (overlapR && !isRightLeaf);
+
+		if (!traverseL && !traverseR)
+			SoAindex = *--stackPtr; // pop
+		else
+		{
+			SoAindex = (traverseL) ? leftChildIndex : rightChildIndex;
+			if (traverseL && traverseR)
+				*stackPtr++ = rightChildIndex; // push
+		}
+	} while (SoAindex != -1);
+
+}
+
+void FindAugmentedRealityCollisionsBVHWrapper(
+	float4 *color, // Input: particle's color, only used for testing purposes
+	float4 *position, // Input: virutal particle positions
+	bool *isLeaf, // Input: array containing a flag to indicate whether node is leaf
+	int *leftIndices, // Input:  array containing indices of the left children of each node
+	int *rightIndices, // Input: array containing indices of the right children of each node
+	int *minRange, // Input: array containing minimum (sorted) leaf covered by each node
+	int *maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+	float4 *CMs, // Input: array containing centers of mass for each leaf
+	AABB *bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+	int *sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+	float *radii, // Input: radii of all nodes - currently the same for all particles
+	int numThreads, // Input: number of threads to use
+	int numParticles, // Input: number of virtual particles
+	int numRangeData, // Input: number of augmented reality particles
+	SimParams params, // Input: simulation parameters
+	float *contactDistance, // Output: distance between particles presenting largest penetration
+	int *collidingParticleIndex)// Output: particle of most important contact
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+	FindAugmentedRealityCollisionsBVHKernel << < gridDim, blockDim >> >(
+		color, // Input: particle's color, only used for testing purposes
+		position, // Input: virutal particle positions
+		isLeaf, // Input: array containing a flag to indicate whether node is leaf
+		leftIndices, // Input:  array containing indices of the left children of each node
+		rightIndices, // Input: array containing indices of the right children of each node
+		minRange, // Input: array containing minimum (sorted) leaf covered by each node
+		maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+		CMs, // Input: array containing centers of mass for each leaf
+		bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+		sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+		radii, // Input: radii of all nodes - currently the same for all particles
+		numParticles, // Input: number of virtual particles
+		numRangeData, // Input: number of augmented reality particles
+		params, // Input: simulation parameters
+		contactDistance, // Output: distance between particles presenting largest penetration
+		collidingParticleIndex); // Output: particle of most important contact
 }

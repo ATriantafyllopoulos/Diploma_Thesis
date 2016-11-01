@@ -154,7 +154,7 @@ numThreads(128)
 
 	
 	readRangeData();
-    collisionMethod = M_UNIFORM_GRID;
+    collisionMethod = M_BVH;
 	if (numParticles)
 	{
 		_initialize(numParticles);
