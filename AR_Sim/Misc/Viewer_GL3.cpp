@@ -1,8 +1,14 @@
 #include "Viewer_GL3.h"
 
 static Viewer_GL3 *callBackInstance;
+
+Viewer_GL3 *Viewer_GL3::instance = NULL;
+
+
+
 Viewer_GL3::Viewer_GL3(GLFWwindow* inWindow)
 {
+	instance = this;
     window = inWindow;
 	renderer = NULL;
     if (create())
@@ -12,6 +18,13 @@ Viewer_GL3::Viewer_GL3(GLFWwindow* inWindow)
 	callBackInstance = this;
 	modelMatrix = NULL;
 //	showRangeData = true;
+}
+
+float Viewer_GL3::getPixelDepth(int x, int y)
+{
+	float depth;
+	glReadPixels(x, y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	return depth;
 }
 
 /*-----------------------------------------------
@@ -162,7 +175,7 @@ void Viewer_GL3::render(void)
 		shader.setUniform("matrices.viewMatrix", viewMatrix);
 		for (int i = 0; i < number_of_objects; i++)
 		{
-			modelMatrix[i] = glm::scale(modelMatrix[i], glm::vec3(1.0, 1.0, 1.0));
+			modelMatrix[i] = glm::scale(modelMatrix[i], glm::vec3(1.5, 1.5, 1.5));
 			glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelMatrix[i]));
 			shader.setUniform("matrices.normalMatrix", normalMatrix);
 			shader.setUniform("matrices.modelMatrix", modelMatrix[i]);

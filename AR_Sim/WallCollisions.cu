@@ -65,7 +65,7 @@ __global__ void DetectWallCollisionKernel(
 
 	float4 vel = rigidBodyVel[correspondingRigidBody];
 	float4 p = pos[index];
-	float4 unit = make_float4(1, 1, 1, 1);
+	float4 unit = make_float4(1, 1, 1, 0);
 	float sign = dot(n, unit); // 1 if n is positive and -1 if n negative
 	float4 normN = n * sign;
 	// ISSUE: signs do not work for all walls
@@ -244,6 +244,7 @@ __global__ void HandleWallCollisionKernelUnmapped(
 
 	// find new particle position
 	float4 newP = newCM + oldDisp;
+	newP.w = 1.f;
 	float4 cn, cp;
 	// find exact collision point
 	FindExactContactPointKernel(newP, newP + n * radius, radius, 0, &cp, &cn);

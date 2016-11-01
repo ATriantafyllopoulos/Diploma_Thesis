@@ -31,7 +31,7 @@ Adds new object to object list. Also adds it to viewer's and engine's list.
 //}
 
 // get functions
-Viewer * VirtualWorld::getViewer(void)
+Viewer_GL3 * VirtualWorld::getViewer(void)
 {
 	return viewer;
 }
@@ -42,7 +42,7 @@ Viewer * VirtualWorld::getViewer(void)
 //}
 
 // set functions
-void VirtualWorld::setViewer(Viewer *v)
+void VirtualWorld::setViewer(Viewer_GL3 *v)
 {
 	viewer = v;
 }
@@ -101,7 +101,7 @@ void VirtualWorld::resize(int w, int h)
 void VirtualWorld::setMode(const int &mode)
 {
 	viewMode = mode;
-	viewer->viewModeCommand(mode);
+	viewer->setViewModeCommand(mode);
 }
 
 void VirtualWorld::initializeParticleSystem()
@@ -174,7 +174,7 @@ void VirtualWorld::initDemoMode()
 	psystem->toggleARcollisions(); //disable AR collisions
 	//camera is static
 //	viewMode = M_VIEW;viewer->viewModeCommand(M_VIEW);
-	viewMode = M_VIEW; viewer->viewModeCommand(M_VIEW);
+	viewMode = M_VIEW; viewer->setViewModeCommand(M_VIEW);
 	glm::vec3 vEye(0.0f, 0.0f, 3.1f);
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
@@ -191,8 +191,8 @@ void VirtualWorld::initDemoMode()
 						(float)std::rand() / (float)RAND_MAX / 10.f);
 
 				//glm::vec3 velocity(0, 0, 0);
-				psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				//psystem->addBunny(worldSpaceCoordinates, velocity);
+				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
+				psystem->addBunny(worldSpaceCoordinates, velocity);
 			}
 //	for (float x = -1; x < 1; x += 0.4)
 //		for (float y = -0.8; y < 0.8; y += 0.4)

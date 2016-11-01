@@ -245,7 +245,7 @@ void ParticleSystem::addRigidBody(
 void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 {
 	std::string line;
-	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_1_0.txt");
+	std::ifstream myfile ("Data/OBJparticles/bunny/bunny_1_5.txt");
 	if (myfile.is_open())
 	{
 		bool initializedNow = false;
@@ -312,7 +312,7 @@ void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 			m_hPos[4 * i] = x;
 			m_hPos[4 * i + 1] = y;
 			m_hPos[4 * i + 2] = z;
-			m_hPos[4 * i + 3] = 1.f;
+			m_hPos[4 * i + 3] = 0.f;
 
 			m_hVel[4 * i] = 0.f;
 			m_hVel[4 * i + 1] = 0.f;
@@ -334,7 +334,7 @@ void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 			m_hPos[4 * i] -= cm.x;
 			m_hPos[4 * i + 1] -= cm.y;
 			m_hPos[4 * i + 2] -= cm.z;
-			m_hPos[4 * i + 3] = 1.f;
+			m_hPos[4 * i + 3] = 0.f;
 
 			float x = m_hPos[4 * i];
 			float y = m_hPos[4 * i + 1];
@@ -437,7 +437,7 @@ void ParticleSystem::initBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 
 		float *newRigidBodyCM;
 		checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
-		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0);
+		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
 		checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
 
 		float *newRigidBodyVelocity;
@@ -589,7 +589,7 @@ void ParticleSystem::addBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 
 	float *newRigidBodyCM;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
-	float4 newCM = make_float4(pos.x, pos.y, pos.z, 0);
+	float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
 	checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
 
 	float *newRigidBodyVelocity;
@@ -1569,7 +1569,7 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 
 		float *newRigidBodyCM;
 		checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
-		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0);
+		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
 		checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
 
 		float *newRigidBodyVelocity;
@@ -1860,7 +1860,7 @@ void ParticleSystem::addTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang)
 
 	float *newRigidBodyCM;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
-	float4 newCM = make_float4(pos.x, pos.y, pos.z, 0);
+	float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
 	checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
 
 	float *newRigidBodyVelocity;

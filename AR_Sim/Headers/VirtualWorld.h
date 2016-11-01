@@ -1,6 +1,6 @@
 //#pragma once
 
-#include "Viewer.h"
+#include "Viewer_GL3.h"
 #include "VirtualObject.h"
 #include "PhysicsEngine.h"
 #include <vector>
@@ -18,11 +18,11 @@ public:
 	~VirtualWorld();
 
 	// get functions
-	Viewer *getViewer(void);
+	Viewer_GL3 *getViewer(void);
 	//PhysicsEngine *getEngine(void);
 
 	// set functions
-	void setViewer(Viewer *v);
+	void setViewer(Viewer_GL3 *v);
 
     //void addVirtualObject(std::shared_ptr<VirtualObject> obj);
 	void render(void);
@@ -66,7 +66,7 @@ private:
 	float collideShear;
 	float collideAttraction;
 	int viewMode;
-	Viewer *viewer;
+	Viewer_GL3 *viewer;
 	//PhysicsEngine *engine;
     //std::vector<std::shared_ptr<VirtualObject>> virtualObjects;
 

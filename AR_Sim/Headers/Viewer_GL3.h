@@ -13,14 +13,25 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #endif
-#include "Viewer.h"
+#include "Renderable.h"
+// OpenGL and GLEW Header Files and Libraries
+
+#include "Platform.h"
+#include <GL/glew.h>
+//#pragma comment(lib, "glew32.lib")
+//#pragma comment(lib, "opengl32.lib")
+#include <memory>
+#include <vector>
+#include "../Particles/renderParticles.h"
+#include "Menu.h"
+ 
 // Include input and output operations
 #include <glfw3.h>
 #include <stdio.h>
-#include <glm/glm.hpp>
 #include <string>
 #include <iostream>
-#include <glm/glm.hpp>   
+
+#include <glm/glm.hpp>  
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/trigonometric.hpp>
@@ -36,64 +47,89 @@ Currently dependent on .NET
 Update 10.4.2016: adding camera control functionality
 */
 
-class Viewer_GL3 : public Viewer
+class Viewer_GL3
 {
 
 public:
 
+	static Viewer_GL3 *instance;
+
     Viewer_GL3(GLFWwindow *inWindow);
 	~Viewer_GL3();
 	
-	void render(void); // render scene
 	void addToDraw(Renderable *r); // add object to draw queue
 	void resize(GLint w, GLint h);
-	//camera functions
+	void render(void); // render scene
+
+	void addParticleRenderer(ParticleRenderer *x)
+	{
+		renderer = x;
+		renderer->setWindowSize(windowWidth, windowHeight);
+	}
+	
+	glm::vec4 getViewport(void){ return viewport; }
+	float getPixelDepth(int x, int y);
+	glm::mat4 getProjectionMatrix(){ return projectionMatrix; }
+	glm::mat4 getViewMatrix(){ return viewMatrix; }
+
+	void toggleShowRangeData(void){ showRangeData = !showRangeData; };
+	// setters
+	void setRendererVBO(unsigned int id, int numberOfParticles){ renderer->setVertexBuffer(id, numberOfParticles); }
+	void setViewMatrix(const glm::mat4 &x){ renderer->setViewMatrix(x); }
+	void setModelMatrixArray(glm::mat4 *x){ modelMatrix = x; }
+	void setObjectNumber(const int &x){ number_of_objects = x; }
+	void setNumberOfRangeData(const int &x) { renderer->setNumberOfRangeData(x); }
+	void setRangeSampler(const GLuint &x) { renderer->setRangeSampler(x); }
+	void setRangeVAO(const GLuint &x) { renderer->setRangeVAO(x); }
+	void setRangeTexture(const GLuint &x) { renderer->setRangeTexture(x); }
+	void setViewModeCommand(const int &mode){ viewMode = mode; }
+
+private:
+	// camera controls
 	void rotateWithMouse();
 	void cameraUpdate();
 	float getAngleX(), getAngleY();// Functions that get viewing angles
-	void toggleShowRangeData(void){showRangeData =  !showRangeData;};
-	glm::mat4 getProjectionMatrix(){ return projectionMatrix; }
-	glm::mat4 getViewMatrix(){ return viewMatrix; }
-	
 
-//	void toggleShowRangeData(){ showRangeData = !showRangeData; }
-private:
-//	bool showRangeData;
+	// camera variables
+	glm::vec3 vEye, vView, vUp;
+	float fSpeed;
+	float fSensitivity; // How many degrees to rotate per pixel moved by mouse (nice value is 0.10)
+
+	// timer
 	void ResetTimer();
 	void UpdateTimer();
 	clock_t tLastFrame;
 	float fFrameInterval;
 
     CShaderProgram shader; // Our GLSL shader
-	//HGLRC hrc; // Rendering context
-	//HDC hdc; // Device context
-	//HWND hwnd; // Window identifier
+
     GLFWwindow *window;
 	glm::mat4 projectionMatrix; // Store the projection matrix  
 	glm::mat4 viewMatrix; // Store the view matrix  
-	//glm::mat4 modelMatrix; // Store the model matrix  
-
-	//std::vector<std::shared_ptr<Renderable_GL3>> models; // objects to be drawn on screen
 
     bool create(); // called by constructor
 	void init(void); // called by constructor, after a successfull call to create
 
-	//camera variables
-	glm::vec3 vEye, vView, vUp;
-	float fSpeed;
-	float fSensitivity; // How many degrees to rotate per pixel moved by mouse (nice value is 0.10)
-    //POINT pCur; // For mouse rotation
 	
 	bool showRangeData; // Show cursor flag
 	
-
-	//struct cudaGraphicsResource* testingVBO_CUDA; //CUDA resources pointer
 	GLuint testingVAO; //Vertex Array Buffer used for testing
 	int numOfParticles; //total number of particles
     CShader shVertex, shFragment;
 
 	// obj rendering related variables
 	CAssimpModel objModels[1];
+
+	int viewMode;
+	GLint windowWidth; // Store the width of our window
+	GLint windowHeight; // Store the height of our window
+
+	ParticleRenderer *renderer;
+	glm::vec4 viewport;
+
+	int number_of_objects;
+	glm::mat4 *modelMatrix; // pointer to model matrix array
+	
 	
 };
 
