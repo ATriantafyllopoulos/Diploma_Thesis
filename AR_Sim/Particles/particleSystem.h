@@ -293,8 +293,10 @@ protected:
 	void staticUpdateRigidBodies(float deltaTime);
 
 	void updateGrid(float deltaTime);
-	void updateGridExperimental(float deltaTime);
+	void updateUniformGrid(float deltaTime);
 	void updateStaticParticles(float deltaTime);
+
+	void updateBVHExperimental(float deltaTime);
 
 	void reallocGridAuxiliaries();
 protected:
@@ -563,6 +565,9 @@ private:
 	void Handle_Augmented_Reality_Collisions_Baraff_GPU();
 	void Handle_Augmented_Reality_Collisions_Baraff_CPU();
 
+	// BVH collision detection
+	void Find_Rigid_Body_Collisions_BVH();
+	void Find_Augmented_Reality_Collisions_BVH();
 	// make these part of the class so they can be used between functions
 	// compatible with old code as they will be overriden locally
 	float *dPos;

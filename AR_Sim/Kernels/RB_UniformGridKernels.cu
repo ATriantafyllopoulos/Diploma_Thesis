@@ -769,7 +769,7 @@ SimParams params)
 				float dist = length(pos - pos2); // distance between two particles
 				if (collisionThreshold - dist > maxDistance)
 				{
-					maxDistance = dist;
+					maxDistance = collisionThreshold - dist;
 					contactDistance[originalIndex] = maxDistance;
 					collidingParticleIndex[originalIndex] = originalIndex_2;
 					collidingRigidBodyIndex[originalIndex] = rigidBodyIndex_2;

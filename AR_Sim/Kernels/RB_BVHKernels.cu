@@ -755,3 +755,170 @@ void collideBVHSoARigidBodyOnlyWrapper(float4 *color, //particle's color, only u
 		numParticles, //number of virtual particles
 		params); //simulation parameters
 }
+
+
+__global__ void FindRigidBodyCollisionsBVHKernel(
+	float4 *color, // Input: particle's color, only used for testing purposes
+	int *rigidBodyIndex, // Input: index of the rigid body each particle belongs to
+	bool *isLeaf, // Input: array containing a flag to indicate whether node is leaf
+	int *leftIndices, // Input:  array containing indices of the left children of each node
+	int *rightIndices, // Input: array containing indices of the right children of each node
+	int *minRange, // Input: array containing minimum (sorted) leaf covered by each node
+	int *maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+	float4 *CMs, // Input: array containing centers of mass for each leaf
+	AABB *bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+	int *sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+	float *radii, // Input: radii of all nodes - currently the same for all particles
+	int numParticles, // Input: number of virtual particles
+	SimParams params, // Input: simulation parameters
+	float *contactDistance, // Output: distance between particles presenting largest penetration
+	int *collidingParticleIndex, // Output: particle of most important contact
+	int *collidingRigidBodyIndex) // Output: rigid body of most important contact
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x; //handling particle #(index)
+	if (index >= numParticles)
+		return;
+
+	// initialize stack
+	int stack[64]; // using stack of indices
+	int* stackPtr = stack;
+	*stackPtr++ = -1; // push -1 at beginning so that thread will return when stack is empty
+	int SoAindex = numParticles; // start at root
+	// Traverse nodes starting from the root.
+	// load leaf positions once - better to use this array as successive threads will access successive memory positions
+
+	// load sorted variables
+	int queryIndex = sortedIndices[index]; //load original particle index once
+	float4 queryPos = CMs[index];
+	AABB queryBound = bounds[index]; // load particle's bounding volume once
+	
+	// load unsorted variables
+	float queryRad = radii[queryIndex]; // load particle radius once - currently all particles have the same radius
+	int queryRigidBody = rigidBodyIndex[queryIndex]; // rigid body index corresponding to query particle	
+	float maxDistance = contactDistance[queryIndex];
+
+	int numCollisions = 0; // count number of collisions
+	do
+	{
+		//Check each child node for overlap
+		int leftChildIndex = leftIndices[SoAindex]; //load left child index once
+		int rightChildIndex = rightIndices[SoAindex]; //load right child index once
+
+		bool overlapL = checkOverlap(queryBound, bounds[leftChildIndex]); //check overlap with left child
+		bool overlapR = checkOverlap(queryBound, bounds[rightChildIndex]); //check overlap with right child
+
+		//indices are unique for each node, internal or leaf, as they are stored in the same array
+		if (leftChildIndex == index || maxRange[leftChildIndex] < index) //left child is current leaf
+			overlapL = false;
+		if (rightChildIndex == index || maxRange[rightChildIndex] < index) //right child is current leaf
+			overlapR = false;
+		bool isLeftLeaf = isLeaf[leftChildIndex]; //load left child's leaf flag once
+		bool isRightLeaf = isLeaf[rightChildIndex]; //load right child's leaf flag once
+
+		// broad phase collision detection test
+		if (overlapL && isLeftLeaf)
+		{
+			int leftSortedIndex = sortedIndices[leftChildIndex];
+			int leftRigidBody = rigidBodyIndex[leftSortedIndex];
+			if (queryRigidBody != leftRigidBody)
+			{
+				float dist = length(CMs[leftChildIndex] - queryPos); //distance between two centers
+				float collisionThreshold = queryRad + radii[leftSortedIndex]; //sum of radii
+				if (collisionThreshold - dist > maxDistance)
+				{
+					maxDistance = collisionThreshold - dist;
+					// narrow phase collision detection test
+					numCollisions++;
+					color[queryIndex] = make_float4(1, 0, 0, 0);
+					// report collision
+					contactDistance[queryIndex] = maxDistance;
+					collidingParticleIndex[queryIndex] = leftSortedIndex;
+					collidingRigidBodyIndex[queryIndex] = leftRigidBody;
+				}
+			}
+		}
+		// broad phase collision detection test
+		if (overlapR && isRightLeaf)
+		{
+
+			int rightSortedIndex = sortedIndices[rightChildIndex];
+			int rightRigidBody = rigidBodyIndex[rightSortedIndex];
+			if (queryRigidBody != rightRigidBody)
+			{
+				float dist = length(CMs[rightChildIndex] - queryPos); // distance between two centers
+				float collisionThreshold = queryRad + radii[rightSortedIndex]; // sum of radii
+				if (collisionThreshold - dist > maxDistance)
+				{
+					maxDistance = collisionThreshold - dist;
+					// narrow phase collision detection test
+					numCollisions++;
+					color[queryIndex] = make_float4(1, 0, 0, 0);
+					// report collision
+					contactDistance[queryIndex] = maxDistance;
+					collidingParticleIndex[queryIndex] = rightSortedIndex;
+					collidingRigidBodyIndex[queryIndex] = rightRigidBody;
+				}
+			}
+		}
+
+		// Query overlaps an internal node => traverse
+		bool traverseL = (overlapL && !isLeftLeaf);
+		bool traverseR = (overlapR && !isRightLeaf);
+
+		if (!traverseL && !traverseR)
+			SoAindex = *--stackPtr; // pop
+		else
+		{
+			SoAindex = (traverseL) ? leftChildIndex : rightChildIndex;
+			if (traverseL && traverseR)
+				*stackPtr++ = rightChildIndex; // push
+		}
+	} while (SoAindex != -1);
+
+	if (!numCollisions)
+		color[queryIndex] = make_float4(1, 1, 1, 0);
+}
+
+	
+
+void FindRigidBodyCollisionsBVHWrapper(
+		float4 *color, // Input: particle's color, only used for testing purposes
+		int *rigidBodyIndex, // Input: index of the rigid body each particle belongs to
+		bool *isLeaf, // Input: array containing a flag to indicate whether node is leaf
+		int *leftIndices, // Input:  array containing indices of the left children of each node
+		int *rightIndices, // Input: array containing indices of the right children of each node
+		int *minRange, // Input: array containing minimum (sorted) leaf covered by each node
+		int *maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+		float4 *CMs, // Input: array containing centers of mass for each leaf
+		AABB *bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+		int *sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+		float *radii, // Input: radii of all nodes - currently the same for all particles
+		int numThreads, // Input: number of threads to use
+		int numParticles, // Input: number of virtual particles
+		SimParams params, // Input: simulation parameters
+		float *contactDistance, // Output: distance between particles presenting largest penetration
+		int *collidingParticleIndex, // Output: particle of most important contact
+		int *collidingRigidBodyIndex) // Output: rigid body of most important contact
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+	FindRigidBodyCollisionsBVHKernel << < gridDim, blockDim >> >(
+		color, // Input: particle's color, only used for testing purposes
+		rigidBodyIndex, // Input: index of the rigid body each particle belongs to
+		isLeaf, // Input: array containing a flag to indicate whether node is leaf
+		leftIndices, // Input:  array containing indices of the left children of each node
+		rightIndices, // Input: array containing indices of the right children of each node
+		minRange, // Input: array containing minimum (sorted) leaf covered by each node
+		maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+		CMs, // Input: array containing centers of mass for each leaf
+		bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+		sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+		radii, // Input: radii of all nodes - currently the same for all particles
+		numParticles, // Input: number of virtual particles
+		params, // Input: simulation parameters
+		contactDistance, // Output: distance between particles presenting largest penetration
+		collidingParticleIndex, // Output: particle of most important contact
+		collidingRigidBodyIndex); // Output: rigid body of most important contact
+
+
+}

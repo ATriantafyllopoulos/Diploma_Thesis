@@ -154,6 +154,7 @@ void VirtualWorld::initDemoMode()
 	std::srand(NULL);
 	viewer->toggleShowRangeData(); //don't show range data
 	psystem->toggleARcollisions(); //disable AR collisions
+	psystem->setCollisionDetectionMethod(M_BVH);
 	//camera is static
 //	viewMode = M_VIEW;viewer->viewModeCommand(M_VIEW);
 	viewMode = M_VIEW; viewer->setViewModeCommand(M_VIEW);
@@ -174,7 +175,7 @@ void VirtualWorld::initDemoMode()
 
 				//glm::vec3 velocity(0, 0, 0);
 				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0.1, 0), 1.5f);
+				psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 1.5f);
 				viewer->addScaleFactor(1.5f);
 			}
 //	for (float x = -1; x < 1; x += 0.4)

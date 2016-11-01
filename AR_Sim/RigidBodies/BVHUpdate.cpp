@@ -590,3 +590,223 @@ void ParticleSystem::staticUpdateRigidBodies(float deltaTime)
 		unmapGLBufferObject(m_cuda_posvbo_resource);
 	}
 }
+
+void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
+{
+	checkCudaErrors(createMortonCodes((float4 *)dPos,
+		&mortonCodes,
+		&indices,
+		&sortedMortonCodes,
+		&sortedIndices,
+		m_numParticles,
+		numThreads));
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	wrapperConstructRadixTreeSoA(
+		isLeaf, //array containing a flag to indicate whether node is leaf
+		leftIndices, //array containing indices of the left children of each node
+		rightIndices, //array containing indices of the right children of each node
+		parentIndices, //array containing indices of the parent of each node
+		minRange, //array containing minimum (sorted) leaf covered by each node
+		maxRange, //array containing maximum (sorted) leaf covered by each node
+		sortedMortonCodes,
+		numThreads,
+		m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	initializeRadiiWrapper(radii,
+		m_params.particleRadius,
+		m_numParticles,
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	wrapperConstructLeafNodesSoA(
+		isLeaf, //array containing a flag to indicate whether node is leaf
+		leftIndices, //array containing indices of the left children of each node
+		rightIndices, //array containing indices of the right children of each node
+		parentIndices, //array containing indices of the parent of each node
+		minRange, //array containing minimum (sorted) leaf covered by each node
+		maxRange, //array containing maximum (sorted) leaf covered by each node
+		CMs, //array containing centers of mass for each leaf
+		bounds, //array containing bounding volume for each node - currently templated Array of Structures
+		sortedIndices, //array containing corresponding unsorted indices for each leaf
+		radii, //radii of all nodes - currently the same for all particles
+		(float4 *)dPos, //original positions
+		m_params.particleRadius, //common radius parameter
+		numThreads,
+		m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	wrapperConstructInternalNodesSoA(
+		leftIndices, //array containing indices of the left children of each node
+		rightIndices, //array containing indices of the right children of each node
+		parentIndices, //array containing indices of the parent of each node
+		bounds, //array containing bounding volume for each node - currently templated Array of Structures
+		numThreads,
+		m_numParticles);
+
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	// cudaMemset is mandatory if cudaMalloc takes place once
+	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
+
+	FindRigidBodyCollisionsBVHWrapper(
+		(float4 *)dCol, // Input: particle's color, only used for testing purposes
+		rbIndices, // Input: index of the rigid body each particle belongs to
+		isLeaf, // Input: array containing a flag to indicate whether node is leaf
+		leftIndices, // Input:  array containing indices of the left children of each node
+		rightIndices, // Input: array containing indices of the right children of each node
+		minRange, // Input: array containing minimum (sorted) leaf covered by each node
+		maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+		CMs, // Input: array containing centers of mass for each leaf
+		bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+		sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+		radii, // Input: radii of all nodes - currently the same for all particles
+		numThreads, // Input: number of threads to use
+		m_numParticles, // Input: number of virtual particles
+		m_params, // Input: simulation parameters
+		contactDistance, // Output: distance between particles presenting largest penetration
+		collidingParticleIndex, // Output: particle of most important contact
+		collidingRigidBodyIndex); // Output: rigid body of most important contact
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+}
+
+void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
+{
+	// calculate grid hash
+	calcHash(
+		m_dGridParticleHash,
+		m_dGridParticleIndex,
+		dPos,
+		m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	// sort particles based on hash
+	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	// reorder particle arrays into sorted order and
+	// find start and end of each cell
+	reorderDataAndFindCellStart(
+		rbIndices, //index of the rigid body each particle belongs to
+		m_dCellStart,
+		m_dCellEnd,
+		m_dSortedPos,
+		m_dSortedVel,
+		m_dGridParticleHash,
+		m_dGridParticleIndex,
+		dPos,
+		m_dVel,
+		m_numParticles,
+		m_numGridCells);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	// calculate grid hash
+	calcHash(
+		staticGridParticleHash,
+		staticGridParticleIndex,
+		staticPos,
+		numberOfRangeData);
+	// sort particles based on hash
+	sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	// reorder particle arrays into sorted order and
+	// find start and end of each cell
+	reorderDataAndFindCellStart(rbIndices, //index of the rigid body each particle belongs to
+		staticCellStart,
+		staticCellEnd,
+		staticSortedPos,
+		staticSortedVel,
+		staticGridParticleHash,
+		staticGridParticleIndex,
+		staticPos,
+		staticVel,
+		numberOfRangeData,
+		m_numGridCells);
+
+	// cudaMemset is mandatory if cudaMalloc takes place once
+	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
+
+	FindAugmentedRealityCollisionsUniformGridWrapper(
+		collidingParticleIndex, // index of particle of contact
+		contactDistance, // penetration distance
+		(float4 *)dCol, // particle color
+		(float4 *)m_dSortedPos, // sorted positions
+		(float4 *)staticSortedPos, // sorted augmented reality positions
+		m_dGridParticleIndex, // sorted particle indices
+		staticGridParticleIndex, // sorted scene particle indices
+		staticCellStart,
+		staticCellEnd,
+		m_numParticles,
+		numberOfRangeData,
+		m_params,
+		numThreads);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+}
+
+void ParticleSystem::updateBVHExperimental(float deltaTime)
+{
+	assert(m_bInitialized);
+
+	//float *dPos;
+	//float *dCol;
+	if (m_bUseOpenGL)
+	{
+		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+		dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
+	}
+	else
+	{
+		dPos = (float *)m_cudaPosVBO;
+	}
+
+	// update constants
+	setParameters(&m_params);
+
+	// integrate system of rigid bodies
+	Integrate_RB_System(deltaTime);
+
+	// find and handle wall collisions
+	Handle_Wall_Collisions();
+
+	if (simulateAR)
+	{
+		// find collisions between rigid bodies and real scene
+		Find_Augmented_Reality_Collisions_BVH();
+
+		// handle collisions between rigid bodies and real scene
+		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+	}
+
+	// find collisions between rigid bodies
+	Find_Rigid_Body_Collisions_BVH();
+
+	// handle collisions between rigid bodies
+	Handle_Rigid_Body_Collisions_Baraff_CPU();
+
+	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
+	if (m_bUseOpenGL)
+	{
+		unmapGLBufferObject(m_cuda_colorvbo_resource);
+		unmapGLBufferObject(m_cuda_posvbo_resource);
+	}
+
+}

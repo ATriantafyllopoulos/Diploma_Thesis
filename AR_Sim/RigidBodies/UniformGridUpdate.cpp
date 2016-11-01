@@ -355,13 +355,6 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	// cudaMalloc contact info variables
-	// cudaFree them after collisions are handled
-	// cudaMalloc can be called once - after adding a new rigid body
-	/*checkCudaErrors(cudaMalloc((void**)&collidingRigidBodyIndex, sizeof(int) * m_numParticles));
-	checkCudaErrors(cudaMalloc((void**)&collidingParticleIndex, sizeof(int) * m_numParticles));
-	checkCudaErrors(cudaMalloc((void**)&contactDistance, sizeof(float) * m_numParticles));*/
-
 	// cudaMemset is mandatory if cudaMalloc takes place once
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
 
@@ -379,7 +372,8 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		m_params,
 		numThreads);
 
-
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
@@ -477,7 +471,7 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 
 }
 
-void ParticleSystem::updateGridExperimental(float deltaTime)
+void ParticleSystem::updateUniformGrid(float deltaTime)
 {
 	assert(m_bInitialized);
 

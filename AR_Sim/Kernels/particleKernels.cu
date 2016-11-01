@@ -662,9 +662,10 @@ __global__ void mapActualPositionRigidBodyParticles(
 	int numParticles)
 {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
+	if (index >= numParticles)
+		return;
 	int rbIndex = rbIndices[index];
-	if (index >= numParticles || rbIndex == -1)
+	if (rbIndex == -1)
 		return;
 
 	positions[index] = rbPositions[rbIndex] + relativePositions[index];

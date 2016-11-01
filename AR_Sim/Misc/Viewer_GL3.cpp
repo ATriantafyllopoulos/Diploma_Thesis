@@ -174,7 +174,7 @@ void Viewer_GL3::render(void)
 		renderer->setViewMatrix(viewMatrix);
 	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 
-	if (number_of_objects)
+	if (0)
 	{
 		CAssimpModel::BindModelsVAO();
 		shader.bind();

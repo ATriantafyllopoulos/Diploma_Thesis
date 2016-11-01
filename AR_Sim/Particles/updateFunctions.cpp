@@ -378,11 +378,6 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 	delete collidingRigidBodyIndex_CPU;
 	delete collidingParticleIndex_CPU;
 
-	// cudaFree contact info variables
-	/*checkCudaErrors(cudaFree(collidingRigidBodyIndex));
-	checkCudaErrors(cudaFree(collidingParticleIndex));
-	checkCudaErrors(cudaFree(contactDistance));*/
-
 }
 
 void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_GPU()
@@ -485,32 +480,6 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				//std::cout << "Rigid body No." << index + 1 << " is colliding with particle No." << particleIndex << std::endl;
-				////float3 displacementVector = make_float3(CMs_CPU[index] + relative_CPU[current_particle] - position_CPU[particleIndex]);
-				//float3 displacementVector = make_float3(particlePosition_CPU[current_particle] - position_CPU[particleIndex]);
-				//float displacementDistance = 2 * m_params.particleRadius - length(displacementVector);
-				//std::cout << "GPU distance: " << contactDistance_CPU[current_particle] << " CPU distance: " << displacementDistance
-				//for (int testParticle = 0; testParticle < numberOfRangeData; testParticle++)
-				//{
-				//	displacementVector = make_float3(particlePosition_CPU[current_particle] - position_CPU[testParticle]);
-				//	displacementDistance = 2 * m_params.particleRadius - length(displacementVector);
-				//	if (abs(displacementDistance - contactDistance_CPU[current_particle]) < 0.001)
-				//	{
-				//		std::cout << "Correct particle found @: " << testParticle << std::endl;
-				//	}
-				//	if (displacementDistance > 0)
-				//	{
-				//		std::cout << "Found collision @: " << testParticle << " distance is: " << displacementDistance << std::endl;
-				//	}
-				//}
-				/*std::cout << "Rigid body state before collision:" << std::endl;
-				std::cout << "Position: (" << CMs_CPU[index].x << " " << CMs_CPU[index].y << " "
-					<< CMs_CPU[index].z << " " << CMs_CPU[index].w << ") " << std::endl;;
-				std::cout << "Velocity: (" << vel_CPU[index].x << " " << vel_CPU[index].y << " "
-					<< vel_CPU[index].z << " " << vel_CPU[index].w << ") " << std::endl;;
-				std::cout << "Angular velocity: (" << rbAngularVelocity_CPU[index].x << " " << rbAngularVelocity_CPU[index].y << " "
-					<< rbAngularVelocity_CPU[index].z << " " << rbAngularVelocity_CPU[index].w << ") " << std::endl;;
-				std::cout << std::endl;*/
 				if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
 					m_params.particleRadius,
@@ -545,15 +514,6 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						(glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
 					rbAngularVelocity_CPU[index] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
 					rbAngularVelocity_CPU[index].w = 0;
-
-					//std::cout << "Rigid body state after collision:" << std::endl;
-					//std::cout << "Position: (" << CMs_CPU[index].x << " " << CMs_CPU[index].y << " "
-					//	<< CMs_CPU[index].z << " " << CMs_CPU[index].w << ") " << std::endl;;
-					//std::cout << "Velocity: (" << vel_CPU[index].x << " " << vel_CPU[index].y << " "
-					//	<< vel_CPU[index].z << " " << vel_CPU[index].w << ") " << std::endl;;
-					//std::cout << "Angular velocity: (" << rbAngularVelocity_CPU[index].x << " " << rbAngularVelocity_CPU[index].y << " "
-					//	<< rbAngularVelocity_CPU[index].z << " " << rbAngularVelocity_CPU[index].w << ") " << std::endl;;
-					//std::cout << std::endl;
 
 				}
 			}
@@ -1255,35 +1215,11 @@ void ParticleSystem::update(float deltaTime)
 	{
 		if (collisionMethod == M_UNIFORM_GRID)
         {
-			//updateGrid(deltaTime);
-			updateGridExperimental(deltaTime);
-			//flushAndPrintRigidBodyParameters();
-		/*	if (simulateAR)
-            {
-				m_params.spring = 0.12f;
-				m_params.damping = 0.02f;
-				m_params.shear = 0.f;
-				m_params.attraction = 0.0f;
-				m_params.boundaryDamping = -0.5f;
-				m_params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
-				m_params.globalDamping = 1.f;
-				updateStaticParticles(deltaTime);
-			}*/
+			updateUniformGrid(deltaTime);
 		}
 		else if (collisionMethod == M_BVH)
 		{
-			updateRigidBodies(deltaTime);
-			if (simulateAR)
-			{
-				m_params.spring = 0.1f;
-				m_params.damping = 0.02f;
-				m_params.shear = 0.02f;
-				m_params.attraction = 0.0f;
-				m_params.boundaryDamping = -0.5f;
-				m_params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
-				m_params.globalDamping = 1.f;
-                staticUpdateRigidBodies(deltaTime);
-			}
+			updateBVHExperimental(deltaTime);
 		}
 	}
     if (!pauseFrame)

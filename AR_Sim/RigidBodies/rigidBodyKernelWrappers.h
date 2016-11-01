@@ -284,4 +284,23 @@ void HandleAugmentedRealityCollisionWrapper(
 	int numThreads, // number of threads to use
 	SimParams params); // simulation parameters
 
+void FindRigidBodyCollisionsBVHWrapper(
+	float4 *color, // Input: particle's color, only used for testing purposes
+	int *rigidBodyIndex, // Input: index of the rigid body each particle belongs to
+	bool *isLeaf, // Input: array containing a flag to indicate whether node is leaf
+	int *leftIndices, // Input:  array containing indices of the left children of each node
+	int *rightIndices, // Input: array containing indices of the right children of each node
+	int *minRange, // Input: array containing minimum (sorted) leaf covered by each node
+	int *maxRange, // Input: array containing maximum (sorted) leaf covered by each node
+	float4 *CMs, // Input: array containing centers of mass for each leaf
+	AABB *bounds, // Input: array containing bounding volume for each node - currently templated Array of Structures
+	int *sortedIndices, // Input: array containing corresponding unsorted indices for each leaf
+	float *radii, // Input: radii of all nodes - currently the same for all particles
+	int numThreads, // Input: number of threads to use
+	int numParticles, // Input: number of virtual particles
+	SimParams params, // Input: simulation parameters
+	float *contactDistance, // Output: distance between particles presenting largest penetration
+	int *collidingParticleIndex, // Output: particle of most important contact
+	int *collidingRigidBodyIndex); // Output: rigid body of most important contact
+
 #endif

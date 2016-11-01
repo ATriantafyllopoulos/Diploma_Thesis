@@ -41,8 +41,6 @@ void ParticleSystem::addRigidBody(
 	int *newParticleIndex, //particlesAdded
 	bool isRigidBodyLocal)
 {
-
-
 	objectsThrown++; //increase number of objects thrown
 	numRigidBodies++; //increase number of rigid bodies
 
