@@ -33,7 +33,6 @@
     <ClInclude Include="Headers\shaders.h" />
     <ClInclude Include="Headers\texture.h" />
     <ClInclude Include="Headers\vertexBufferObject.h" />
-    <ClInclude Include="Headers\Viewer.h" />
     <ClInclude Include="Headers\Viewer_GL3.h" />
     <ClInclude Include="Headers\VirtualObject.h" />
     <ClInclude Include="Headers\VirtualWorld.h" />
@@ -62,7 +61,6 @@
   <ItemGroup>
     <ClCompile Include="Misc\main.cpp" />
     <ClCompile Include="Misc\objModel.cpp" />
-    <ClCompile Include="Misc\playground.cpp" />
     <ClCompile Include="Misc\Renderable.cpp" />
     <ClCompile Include="Misc\Renderable_GL3.cpp" />
     <ClCompile Include="Misc\RigidBody.cpp" />
@@ -70,7 +68,6 @@
     <ClCompile Include="Misc\shaders.cpp" />
     <ClCompile Include="Misc\texture.cpp" />
     <ClCompile Include="Misc\vertexBufferObject.cpp" />
-    <ClCompile Include="Misc\Viewer.cpp" />
     <ClCompile Include="Misc\Viewer_GL3.cpp" />
     <ClCompile Include="Misc\VirtualWorld.cpp" />
     <ClCompile Include="Misc\WindowsHandler.cpp" />
@@ -81,6 +78,7 @@
     <ClCompile Include="Particles\sphereAddition.cpp" />
     <ClCompile Include="Particles\updateFunctions.cpp" />
     <ClCompile Include="RigidBodies\BVHUpdate.cpp" />
+    <ClCompile Include="RigidBodies\RigidBodyAddition.cpp" />
     <ClCompile Include="RigidBodies\UniformGridUpdate.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -13,7 +13,6 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #endif
-#include "Renderable.h"
 // OpenGL and GLEW Header Files and Libraries
 
 #include "Platform.h"
@@ -57,7 +56,6 @@ public:
     Viewer_GL3(GLFWwindow *inWindow);
 	~Viewer_GL3();
 	
-	void addToDraw(Renderable *r); // add object to draw queue
 	void resize(GLint w, GLint h);
 	void render(void); // render scene
 
@@ -84,9 +82,9 @@ public:
 	void setRangeTexture(const GLuint &x) { renderer->setRangeTexture(x); }
 	void setViewModeCommand(const int &mode){ viewMode = mode; }
 
+	void addScaleFactor(const float &newFactor);
 private:
 	// camera controls
-	void rotateWithMouse();
 	void cameraUpdate();
 	float getAngleX(), getAngleY();// Functions that get viewing angles
 
@@ -130,7 +128,7 @@ private:
 	int number_of_objects;
 	glm::mat4 *modelMatrix; // pointer to model matrix array
 	
-	
+	glm::vec3 *scaleFactor;
 };
 
 #endif

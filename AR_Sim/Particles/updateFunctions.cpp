@@ -467,6 +467,8 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 	checkCudaErrors(cudaMemcpy(particlePosition_CPU, dPos, m_numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
 	float4 *position_CPU = new float4[numberOfRangeData];
 	checkCudaErrors(cudaMemcpy(position_CPU, staticPos, numberOfRangeData * sizeof(float4), cudaMemcpyDeviceToHost));
+	float4 *normal_CPU = new float4[numberOfRangeData];
+	checkCudaErrors(cudaMemcpy(normal_CPU, staticNorm, numberOfRangeData * sizeof(float4), cudaMemcpyDeviceToHost));
 
 	// copy contact info to CPU - one contact per particle
 	float *contactDistance_CPU = new float[m_numParticles];
@@ -521,6 +523,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						m_params.particleRadius,
 						m_params.particleRadius,
 						cp, cn);
+					cn = normal_CPU[particleIndex];
 					float4 r1 = cp - CMs_CPU[index];
 					
 					glm::mat3 IinvA = rbCurrentInertia_CPU[index];
@@ -573,6 +576,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 
 	delete relative_CPU;
 	delete position_CPU;
+	delete normal_CPU;
 	delete particlePosition_CPU;
 
 	delete contactDistance_CPU;

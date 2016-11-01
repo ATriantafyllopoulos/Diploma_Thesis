@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Misc">
+      <UniqueIdentifier>{1a1b2abb-5907-4ef5-9815-90ec1cebbbd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Misc\Headers">
+      <UniqueIdentifier>{835751b0-67d8-438e-8c87-2039b20a7e42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Misc\Source">
+      <UniqueIdentifier>{c61c3d89-d557-443a-95ba-19a461dc967e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Particles">
+      <UniqueIdentifier>{95e39927-28cd-4117-b668-eb8271d2feac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Particles\Headers">
+      <UniqueIdentifier>{6798c980-f65a-4825-ba47-f2229dbe9bc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Particles\Source">
+      <UniqueIdentifier>{2725714f-c204-4ad1-b22a-cdc84b1c482f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Particles\Kernels">
+      <UniqueIdentifier>{64fe9e59-3901-4012-b064-4c5b27cab709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rigid Body">
+      <UniqueIdentifier>{396a1882-1048-4cb9-9e9c-a1b6aa9c4e48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rigid Body\Header">
+      <UniqueIdentifier>{84e44beb-7c1d-4cc6-9e40-6ab9c594bd35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rigid Body\Source">
+      <UniqueIdentifier>{38b19afc-05a3-4ca7-a5ab-8ab248722694}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rigid Body\Kernels">
+      <UniqueIdentifier>{65194bf1-81b6-4fa4-9129-3c826babd54a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BVH">
+      <UniqueIdentifier>{eee19268-ca23-44bd-b9a8-5da232e293c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BVH\Headers">
+      <UniqueIdentifier>{d4e24ffe-768f-4ea1-aed6-276ad11ff76d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BVH\Source">
+      <UniqueIdentifier>{f87965bf-d27f-495f-98ff-11dbbbd92217}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BVH\Kernels">
+      <UniqueIdentifier>{968b8c17-f093-48f5-8887-1ff42b561d1c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BVHSource\BVHcreation.h">
+      <Filter>BVH\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="BVHSource\BVHAuxiliary.cuh">
+      <Filter>BVH\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Menu.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\objModel.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\PhysicsEngine.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Primitives.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Renderable.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Renderable_GL3.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\RigidBody.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Shader.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\shaders.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\texture.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\vertexBufferObject.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Viewer_GL3.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\VirtualObject.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\VirtualWorld.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\WindowsHandler.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="RigidBodies\rigidBodyKernelWrappers.h">
+      <Filter>Rigid Body\Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Particles\ParticleAuxiliaryFunctions.h">
+      <Filter>Particles\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Particles\particleSystem.h">
+      <Filter>Particles\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Particles\renderParticles.h">
+      <Filter>Particles\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Kernels\particleSystem.cuh">
+      <Filter>Particles\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Platform.h">
+      <Filter>Misc\Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="BVHSource\BVHcreation.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BVHSource\BVHkernels.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BVHSource\BVHkernelWrappers.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BVHSource\BVHSoAKernels.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BVHSource\BVHSoAKernelWrappers.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="BVHSource\createMortonCodes.cu">
+      <Filter>BVH\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\rigidBodyKernels.cu">
+      <Filter>Rigid Body\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\customRangeImageLoader.cu">
+      <Filter>Particles\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\particleKernels.cu">
+      <Filter>Particles\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\particleKernelWrappers.cu">
+      <Filter>Particles\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\RB_UniformGridKernels.cu">
+      <Filter>Rigid Body\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Kernels\RB_BVHKernels.cu">
+      <Filter>Rigid Body\Kernels</Filter>
+    </CudaCompile>
+    <CudaCompile Include="WallCollisions.cu">
+      <Filter>Rigid Body\Kernels</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Misc\main.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\objModel.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\Renderable.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\Renderable_GL3.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\RigidBody.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\Shader.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\shaders.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\texture.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\vertexBufferObject.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\Viewer_GL3.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\VirtualWorld.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\WindowsHandler.cpp">
+      <Filter>Misc\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\sphereAddition.cpp">
+      <Filter>Rigid Body\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\loadRangeDataFromFile.cpp">
+      <Filter>Particles\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\particleSystem.cpp">
+      <Filter>Particles\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\renderParticles.cpp">
+      <Filter>Particles\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\updateFunctions.cpp">
+      <Filter>Particles\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="RigidBodies\UniformGridUpdate.cpp">
+      <Filter>Rigid Body\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="RigidBodies\BVHUpdate.cpp">
+      <Filter>Rigid Body\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Particles\CPU_Engine.cpp">
+      <Filter>Particles\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="RigidBodies\RigidBodyAddition.cpp">
+      <Filter>Rigid Body\Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -15,38 +15,20 @@ VirtualWorld::VirtualWorld()
 	viewMode = M_VIEW;
 }
 
-
 VirtualWorld::~VirtualWorld()
 {
 	delete psystem;
 }
 
-/**
-Adds new object to object list. Also adds it to viewer's and engine's list.
-*/
-//void VirtualWorld::addVirtualObject(std::shared_ptr<VirtualObject> obj)
-//{
-//	virtualObjects.push_back(obj);
-//	viewer->addToDraw(&*obj);
-//}
-
-// get functions
 Viewer_GL3 * VirtualWorld::getViewer(void)
 {
 	return viewer;
 }
 
-//PhysicsEngine * VirtualWorld::getEngine(void)
-//{
-//	return engine;
-//}
-
-// set functions
 void VirtualWorld::setViewer(Viewer_GL3 *v)
 {
 	viewer = v;
 }
-
 
 void VirtualWorld::render(void)
 {
@@ -127,16 +109,12 @@ void VirtualWorld::addSphere(int x, int y)
 	glm::vec3 velocity = glm::vec3(0.f, -0.1f, 0.0f);
 	worldSpaceCoordinates.y = 2.01f;
 	if (objectMode == M_POINT_SPRITE)
-//		psystem->addTeapot(worldSpaceCoordinates, velocity);
-		psystem->addBunny(worldSpaceCoordinates, velocity);
-//		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
-//		psystem->addNewSphere(1024, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
-		//psystem->addSphere(0, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
+	{
+		psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
+		viewer->addScaleFactor(1.5f);
+	}
 	else if (objectMode == M_SOLID_SPHERE)
 		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
-//		psystem->addTeapot(worldSpaceCoordinates, velocity);
-//		psystem->addNewSphere(1024, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
-		//psystem->addRigidSphere(1024, worldSpaceCoordinates, velocity, 4, psystem->getParticleRadius()*2.0f);
 	
 }
 
@@ -151,15 +129,19 @@ void VirtualWorld::throwSphere(int x, int y)
 	glm::vec3 velocity = glm::vec3(0.f, 0.0f, -0.3f);
 	worldSpaceCoordinates.z = 0.01f;
 	if (objectMode == M_POINT_SPRITE)
-//		psystem->addTeapot(worldSpaceCoordinates, velocity);
-		psystem->addBunny(worldSpaceCoordinates, velocity);
-//		psystem->addNewSphere(1024, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
-//		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
+	{
+		//		psystem->addTeapot(worldSpaceCoordinates, velocity);
+		psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
+		viewer->addScaleFactor(1.5f);
+		//		psystem->addNewSphere(1024, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
+		//		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
+	}
 	else if (objectMode == M_SOLID_SPHERE)
+	{
 //		psystem->addTeapot(worldSpaceCoordinates, velocity);
 		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
 		//psystem->addRigidSphere(1024, worldSpaceCoordinates, velocity, 4, psystem->getParticleRadius()*2.0f);
-
+	}
 }
 
 void VirtualWorld::setObjectMode(int x) 
@@ -192,7 +174,8 @@ void VirtualWorld::initDemoMode()
 
 				//glm::vec3 velocity(0, 0, 0);
 				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				psystem->addBunny(worldSpaceCoordinates, velocity);
+				psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0.1, 0), 1.5f);
+				viewer->addScaleFactor(1.5f);
 			}
 //	for (float x = -1; x < 1; x += 0.4)
 //		for (float y = -0.8; y < 0.8; y += 0.4)

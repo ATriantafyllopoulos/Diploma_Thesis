@@ -1,8 +1,6 @@
 //#pragma once
 
 #include "Viewer_GL3.h"
-#include "VirtualObject.h"
-#include "PhysicsEngine.h"
 #include <vector>
 #include "particleSystem.h"
 #include <glm/gtx/euler_angles.hpp>

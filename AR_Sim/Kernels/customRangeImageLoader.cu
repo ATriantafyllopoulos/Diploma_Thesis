@@ -91,7 +91,7 @@ __global__ void RGBDloader(	unsigned short *image,
 	staticPos[4 * index] = posX;
 	staticPos[4 * index + 1] = posY;
 	staticPos[4 * index + 2] = posZ; 
-	staticPos[4 * index + 3] = 1.0f;
+	staticPos[4 * index + 3] = 0.0f;
 	
 }
 

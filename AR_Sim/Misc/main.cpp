@@ -21,21 +21,12 @@ int cubTest(int elements)
 
 int main(void)
 {
-	//return cubTest(10000);
-	cudaError_t cudaStatus;
-	//if (cudaStatus != cudaSuccess)
-	//{
-	//    fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-	//}
 	checkCudaErrors(cudaSetDevice(0));
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
 	WindowsHandler window("Simulation", 640, 480);
 	VirtualWorld virtualWorld;
-
-
-
 	ParticleSystem *psystem = new ParticleSystem(0, make_uint3(64, 64, 64), true);
 
 	ParticleRenderer *renderer = new ParticleRenderer;
@@ -56,12 +47,7 @@ int main(void)
 	//virtualWorld.initDemoMode();
 	//window.Demo();
 
-	// cudaDeviceReset must be called before exiting in order for profiling and
-	// tracing tools such as Nsight and Visual Profiler to show complete traces.
-	cudaStatus = cudaDeviceReset();
-	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceReset failed!");
-	}
+	checkCudaErrors(cudaDeviceReset());
 	if (psystem) delete psystem;
 	if (renderer) delete renderer;
 

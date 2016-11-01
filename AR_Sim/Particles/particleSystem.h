@@ -351,11 +351,11 @@ public:
 	void initRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel, int r, float spacing);
 	void addRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel, float r, float spacing);
 
-	void addBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
-	void initBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
+	void addBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
+	void initBunny(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 
-	void addTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
-	void initTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0));
+	void addTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
+	void initTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 
 private:
 	void addRigidBody(int previousParticleCount,

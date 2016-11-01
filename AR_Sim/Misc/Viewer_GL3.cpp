@@ -17,6 +17,7 @@ Viewer_GL3::Viewer_GL3(GLFWwindow* inWindow)
     viewMode = M_VIEW;
 	callBackInstance = this;
 	modelMatrix = NULL;
+	scaleFactor = NULL;
 //	showRangeData = true;
 }
 
@@ -64,19 +65,9 @@ void Viewer_GL3::UpdateTimer()
 Viewer_GL3::~Viewer_GL3()
 {
     shader.deleteProgram();
-	//delete shader;
 	shVertex.deleteShader();
 	shFragment.deleteShader();
-	//cudaGraphicsUnregisterResource(testingVBO_CUDA);
 	glDeleteBuffers(1, &testingVAO);
-    //wglMakeCurrent(hdc, 0); // Remove the rendering context from our device context
-    //wglDeleteContext(hrc); // Delete our rendering context
-    //ReleaseDC(hwnd, hdc); // Release the device context from our window
-}
-
-void Viewer_GL3::addToDraw(Renderable *r)
-{
-    //models.push_back((std::shared_ptr<Renderable_GL3>)(static_cast<Renderable_GL3*>(r)));
 }
 
 bool Viewer_GL3::create()
@@ -143,7 +134,22 @@ void Viewer_GL3::init(void)
 	CAssimpModel::FinalizeVBO();
 
 }
-
+/*
+* Add new scaling factor. Re-allocate scaling factor array.
+* This must be explicitly called every time a new object is added for rendering.
+* If it is not called there will be an error in renderer.
+*/
+void Viewer_GL3::addScaleFactor(const float &newFactor)
+{
+	number_of_objects++; // increase number of objects by one
+	glm::vec3 newScaleFactor(newFactor, newFactor, newFactor);
+	glm::vec3 *newScaleArray = new glm::vec3[number_of_objects];
+	memcpy(newScaleArray, scaleFactor, sizeof(glm::vec3) * (number_of_objects - 1));
+	newScaleArray[number_of_objects - 1] = newScaleFactor;
+	if (scaleFactor)
+		delete scaleFactor;
+	scaleFactor = newScaleArray;
+}
 /**
 Rendering function
 */
@@ -175,7 +181,7 @@ void Viewer_GL3::render(void)
 		shader.setUniform("matrices.viewMatrix", viewMatrix);
 		for (int i = 0; i < number_of_objects; i++)
 		{
-			modelMatrix[i] = glm::scale(modelMatrix[i], glm::vec3(1.5, 1.5, 1.5));
+			modelMatrix[i] = glm::scale(modelMatrix[i], scaleFactor[i]);
 			glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelMatrix[i]));
 			shader.setUniform("matrices.normalMatrix", normalMatrix);
 			shader.setUniform("matrices.modelMatrix", modelMatrix[i]);
@@ -188,48 +194,6 @@ void Viewer_GL3::render(void)
     glfwPollEvents();
 }
 
-/*-----------------------------------------------
-
-Name:	rotateWithMouse
-
-Params:	none
-
-Result:	Checks for moving of mouse and rotates
-camera.
-
----------------------------------------------*/
-void Viewer_GL3::rotateWithMouse()
-{
-//	GetCursorPos(&pCur);
-//	RECT rRect;
-//	GetWindowRect(hwnd, &rRect);
-//	int iCentX = (rRect.left + rRect.right) >> 1,
-//		iCentY = (rRect.top + rRect.bottom) >> 1;
-
-//	float deltaX = (float)(iCentX - pCur.x)*fSensitivity;
-//	float deltaY = (float)(iCentY - pCur.y)*fSensitivity;
-
-//	if (deltaX != 0.0f)
-//	{
-//		vView -= vEye;
-//		vView = glm::rotate(vView, deltaX, glm::vec3(0.0f, 1.0f, 0.0f));
-//		vView += vEye;
-//	}
-//	if (deltaY != 0.0f)
-//	{
-//		glm::vec3 vAxis = glm::cross(vView - vEye, vUp);
-//		vAxis = glm::normalize(vAxis);
-//		float fAngle = deltaY;
-//		float fNewAngle = fAngle + getAngleX();
-//		if (fNewAngle > -89.80f && fNewAngle < 89.80f)
-//		{
-//			vView -= vEye;
-//			vView = glm::rotate(vView, deltaY, vAxis);
-//			vView += vEye;
-//		}
-//	}
-//	SetCursorPos(iCentX, iCentY);
-}
 
 /*-----------------------------------------------
 
@@ -284,160 +248,84 @@ rotating.
 ---------------------------------------------*/
 void Viewer_GL3::cameraUpdate()
 {
-	//	GetCursorPos(&pCur);
-	//	RECT rRect;
-	//	GetWindowRect(hwnd, &rRect);
-	//	int iCentX = (rRect.left + rRect.right) >> 1,
-	//		iCentY = (rRect.top + rRect.bottom) >> 1;
-
-	//	float deltaX = (float)(iCentX - pCur.x)*fSensitivity;
-	//	float deltaY = (float)(iCentY - pCur.y)*fSensitivity;
-
-	//	if (deltaX != 0.0f)
-	//	{
-	//		vView -= vEye;
-	//		vView = glm::rotate(vView, deltaX, glm::vec3(0.0f, 1.0f, 0.0f));
-	//		vView += vEye;
-	//	}
-	//	if (deltaY != 0.0f)
-	//	{
-	//		glm::vec3 vAxis = glm::cross(vView - vEye, vUp);
-	//		vAxis = glm::normalize(vAxis);
-	//		float fAngle = deltaY;
-	//		float fNewAngle = fAngle + getAngleX();
-	//		if (fNewAngle > -89.80f && fNewAngle < 89.80f)
-	//		{
-	//			vView -= vEye;
-	//			vView = glm::rotate(vView, deltaY, vAxis);
-	//			vView += vEye;
-	//		}
-	//	}
-	//	SetCursorPos(iCentX, iCentY);
-if (viewMode == M_VIEW)
-{
-	int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	if (state == GLFW_PRESS)
+	if (viewMode == M_VIEW)
 	{
-		double xpos, ypos;
-
-
-		glfwGetCursorPos(window, &xpos, &ypos);
-		//glfwGetWindowSize(window, &windowWidth, &windowHeight);
-		int iCentX;
-		int iCentY;
-		glfwGetWindowPos(window, &iCentX, &iCentY);
-		float deltaX = (float)(iCentX + windowWidth / 2 - xpos)*fSensitivity;
-		float deltaY = (float)(iCentY + windowHeight / 2 - ypos)*fSensitivity;
-
-//		float deltaX = xpos * fSensitivity;
-//		float deltaY = ypos * fSensitivity;
-		if (deltaX != 0.0f)
+		int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+		if (state == GLFW_PRESS)
 		{
-			vView -= vEye;
-			vView = glm::rotate(vView, deltaX, glm::vec3(0.0f, 1.0f, 0.0f));
-			vView += vEye;
-		}
-		if (deltaY != 0.0f)
-		{
-			glm::vec3 vAxis = glm::cross(vView - vEye, vUp);
-			vAxis = glm::normalize(vAxis);
-			float fAngle = deltaY;
-			float fNewAngle = fAngle + getAngleX();
-			if (fNewAngle > -89.80f && fNewAngle < 89.80f)
+			double xpos, ypos;
+
+
+			glfwGetCursorPos(window, &xpos, &ypos);
+			//glfwGetWindowSize(window, &windowWidth, &windowHeight);
+			int iCentX;
+			int iCentY;
+			glfwGetWindowPos(window, &iCentX, &iCentY);
+			float deltaX = (float)(iCentX + windowWidth / 2 - xpos)*fSensitivity;
+			float deltaY = (float)(iCentY + windowHeight / 2 - ypos)*fSensitivity;
+
+	//		float deltaX = xpos * fSensitivity;
+	//		float deltaY = ypos * fSensitivity;
+			if (deltaX != 0.0f)
 			{
 				vView -= vEye;
-				vView = glm::rotate(vView, deltaY, vAxis);
+				vView = glm::rotate(vView, deltaX, glm::vec3(0.0f, 1.0f, 0.0f));
 				vView += vEye;
 			}
+			if (deltaY != 0.0f)
+			{
+				glm::vec3 vAxis = glm::cross(vView - vEye, vUp);
+				vAxis = glm::normalize(vAxis);
+				float fAngle = deltaY;
+				float fNewAngle = fAngle + getAngleX();
+				if (fNewAngle > -89.80f && fNewAngle < 89.80f)
+				{
+					vView -= vEye;
+					vView = glm::rotate(vView, deltaY, vAxis);
+					vView += vEye;
+				}
+			}
+
+			viewMatrix = glm::lookAt(vEye, vView, vUp);	//update our view matrix
+			glfwSetCursorPos(window, iCentX + windowWidth / 2, iCentY + windowHeight / 2);
 		}
 
+		// Get view direction
+		glm::vec3 vMove = vView - vEye;
+		vMove = glm::normalize(vMove);
+		vMove *= fSpeed;
+
+		glm::vec3 vStrafe = glm::cross(vView - vEye, vUp);
+		vStrafe = glm::normalize(vStrafe);
+		vStrafe *= fSpeed;
+
+		glm::vec3 vMoveBy;
+
+		state = glfwGetKey(window, GLFW_KEY_W);
+		if (state == GLFW_PRESS)
+		{
+			vMoveBy += vMove * fFrameInterval;
+		}
+		state = glfwGetKey(window, GLFW_KEY_S);
+		if (state == GLFW_PRESS)
+		{
+			vMoveBy -= vMove * fFrameInterval;
+		}
+		state = glfwGetKey(window, GLFW_KEY_A);
+		if (state == GLFW_PRESS)
+		{
+			vMoveBy -= vStrafe * fFrameInterval;
+		}
+		state = glfwGetKey(window, GLFW_KEY_D);
+		if (state == GLFW_PRESS)
+		{
+			vMoveBy += vStrafe * fFrameInterval;
+		}
+
+		vEye += vMoveBy;
+		vView += vMoveBy;
 		viewMatrix = glm::lookAt(vEye, vView, vUp);	//update our view matrix
-		glfwSetCursorPos(window, iCentX + windowWidth / 2, iCentY + windowHeight / 2);
 	}
-
-	// Get view direction
-	glm::vec3 vMove = vView - vEye;
-	vMove = glm::normalize(vMove);
-	vMove *= fSpeed;
-
-	glm::vec3 vStrafe = glm::cross(vView - vEye, vUp);
-	vStrafe = glm::normalize(vStrafe);
-	vStrafe *= fSpeed;
-
-	glm::vec3 vMoveBy;
-
-	state = glfwGetKey(window, GLFW_KEY_W);
-	if (state == GLFW_PRESS)
-	{
-		vMoveBy += vMove * fFrameInterval;
-	}
-	state = glfwGetKey(window, GLFW_KEY_S);
-	if (state == GLFW_PRESS)
-	{
-		vMoveBy -= vMove * fFrameInterval;
-	}
-	state = glfwGetKey(window, GLFW_KEY_A);
-	if (state == GLFW_PRESS)
-	{
-		vMoveBy -= vStrafe * fFrameInterval;
-	}
-	state = glfwGetKey(window, GLFW_KEY_D);
-	if (state == GLFW_PRESS)
-	{
-		vMoveBy += vStrafe * fFrameInterval;
-	}
-
-	vEye += vMoveBy;
-	vView += vMoveBy;
-	viewMatrix = glm::lookAt(vEye, vView, vUp);	//update our view matrix
-}
-//	if ((GetKeyState(VK_LBUTTON) & 0x100) != 0)
-//	{
-//		if (showCursor)
-//		{
-//			ShowCursor(FALSE);
-//			ShowCursor(FALSE);
-//			showCursor = !showCursor;
-//		}
-//		if (viewMode == VIEW) rotateWithMouse();
-//	}
-//	else
-//		if (!showCursor)
-//		{
-//		ShowCursor(TRUE);
-//		ShowCursor(TRUE);
-//		showCursor = !showCursor;
-//		}
-		
-
-//	// Get view direction
-//	glm::vec3 vMove = vView - vEye;
-//	vMove = glm::normalize(vMove);
-//	vMove *= fSpeed;
-
-//	glm::vec3 vStrafe = glm::cross(vView - vEye, vUp);
-//	vStrafe = glm::normalize(vStrafe);
-//	vStrafe *= fSpeed;
-
-//	int iMove = 0;
-//	glm::vec3 vMoveBy;
-//	//Get vector of move
-//	if ((GetAsyncKeyState('W') >> 15) & 1)
-//		vMoveBy += vMove * fFrameInterval;
-//	if ((GetAsyncKeyState('S') >> 15) & 1)
-//		vMoveBy -= vMove * fFrameInterval;
-//	if ((GetAsyncKeyState('A') >> 15) & 1)
-//		vMoveBy -= vStrafe * fFrameInterval;
-//	if ((GetAsyncKeyState('D') >> 15) & 1)
-//		vMoveBy += vStrafe * fFrameInterval;
-
-//	vEye += vMoveBy;
-//	vView += vMoveBy;
-
-//	if ((GetAsyncKeyState(27) >> 15) & 1)
-//		exit(1);
-
-//	viewMatrix = glm::lookAt(vEye, vView, vUp);	//update our view matrix
 }
 
 /**

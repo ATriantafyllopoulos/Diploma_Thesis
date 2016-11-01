@@ -451,6 +451,7 @@ void ParticleSystem::findExactContactPoint(
 	float4 &cp,
 	float4 &cn)
 {
+
 	float t = r1 / (r1 + r2);
 	cp = p1 + (p2 - p1) * t;
 	cn = normalize(p2 - p1) * (-1.f);
