@@ -18,6 +18,7 @@ Viewer_GL3::Viewer_GL3(GLFWwindow* inWindow)
 	callBackInstance = this;
 	modelMatrix = NULL;
 	scaleFactor = NULL;
+	objectTypeArray = NULL;
 //	showRangeData = true;
 }
 
@@ -101,6 +102,11 @@ void Viewer_GL3::init(void)
 	shader.setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
 	shader.setUniform("gSampler", 0);
 	shader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	shader.setUniform("sunLight.vColor", glm::vec3(1.0f, 0.0f, 0.0f)); // color 
+	shader.setUniform("sunLight.vDirection", glm::vec3(sqrt(2.0f) / 2, -sqrt(2.0f) / 2, 0)); // direction
+	shader.setUniform("sunLight.fAmbient", 0.5f); // ambient
+
 	shader.unbind();
 
 	// camera init parameters
@@ -130,10 +136,12 @@ void Viewer_GL3::init(void)
 		renderer->setWindowSize(windowWidth, windowHeight);
 
 	objModels[0].LoadModelFromFile("Data/OBjmodels/bunny.obj");
+	objModels[1].LoadModelFromFile("Data/OBjmodels/teapot.obj");
 	number_of_objects = 0;
 	CAssimpModel::FinalizeVBO();
 
 }
+
 /*
 * Add new scaling factor. Re-allocate scaling factor array.
 * This must be explicitly called every time a new object is added for rendering.
@@ -141,7 +149,6 @@ void Viewer_GL3::init(void)
 */
 void Viewer_GL3::addScaleFactor(const float &newFactor)
 {
-	number_of_objects++; // increase number of objects by one
 	glm::vec3 newScaleFactor(newFactor, newFactor, newFactor);
 	glm::vec3 *newScaleArray = new glm::vec3[number_of_objects];
 	memcpy(newScaleArray, scaleFactor, sizeof(glm::vec3) * (number_of_objects - 1));
@@ -150,6 +157,17 @@ void Viewer_GL3::addScaleFactor(const float &newFactor)
 		delete scaleFactor;
 	scaleFactor = newScaleArray;
 }
+
+void Viewer_GL3::addObjectType(const int &type)
+{
+	int *newObjectTypeArray = new int[number_of_objects];
+	memcpy(newObjectTypeArray, objectTypeArray, sizeof(int) * (number_of_objects - 1));
+	newObjectTypeArray[number_of_objects - 1] = type;
+	if (objectTypeArray)
+		delete objectTypeArray;
+	objectTypeArray = newObjectTypeArray;
+}
+
 /**
 Rendering function
 */
@@ -164,17 +182,17 @@ void Viewer_GL3::render(void)
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / (float)windowHeight, 0.1f, 100.f);
 
-	cameraUpdate();
+	if (viewMode == M_VIEW)
+		cameraUpdate();
 	UpdateTimer();
 
 	renderer->setProjectionMatrix(projectionMatrix);
-	if(showRangeData)
-		renderer->renderDepthImage();
-	if (viewMode == M_VIEW)
-		renderer->setViewMatrix(viewMatrix);
+	
+	renderer->setViewMatrix(viewMatrix);
 	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
-
-	if (0)
+	if (showRangeData)
+		renderer->renderDepthImage();
+	if (number_of_objects)
 	{
 		CAssimpModel::BindModelsVAO();
 		shader.bind();
@@ -185,7 +203,15 @@ void Viewer_GL3::render(void)
 			glm::mat4 normalMatrix = glm::transpose(glm::inverse(modelMatrix[i]));
 			shader.setUniform("matrices.normalMatrix", normalMatrix);
 			shader.setUniform("matrices.modelMatrix", modelMatrix[i]);
-			objModels[0].RenderModel();
+			switch (objectTypeArray[i])
+			{
+			case M_BUNNY:
+				objModels[0].RenderModel();
+				break;
+			case M_TEAPOT:
+				objModels[1].RenderModel();
+				break;
+			}
 		}
 
 		shader.unbind();

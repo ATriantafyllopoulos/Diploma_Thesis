@@ -15,6 +15,8 @@ enum MenuModes
 	M_AR,
 	M_POINT_SPRITE,
 	M_SOLID_SPHERE,
+	M_BUNNY,
+	M_TEAPOT, 
 	M_BVH,
 	M_UNIFORM_GRID
 };

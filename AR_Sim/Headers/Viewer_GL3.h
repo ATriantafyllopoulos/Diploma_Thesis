@@ -73,7 +73,7 @@ public:
 	void toggleShowRangeData(void){ showRangeData = !showRangeData; };
 	// setters
 	void setRendererVBO(unsigned int id, int numberOfParticles){ renderer->setVertexBuffer(id, numberOfParticles); }
-	void setViewMatrix(const glm::mat4 &x){ renderer->setViewMatrix(x); }
+	void setViewMatrix(const glm::mat4 &x){ viewMatrix = x; }
 	void setModelMatrixArray(glm::mat4 *x){ modelMatrix = x; }
 	void setObjectNumber(const int &x){ number_of_objects = x; }
 	void setNumberOfRangeData(const int &x) { renderer->setNumberOfRangeData(x); }
@@ -83,6 +83,8 @@ public:
 	void setViewModeCommand(const int &mode){ viewMode = mode; }
 
 	void addScaleFactor(const float &newFactor);
+	void addObjectType(const int &type);
+	void increaseNumberOfObjects() { number_of_objects++; }
 private:
 	// camera controls
 	void cameraUpdate();
@@ -116,7 +118,7 @@ private:
     CShader shVertex, shFragment;
 
 	// obj rendering related variables
-	CAssimpModel objModels[1];
+	CAssimpModel objModels[2];
 
 	int viewMode;
 	GLint windowWidth; // Store the width of our window
@@ -129,6 +131,9 @@ private:
 	glm::mat4 *modelMatrix; // pointer to model matrix array
 	
 	glm::vec3 *scaleFactor;
+
+	// integer pointer to type of object throw
+	int *objectTypeArray;
 };
 
 #endif

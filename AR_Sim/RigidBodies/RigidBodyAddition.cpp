@@ -646,7 +646,20 @@ void ParticleSystem::addBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float
 void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale)
 {
 	std::string line;
-	std::ifstream myfile("Data/OBJparticles/teapot/teapot_1_5.txt");
+	std::string fileName("Data/OBJparticles/teapot/teapot_");
+	if (abs(scale - 1.0 < 0.01))
+		fileName += "1_0";
+	else if (abs(scale - 1.5 < 0.01))
+		fileName += "1_5";
+	else if (abs(scale - 2.0 < 0.01))
+		fileName += "2_0";
+	else if (abs(scale - 2.5 < 0.01))
+		fileName += "2_5";
+	else
+		fileName += "1_5";
+	fileName += ".txt";
+	std::ifstream myfile(fileName);
+
 	if (myfile.is_open())
 	{
 		bool initializedNow = false;
@@ -701,7 +714,9 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		}
 		float maxDistance = -100000000;
 		glm::mat3 inertiaTensor;
-		std::cout << "Altering relative positions in range: " << start << "-" << start + particles << std::endl;
+
+		glm::vec3 cm(0, 0, 0);
+		
 		for (int i = start; i < start + particles; i++)
 		{
 			std::getline(myfile, line);
@@ -719,7 +734,30 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			m_hVel[4 * i + 2] = 0.f;
 			m_hVel[4 * i + 3] = 0.f;
 
-			inertiaTensor[0][0] += y *y + z * z; //y*y + z*z
+			cm.x += x;
+			cm.y += y;
+			cm.z += z;
+
+
+		}
+
+		cm = cm / (float)particles;
+		std::cout << "Obj particles model center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
+		glm::vec3 test(0, 0, 0);
+		for (int i = start; i < start + particles; i++)
+		{
+			m_hPos[4 * i] -= cm.x;
+			m_hPos[4 * i + 1] -= cm.y;
+			m_hPos[4 * i + 2] -= cm.z;
+			m_hPos[4 * i + 3] = 0.f;
+
+			float x = m_hPos[4 * i];
+			float y = m_hPos[4 * i + 1];
+			float z = m_hPos[4 * i + 2];
+
+			test += glm::vec3(x, y, z);
+
+			inertiaTensor[0][0] += y * y + z * z; //y*y + z*z
 			inertiaTensor[0][1] -= x * y; //x*y
 			inertiaTensor[0][2] -= x * z; //x*z
 
@@ -731,12 +769,13 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			inertiaTensor[2][1] -= y * z; //y*z
 			inertiaTensor[2][2] += x * x + y * y; //x*x + y*y
 
+			//find max distance from CM so we can use it as radius
 			maxDistance = maxDistance > x ? maxDistance : x;
 			maxDistance = maxDistance > y ? maxDistance : y;
 			maxDistance = maxDistance > z ? maxDistance : z;
-			//std::cout << "Position: (" << x << ", " << y << ", " << z <<")" << std::endl;
 		}
-
+		test /= (float)particles;
+		std::cout << "Obj particles model corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
 		if (!initializedNow)
 			m_numParticles += particles;
 		inertiaTensor = glm::inverse(inertiaTensor);

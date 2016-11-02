@@ -31,7 +31,7 @@ WindowsHandler::WindowsHandler(std::string inTitle, int inWidth, int inHeight)
     glfwSetKeyCallback(window, keyCallbackPure);
 
     viewMode = M_AR;
-    objectMode = M_POINT_SPRITE;
+    objectMode = M_BUNNY;
     collisionMethod = M_BVH;
     PrintMainMenu();
     sdkCreateTimer(&timer);
@@ -63,17 +63,17 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 	}
 	else if (key == GLFW_KEY_O && action == GLFW_PRESS)
 	{
-		if(objectMode == M_POINT_SPRITE)
+		if(objectMode == M_BUNNY)
 		{
-			std::cout << "Changing to throwing solid spheres." << std::endl;
-			objectMode = M_SOLID_SPHERE;
-			world->setObjectMode(M_SOLID_SPHERE);
+			std::cout << "Changing to throwing teapots." << std::endl;
+			objectMode = M_TEAPOT;
+			world->setObjectMode(M_TEAPOT);
 		}
-		else if(objectMode == M_SOLID_SPHERE)
+		else if(objectMode == M_TEAPOT)
 		{
-			std::cout << "Changing to throwing point sprites." << std::endl;
-			objectMode = M_POINT_SPRITE;
-			world->setObjectMode(M_POINT_SPRITE);
+			std::cout << "Changing to throwing bunnies." << std::endl;
+			objectMode = M_BUNNY;
+			world->setObjectMode(M_BUNNY);
 		}
 	}
 	else if (key == GLFW_KEY_M && action == GLFW_PRESS)
@@ -159,7 +159,7 @@ void WindowsHandler::PrintMainMenu()
 	std::cout << "Press C to toggle AR collisions ON and OFF." << std::endl;
 	std::cout << "Press V to toggle between a free moving and an AR view mode." << std::endl;
 	std::cout << "Press M to toggle between collision detection methods (BVH and Uniform Grid)." << std::endl;
-	std::cout << "Press O to toggle between objects (Point Sprite and Solid Sphere)." << std::endl;
+	std::cout << "Press O to toggle between objects (Stanford Bunny and Teapot)." << std::endl;
 	std::cout << "Press P pause in a current frame or continue video." << std::endl;
 	std::cout << "Press R to toggle visualization of range data." << std::endl;
 	std::cout << "Press H at any time to display these instructions again." << std::endl;
