@@ -122,6 +122,7 @@ numThreads(128)
 	m_params.numCells = m_numGridCells;
 	m_params.numBodies = m_numParticles;
 
+	//m_params.particleRadius = 1.0f / 80.0f;
 	m_params.particleRadius = 1.0f / 64.0f;
 	m_params.colliderPos = make_float3(-1.2f, -0.8f, 0.8f);
 	m_params.colliderRadius = 0.2f;
@@ -154,7 +155,7 @@ numThreads(128)
 
 	
 	readRangeData();
-    collisionMethod = M_BVH;
+    collisionMethod = M_UNIFORM_GRID;
 	if (numParticles)
 	{
 		_initialize(numParticles);

@@ -61,5 +61,6 @@ private:
 	vector<int> iMeshSizes;
 	vector<int> iMaterialIndices;
 	int iNumMaterials;
+	int iNumVertices;
 };
 

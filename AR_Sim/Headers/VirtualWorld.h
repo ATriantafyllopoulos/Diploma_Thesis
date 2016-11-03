@@ -47,7 +47,11 @@ public:
 	void decreaseARrestitution(){ psystem->decreaseARrestitution();}
 	void initDemoMode();
 	void DemoMode();
+	void toggleSimulation(){ runSimulation = !runSimulation; }
+
 private:
+
+	bool runSimulation;
 	int objectMode;
 	int numberOfParticles;
 	uint3 gridSize;

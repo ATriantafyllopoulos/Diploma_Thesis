@@ -4,7 +4,6 @@
 static WindowsHandler *callBackInstance;
 WindowsHandler::WindowsHandler() : WindowsHandler::WindowsHandler("Default Name", 640, 480)
 {
-	simulationIsRunning = false;
 	fpsCount = 0;
 	fpsLimit = 1;
 	title = "";
@@ -19,7 +18,6 @@ WindowsHandler::WindowsHandler() : WindowsHandler::WindowsHandler("Default Name"
 WindowsHandler::WindowsHandler(std::string inTitle, int inWidth, int inHeight)
 {
 	callBackInstance = this;
-    simulationIsRunning = false;
     fpsCount = 0;
     fpsLimit = 1;
     title = inTitle;
@@ -109,11 +107,18 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 	}
 	else if (key == GLFW_KEY_P && action == GLFW_PRESS)
 	{
-		world->togglePauseFrame();
+		//world->togglePauseFrame();
+		world->toggleSimulation();
 	}
 	else if (key == GLFW_KEY_H && action == GLFW_PRESS)
 	{
 		PrintMainMenu();
+	}
+	else if (key == GLFW_KEY_F && action == GLFW_PRESS)
+	{
+		world->toggleSimulation();
+		world->DemoMode();
+		world->toggleSimulation();
 	}
 }
 
@@ -219,6 +224,7 @@ void WindowsHandler::Run()
 void WindowsHandler::Demo()
 {
 	do{
+
 		sdkStartTimer(&timer);
 		world->DemoMode();
 		sdkStopTimer(&timer);

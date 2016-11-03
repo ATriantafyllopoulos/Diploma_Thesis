@@ -88,6 +88,7 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 		}
 	}
 	cm /= (float)number_of_vertices;
+	iNumVertices = number_of_vertices;
 	std::cout << "ASSIMP model center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
 	aiVector3D test(0, 0, 0);
 	FOR(i, scene->mNumMeshes)

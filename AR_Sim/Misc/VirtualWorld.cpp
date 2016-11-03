@@ -1,6 +1,5 @@
 #include "VirtualWorld.h"
 
-
 VirtualWorld::VirtualWorld()
 {
 	timestep = 0.05f;
@@ -13,6 +12,7 @@ VirtualWorld::VirtualWorld()
 	collideAttraction = 0.0f;
 	objectMode = M_BUNNY;
 	viewMode = M_VIEW;
+	runSimulation = false;
 }
 
 VirtualWorld::~VirtualWorld()
@@ -117,9 +117,9 @@ void VirtualWorld::addSphere(int x, int y)
 	}
 	else if (objectMode == M_TEAPOT)
 	{
-		psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
+		psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.0f);
 		viewer->increaseNumberOfObjects();
-		viewer->addScaleFactor(0.00015f);
+		viewer->addScaleFactor(0.0002f);
 		viewer->addObjectType(M_TEAPOT);
 		//psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
 	}
@@ -148,9 +148,9 @@ void VirtualWorld::throwSphere(int x, int y)
 	}
 	else if (objectMode == M_TEAPOT)
 	{
-		psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
+		psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.0f);
 		viewer->increaseNumberOfObjects();
-		viewer->addScaleFactor(0.00015f);
+		viewer->addScaleFactor(0.0002f);
 		viewer->addObjectType(M_TEAPOT);
 //		psystem->addTeapot(worldSpaceCoordinates, velocity);
 		//psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
@@ -168,7 +168,7 @@ void VirtualWorld::initDemoMode()
 	std::srand(NULL);
 	viewer->toggleShowRangeData(); //don't show range data
 	psystem->toggleARcollisions(); //disable AR collisions
-	psystem->setCollisionDetectionMethod(M_BVH);
+	psystem->setCollisionDetectionMethod(M_UNIFORM_GRID);
 	//camera is static
 //	viewMode = M_VIEW;viewer->viewModeCommand(M_VIEW);
 	viewMode = M_VIEW; viewer->setViewModeCommand(M_VIEW);
@@ -177,34 +177,47 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
 	psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
-	for (float x = -1; x < 1; x += 0.6)
-		for (float y = -0.8; y < 0.8; y += 0.6)
-			for (float z = 0.1; z < 0.9; z += 0.4)
-			{
-				glm::vec3 worldSpaceCoordinates(x, y, z);
+	//for (float x = -1; x < 1; x += 0.6)
+	//	for (float y = -0.8; y < 0.8; y += 0.6)
+	//		for (float z = 0.1; z < 0.9; z += 0.4)
+	//		{
+	//			glm::vec3 worldSpaceCoordinates(x, y, z);
 
-				glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
-						(float)std::rand() / (float)RAND_MAX / 10.f,
-						(float)std::rand() / (float)RAND_MAX / 10.f);
+	//			glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
+	//					(float)std::rand() / (float)RAND_MAX / 10.f,
+	//					(float)std::rand() / (float)RAND_MAX / 10.f);
+	//			//glm::vec3 velocity(0, 0, 0);
+	//			//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
+	//			psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f);
+	//			viewer->increaseNumberOfObjects();
+	//			viewer->addScaleFactor(0.00020f);
+	//			viewer->addObjectType(M_TEAPOT);
+	//		}
 
-				//glm::vec3 velocity(0, 0, 0);
-				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 1.5f);
-				viewer->increaseNumberOfObjects();
-				viewer->addScaleFactor(0.00015f);
-				viewer->addObjectType(M_TEAPOT);
-			}
-//	for (float x = -1; x < 1; x += 0.4)
-//		for (float y = -0.8; y < 0.8; y += 0.4)
-//			for (float z = 0.1; z < 0.9; z += 0.2)
-//			{
-//				glm::vec3 worldSpaceCoordinates(x, y, z);
-//				//		glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 100.f,
-//				//				(float)std::rand() / (float)RAND_MAX / 100.f,
-//				//				(float)std::rand() / (float)RAND_MAX / 100.f);
-//				glm::vec3 velocity(0.1, 0, 0);
-//				psystem->addMolecule(worldSpaceCoordinates, velocity);
-//			}
+	//// teapot 1
+	//psystem->addTeapot(glm::vec3(0, 0.3, 0.0), glm::vec3(0, -0.1, 0.0), glm::vec3(0, 0.0, 0), 2.0f);
+	//viewer->increaseNumberOfObjects();
+	//viewer->addScaleFactor(0.00020f);
+	//viewer->addObjectType(M_TEAPOT);
+
+	//// teapot 2
+	//psystem->addTeapot(glm::vec3(0, -0.3, 0.0), glm::vec3(0, 0, 0), glm::vec3(0, 0.0, 0), 2.0f);
+	//viewer->increaseNumberOfObjects();
+	//viewer->addScaleFactor(0.00020f);
+	//viewer->addObjectType(M_TEAPOT);
+
+	// teapot 1
+	psystem->addTeapot(glm::vec3(0.2, 0.0, 0.0), glm::vec3(0, 0.0, 0.0), glm::vec3(0, 0.1, 0), 2.0f);
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.00020f);
+	viewer->addObjectType(M_TEAPOT);
+
+	// teapot 2
+	psystem->addTeapot(glm::vec3(-0.15, 0.0, 0.0), glm::vec3(0, 0, 0), glm::vec3(0, 0.0, 0), 2.0f);
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.00020f);
+	viewer->addObjectType(M_TEAPOT);
+
 	psystem->initCPU();
 	psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
 }
@@ -219,8 +232,9 @@ void VirtualWorld::DemoMode()
 	psystem->setCollideDamping(collideDamping);
 	psystem->setCollideShear(collideShear);
 	psystem->setCollideAttraction(collideAttraction);
-	psystem->update(timestep);
-	//psystem->updateCPU(timestep);
+	if (runSimulation)
+		psystem->update(timestep);
+		//psystem->updateCPU(timestep);
 
 	viewer->setObjectNumber(psystem->getNumberOfObjects());
 	viewer->setModelMatrixArray(psystem->getModelMatrixArray());

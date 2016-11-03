@@ -747,7 +747,7 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		for (int i = start; i < start + particles; i++)
 		{
 			m_hPos[4 * i] -= cm.x;
-			m_hPos[4 * i + 1] -= cm.y;
+			m_hPos[4 * i + 1] -= cm.y + m_params.particleRadius;
 			m_hPos[4 * i + 2] -= cm.z;
 			m_hPos[4 * i + 3] = 0.f;
 
@@ -779,7 +779,13 @@ void ParticleSystem::initTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		if (!initializedNow)
 			m_numParticles += particles;
 		inertiaTensor = glm::inverse(inertiaTensor);
-
+		std::cout << "Teapot inverse inertia tensor: " << std::endl;
+		for (int row = 0; row < 3; row++)
+		{
+			for (int col = 0; col < 3; col++)
+				std::cout << inertiaTensor[row][col] << " ";
+			std::cout << std::endl;
+		}
 		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
 		//reallocate client (GPU) memory to fit new data
 

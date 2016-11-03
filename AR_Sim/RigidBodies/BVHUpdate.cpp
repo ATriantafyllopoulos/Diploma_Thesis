@@ -785,6 +785,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 {
 	assert(m_bInitialized);
 
+
 	//float *dPos;
 	//float *dCol;
 	if (m_bUseOpenGL)

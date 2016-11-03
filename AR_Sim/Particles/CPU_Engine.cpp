@@ -6,11 +6,11 @@ void ParticleSystem::updateCPU(const float &dt)
 	//	std::cout << "Maxpos: (" << maxPos.x << ", " << maxPos.y << ", " << maxPos.z << ")" << std::endl;
 	integrateCPU(dt);
 	collisionsCPU();
-	float *dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+	dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
 	checkCudaErrors(cudaMemcpy(dPos, POS_CPU, sizeof(float) * 4 * m_numParticles, cudaMemcpyHostToDevice));
 	unmapGLBufferObject(m_cuda_posvbo_resource);
 
-	float *dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
+	dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
 	checkCudaErrors(cudaMemcpy(dCol, COL_CPU, sizeof(float) * 4 * m_numParticles, cudaMemcpyHostToDevice));
 	unmapGLBufferObject(m_cuda_colorvbo_resource);
 }
@@ -373,7 +373,7 @@ void ParticleSystem::collisionsCPU()
 		POS_CPU[particle] = CM_CPU[indexRB[particle]] + displacement[particle];
 	}
 
-	//findParticleCollisions();
+	findParticleCollisions();
 
 	for (int particle = 0; particle < m_numParticles; particle++)
 	{
@@ -431,7 +431,7 @@ float ParticleSystem::computeImpulseMagnitude(
 	glm::vec3 velA = vA + glm::cross(wA, rA);
 	glm::vec3 velB = vB + glm::cross(wB, rB);
 
-	float numerator = -1.9 * (glm::dot(velA, norm) - glm::dot(velB, norm));
+	float numerator = -2.0 * (glm::dot(velA, norm) - glm::dot(velB, norm));
 	float a = 1.f / m1;
 	float b = 1.f / m2;
 	float c = glm::dot(glm::cross(Iinv1 * glm::cross(rA, norm), rA), norm);
@@ -464,7 +464,7 @@ bool ParticleSystem::testParticleCollision(const float4 &p1, const float4 &p2, c
 	float displacementDistance = length(make_float3(displacementVector));
 	if (displacementDistance < r1 + r2)
 	{
-		float dr = (r1 + r2 - displacementDistance) / 2;
+		float dr = (r1 + r2 - displacementDistance);
 		displacementVector = normalize(displacementVector);
 		CM1 -= displacementVector * dr;
 		CM1.w = 0;

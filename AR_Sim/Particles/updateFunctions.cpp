@@ -111,6 +111,7 @@ void integrateRigidBodyCPU(
 		for (int row = 0; row < 3; row++)
 			for (int col = 0; col < 3; col++)
 				modelMatrix[row][col] = rot[row][col];
+
 		
 		modelMatrix[3][0] = locPos.x;
 		modelMatrix[3][1] = locPos.y;
@@ -308,11 +309,12 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 				int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				
-				if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
+				if ((index < rigidBodyIndex || collisionMethod == M_BVH) &&
+					testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
 					m_params.particleRadius,
 					m_params.particleRadius,
-					CMs_CPU[index]) && index < rigidBodyIndex)
+					CMs_CPU[index]))
 				{
 					float4 cp, cn;
 					findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
@@ -333,15 +335,68 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 						r1, r2,	IinvA, IinvB, mA, mB, cn);
 
 					float4 impulseVector = cn * impulse;
-					
+
+					/*std::cout << "Collision normal: (" << cn.x << ", " <<
+						cn.y << ", " << cn.z << ", " << cn.w << ")" << std::endl;
+					std::cout << "r1: (" << r1.x << ", " <<
+						r1.y << ", " << r1.z << ", " << r1.w << ")" << std::endl;
+					std::cout << "r2: (" << r2.x << ", " <<
+						r2.y << ", " << r2.z << ", " << r2.w << ")" << std::endl;
+
+					glm::vec3 vA(vel_CPU[index].x, vel_CPU[index].y, vel_CPU[index].z);
+					glm::vec3 vB(vel_CPU[rigidBodyIndex].x, vel_CPU[rigidBodyIndex].y, vel_CPU[rigidBodyIndex].z);
+
+					glm::vec3 wA(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
+					glm::vec3 wB(rbAngularVelocity_CPU[rigidBodyIndex].x, rbAngularVelocity_CPU[rigidBodyIndex].y, rbAngularVelocity_CPU[rigidBodyIndex].z);
+
+					glm::vec3 rAA(r1.x, r1.y, r1.z);
+					glm::vec3 rBB(r2.x, r2.y, r2.z);
+
+					glm::vec3 norm(cn.x, cn.y, cn.z);
+
+					glm::vec3 velA = vA + glm::cross(wA, rAA);
+					glm::vec3 velB = vB + glm::cross(wB, rBB);
+
+					float numerator = glm::dot(velA - velB, norm);
+					std::cout << "Relative velocity: " << numerator << std::endl;
+
+					std::cout << "Iinv1:" << std::endl;
+					for (int row = 0; row < 3; row++)
+					{
+						for (int col = 0; col < 3; col++)
+							std::cout << IinvA[row][col] << " ";
+						std::cout << std::endl;
+					}
+
+					std::cout << "Iinv2:" << std::endl;
+					for (int row = 0; row < 3; row++)
+					{
+						for (int col = 0; col < 3; col++)
+							std::cout << IinvB[row][col] << " ";
+						std::cout << std::endl;
+					}
+
+					std::cout << "V1 before impulse: (" << vel_CPU[index].x << ", " <<
+						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
+					std::cout << "V2 before impulse: (" << vel_CPU[rigidBodyIndex].x << ", " <<
+						vel_CPU[rigidBodyIndex].y << ", " << vel_CPU[rigidBodyIndex].z << ")" << std::endl;*/
+
 					// apply linear impulse
 					vel_CPU[index] += impulseVector / mA;
 					vel_CPU[rigidBodyIndex] -= impulseVector / mB;
-
+					/*std::cout << "V1 after impulse: (" << vel_CPU[index].x << ", " <<
+						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
+					std::cout << "V2 after impulse: (" << vel_CPU[rigidBodyIndex].x << ", " <<
+						vel_CPU[rigidBodyIndex].y << ", " << vel_CPU[rigidBodyIndex].z << ")" << std::endl;*/
 					// compute auxiliaries for angular impulse
 					glm::vec3 rA(r1.x, r1.y, r1.z);
 					glm::vec3 rB(r2.x, r2.y, r2.z);
 					glm::vec3 impulseVectorGLM(impulseVector.x, impulseVector.y, impulseVector.z);
+
+					/*std::cout << "W1 before impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
+						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
+					std::cout << "W2 before impulse: (" << rbAngularVelocity_CPU[rigidBodyIndex].x << ", " <<
+						rbAngularVelocity_CPU[rigidBodyIndex].y << ", " << rbAngularVelocity_CPU[rigidBodyIndex].z << ")" << std::endl;*/
 
 					// apply angular impulse
 					glm::vec3 AngularImpulse = IinvA *
@@ -352,7 +407,11 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 						(glm::cross(glm::vec3(r2.x, r2.y, r2.z), impulseVectorGLM * (-1.f)));
 					rbAngularVelocity_CPU[rigidBodyIndex] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
 
-
+					/*std::cout << "W1 after impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
+						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
+					std::cout << "W2 after impulse: (" << rbAngularVelocity_CPU[rigidBodyIndex].x << ", " <<
+						rbAngularVelocity_CPU[rigidBodyIndex].y << ", " << rbAngularVelocity_CPU[rigidBodyIndex].z << ")" << std::endl;
+					std::cout << std::endl;*/
 				}
 			}
 			current_particle++;
@@ -503,8 +562,14 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 					float4 impulseVector = cn * impulse;
 
 					// apply linear impulse
+					std::cout << "V1 before impulse: (" << vel_CPU[index].x << ", " <<
+						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
+					std::cout << "Collision normal: (" << cn.x << ", " <<
+						cn.y << ", " << cn.z << ", " << cn.w << ")" << std::endl;
 					vel_CPU[index] += impulseVector / mA;
 					vel_CPU[index].w = 0;
+					std::cout << "V1 after impulse: (" << vel_CPU[index].x << ", " <<
+						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
 					// compute auxiliaries for angular impulse
 					glm::vec3 rA(r1.x, r1.y, r1.z);
 					glm::vec3 impulseVectorGLM(impulseVector.x, impulseVector.y, impulseVector.z);

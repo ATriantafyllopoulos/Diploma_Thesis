@@ -41,7 +41,6 @@ public:
     void Demo();
 private:
 
-    bool simulationIsRunning;
     VirtualWorld *world;
     void PrintMainMenu();
     void createWindow();
