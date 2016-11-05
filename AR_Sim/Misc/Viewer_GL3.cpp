@@ -137,6 +137,7 @@ void Viewer_GL3::init(void)
 
 	objModels[0].LoadModelFromFile("Data/OBjmodels/bunny.obj");
 	objModels[1].LoadModelFromFile("Data/OBjmodels/teapot.obj");
+	objModels[2].LoadModelFromFile("Data/OBjmodels/banana.obj");
 	number_of_objects = 0;
 	CAssimpModel::FinalizeVBO();
 	
@@ -178,8 +179,8 @@ void Viewer_GL3::render(void)
     glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	viewport = glm::vec4(0, 0, windowWidth, windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / (float)windowHeight, 0.1f, 100.f);
 
@@ -212,6 +213,9 @@ void Viewer_GL3::render(void)
 			case M_TEAPOT:
 				objModels[1].RenderModel();
 				break;
+			case M_BANANA:
+				objModels[2].RenderModel();
+				break;
 			}
 		}
 
@@ -220,7 +224,6 @@ void Viewer_GL3::render(void)
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
-
 
 /*-----------------------------------------------
 

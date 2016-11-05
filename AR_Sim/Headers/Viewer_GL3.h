@@ -118,7 +118,7 @@ private:
     CShader shVertex, shFragment;
 
 	// obj rendering related variables
-	CAssimpModel objModels[2];
+	CAssimpModel objModels[3];
 
 	int viewMode;
 	GLint windowWidth; // Store the width of our window

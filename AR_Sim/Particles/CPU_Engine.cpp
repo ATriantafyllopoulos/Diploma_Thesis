@@ -399,13 +399,20 @@ float ParticleSystem::computeImpulseMagnitude(
 	glm::vec3 norm(n.x, n.y, n.z);
 
 	glm::vec3 velA = vA + glm::cross(wA, rA);
-	float epsilon = 1;
-	float numerator = -(1 + epsilon) * (glm::dot(velA, norm));
+	float relativeVelocity = glm::dot(velA, norm);
+	// if bodies are moving away from one another
+	// then we do not have colliding contact
+	// and we should disregard the collision
+	if (relativeVelocity > 0)
+		return 0.f;
+	float epsilon = 1.f;
+	float numerator = -(1 + epsilon) * relativeVelocity;
 	float a = 1.f / mA;
 	float b = glm::dot(glm::cross(IinvA * glm::cross(rA, norm), rA), norm);
 	float denominator = a + b;
 	float j = numerator / denominator;
 
+	
 	return j;
 }
 
@@ -431,7 +438,8 @@ float ParticleSystem::computeImpulseMagnitude(
 	glm::vec3 velA = vA + glm::cross(wA, rA);
 	glm::vec3 velB = vB + glm::cross(wB, rB);
 
-	float numerator = -2.0 * (glm::dot(velA, norm) - glm::dot(velB, norm));
+	float epsilon = 1.f;
+	float numerator = -(1.f + epsilon) *(glm::dot(velA, norm) - glm::dot(velB, norm));
 	float a = 1.f / m1;
 	float b = 1.f / m2;
 	float c = glm::dot(glm::cross(Iinv1 * glm::cross(rA, norm), rA), norm);

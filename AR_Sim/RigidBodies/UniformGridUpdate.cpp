@@ -502,7 +502,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 		Find_Augmented_Reality_Collisions_Uniform_Grid();
 
 		// handle collisions between rigid bodies and real scene
-		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		Handle_Augmented_Reality_Collisions_Catto_CPU();
 	}
 
 	// find collisions between rigid bodies

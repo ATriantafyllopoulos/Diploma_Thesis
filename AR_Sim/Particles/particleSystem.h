@@ -358,6 +358,9 @@ public:
 
 	void addTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 	void initTeapot(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
+	
+	void addBanana(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
+	void initBanana(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 
 private:
 	void addRigidBody(int previousParticleCount,
@@ -389,6 +392,10 @@ private:
 	int firstTeapotIndex;
 	int teapotParticles;
 	float *teapotRelativePositions;
+
+	int firstBananaIndex;
+	int bananaParticles;
+	float *bananaRelativePositions;
 private:
 	//Structure of Arrays parameters and methods
 
@@ -564,6 +571,7 @@ private:
 	void Find_Augmented_Reality_Collisions_Uniform_Grid();
 	void Handle_Augmented_Reality_Collisions_Baraff_GPU();
 	void Handle_Augmented_Reality_Collisions_Baraff_CPU();
+	void Handle_Augmented_Reality_Collisions_Catto_CPU();
 
 	// BVH collision detection
 	void Find_Rigid_Body_Collisions_BVH();
