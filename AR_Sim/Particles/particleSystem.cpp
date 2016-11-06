@@ -105,6 +105,11 @@ numThreads(128)
 	modelMatrix = NULL;
 	cumulativeQuaternion = NULL;
 
+	firstObjectIndex = NULL;
+	objectParticlePositions = NULL;
+	objectParticleStart = NULL;
+	objectsUsed = 0;
+
 	minPos.x = 10000.f;
 	minPos.y = 10000.f;
 	minPos.z = 10000.f;
@@ -172,7 +177,9 @@ numThreads(128)
     firstTeapotIndex = -1;
     teapotParticles = 0;
     teapotRelativePositions = NULL;
-
+	firstBananaIndex = -1;
+	bananaParticles = 0;
+	bananaRelativePositions = NULL;
     std::cout << "Particle system initialized successfully." << std::endl;
 }
 

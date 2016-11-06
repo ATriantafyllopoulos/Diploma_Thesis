@@ -18,6 +18,7 @@ enum MenuModes
 	M_BUNNY,
 	M_BANANA,
 	M_TEAPOT, 
+	M_CUBE,
 	M_BVH,
 	M_UNIFORM_GRID
 };

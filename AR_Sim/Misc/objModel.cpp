@@ -105,7 +105,7 @@ bool CAssimpModel::LoadModelFromFile(char* sFilePath)
 			{
 				aiVector3D pos = mesh->mVertices[face.mIndices[k]] - cm;
 				test += pos;
-				aiVector3D uv = mesh->mTextureCoords[0][face.mIndices[k]];
+				aiVector3D uv = mesh->HasTextureCoords(0) ? mesh->mTextureCoords[0][face.mIndices[k]] : aiVector3D(1.0f, 1.0f, 1.0f);
 				aiVector3D normal = mesh->HasNormals() ? mesh->mNormals[face.mIndices[k]] : aiVector3D(1.0f, 1.0f, 1.0f);
 				vboModelData.AddData(&pos, sizeof(aiVector3D));
 				vboModelData.AddData(&uv, sizeof(aiVector2D));

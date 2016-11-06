@@ -362,7 +362,16 @@ public:
 	void addBanana(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 	void initBanana(glm::vec3 pos = glm::vec3(0, 0, 0), glm::vec3 vel = glm::vec3(0, 0, 0), glm::vec3 ang = glm::vec3(0, 0, 0), float scale = 1.5f);
 
+	void addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName);
+
 private:
+	void addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType);
+	void initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType);
+	int *firstObjectIndex;
+	int *objectParticleStart;
+	float *objectParticlePositions;
+	int objectsUsed;
+	std::vector<std::string> modelNameVector;
 	void addRigidBody(int previousParticleCount,
 			int particlesAdded,
 			float *newRelativePos, //new relative position - 4 * particlesAdded

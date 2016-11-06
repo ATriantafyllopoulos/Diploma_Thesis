@@ -1336,12 +1336,12 @@ void ParticleSystem::initBanana(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 
 void ParticleSystem::addBanana(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale)
 {
-	if (firstTeapotIndex == -1)
+	if (firstBananaIndex == -1)
 	{
 		initBanana(pos, vel, ang, scale);
 		return;
 	}
-	float *dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+	dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
 	mapRelativePositionIndependentParticlesWrapper(
 		(float4 *)dPos, //particle positions
 		(float4 *)relativePos, //relative particle positions
@@ -1471,4 +1471,462 @@ void ParticleSystem::addBanana(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 		newCountARCollions, //particlesAdded
 		newParticleIndex, //particlesAdded
 		true);
+}
+
+void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType)
+{
+	std::string line;
+	std::string fileName("Data/OBJparticles/");
+	fileName += modelName;
+	fileName += '/';
+	fileName += modelName;
+	fileName += '_';
+	if (abs(scale - 1.0 < 0.01))
+		fileName += "1_0";
+	else if (abs(scale - 1.5 < 0.01))
+		fileName += "1_5";
+	else if (abs(scale - 2.0 < 0.01))
+		fileName += "2_0";
+	else if (abs(scale - 2.5 < 0.01))
+		fileName += "2_5";
+	else
+		fileName += "1_5";
+	fileName += ".txt";
+	std::ifstream myfile(fileName);
+
+	if (myfile.is_open())
+	{
+		bool initializedNow = false;
+		std::getline(myfile, line);
+		std::istringstream in(line);
+		int particles;
+		in >> particles;
+		const int start = m_numParticles;
+		if (!m_numParticles)
+		{
+			std::cout << "System has " << m_numParticles << " particles" << std::endl;
+			_initialize(particles);
+			initializedNow = true;
+		}
+		std::cout << modelName << " object has " << particles << " particles" << std::endl;
+		
+		objectsUsed++;
+		std::cout << "Number of objects used is " << objectsUsed << std::endl;
+		int *newObjectIndex = new int[objectsUsed];
+		memcpy(newObjectIndex, firstObjectIndex, sizeof(int) * (objectsUsed - 1));
+		newObjectIndex[objectsUsed - 1] = numRigidBodies;
+		if (firstObjectIndex)
+			delete firstObjectIndex;
+		firstObjectIndex = newObjectIndex;
+
+		int *newObjectParticleStart = new int[objectsUsed];
+		memcpy(newObjectParticleStart, objectParticleStart, sizeof(int) * (objectsUsed - 1));
+		if (objectsUsed > 1)
+			newObjectParticleStart[objectType - 1] = newObjectParticleStart[objectType - 2] + particlesPerObjectThrown[firstObjectIndex[objectsUsed - 2]];
+		else
+			newObjectParticleStart[objectType - 1] = 0;
+		if (objectParticleStart)
+			delete objectParticleStart;
+		objectParticleStart = newObjectParticleStart;
+		
+		//objectsThrown++;
+		//reallocate host memory to fit new data
+		float *h_newPos = new float[(start + particles) * 4]; //add #(particles) new particles to our system
+		float *h_newVel = new float[(start + particles) * 4];
+
+		float *dPos;
+		if (!initializedNow)
+		{
+
+			dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+			mapRelativePositionIndependentParticlesWrapper(
+				(float4 *)dPos, //particle positions
+				(float4 *)relativePos, //relative particle positions
+				rbIndices, //rigid body indices
+				start,
+				numThreads);
+			cudaMemcpy(h_newPos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost); //copy old positions array to newly allocated space
+			unmapGLBufferObject(m_cuda_posvbo_resource);
+
+			checkCudaErrors(cudaGetLastError());
+			checkCudaErrors(cudaDeviceSynchronize());
+
+			cudaMemcpy(h_newVel, m_dVel, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost); //copy old velocities array to newly allocated space
+
+			checkCudaErrors(cudaGetLastError());
+			checkCudaErrors(cudaDeviceSynchronize());
+
+			free(m_hPos); //free old positions array
+			m_hPos = h_newPos; //change pointer to new positions array
+			free(m_hVel); //free old velocities array
+			m_hVel = h_newVel; //change pointer to new velocities array
+			checkCudaErrors(cudaGetLastError());
+			checkCudaErrors(cudaDeviceSynchronize());
+		}
+		float maxDistance = -100000000;
+		glm::mat3 inertiaTensor;
+
+		glm::vec3 cm(0, 0, 0);
+
+		for (int i = start; i < start + particles; i++)
+		{
+			std::getline(myfile, line);
+			std::istringstream in(line);
+			float x, y, z;
+			in >> x >> y >> z;
+
+			m_hPos[4 * i] = x;
+			m_hPos[4 * i + 1] = y;
+			m_hPos[4 * i + 2] = z;
+			m_hPos[4 * i + 3] = 0.f;
+
+			m_hVel[4 * i] = 0.f;
+			m_hVel[4 * i + 1] = 0.f;
+			m_hVel[4 * i + 2] = 0.f;
+			m_hVel[4 * i + 3] = 0.f;
+
+			cm.x += x;
+			cm.y += y;
+			cm.z += z;
+
+
+		}
+		cm = cm / (float)particles;
+		std::cout << "Obj particles model center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
+		glm::vec3 test(0, 0, 0);
+		float yAxisOffset = 0;
+		if (!strcmp(modelName, "banana"))
+			yAxisOffset = 3 * m_params.particleRadius;
+		else if (!strcmp(modelName, "teapot"))
+			yAxisOffset = 2 * m_params.particleRadius;
+		for (int i = start; i < start + particles; i++)
+		{
+			m_hPos[4 * i] -= cm.x;
+			m_hPos[4 * i + 1] -= cm.y + yAxisOffset;
+			m_hPos[4 * i + 2] -= cm.z;
+			m_hPos[4 * i + 3] = 0.f;
+
+			float x = m_hPos[4 * i];
+			float y = m_hPos[4 * i + 1];
+			float z = m_hPos[4 * i + 2];
+
+			test += glm::vec3(x, y, z);
+
+			inertiaTensor[0][0] += y * y + z * z; //y*y + z*z
+			inertiaTensor[0][1] -= x * y; //x*y
+			inertiaTensor[0][2] -= x * z; //x*z
+
+			inertiaTensor[1][0] -= x * y; //x*y
+			inertiaTensor[1][1] += x * x + z * z; //x*x + z*z
+			inertiaTensor[1][2] -= y * z; //y*z
+
+			inertiaTensor[2][0] -= x * z; //x*z
+			inertiaTensor[2][1] -= y * z; //y*z
+			inertiaTensor[2][2] += x * x + y * y; //x*x + y*y
+
+			//find max distance from CM so we can use it as radius
+			maxDistance = maxDistance > x ? maxDistance : x;
+			maxDistance = maxDistance > y ? maxDistance : y;
+			maxDistance = maxDistance > z ? maxDistance : z;
+		}
+		test /= (float)particles;
+		std::cout << "Obj particles corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
+		if (!initializedNow)
+			m_numParticles += particles;
+		inertiaTensor = glm::inverse(inertiaTensor);
+		/*std::cout << modelName << " inverse inertia tensor: " << std::endl;
+		for (int row = 0; row < 3; row++)
+		{
+			for (int col = 0; col < 3; col++)
+				std::cout << inertiaTensor[row][col] << " ";
+			std::cout << std::endl;
+		}*/
+		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
+		//reallocate client (GPU) memory to fit new data
+		reAllocateMemory(&objectParticlePositions, 4 * m_numParticles,
+			&m_hPos[4 * start], 4 * particles, 4 * (m_numParticles - particles), cudaMemcpyHostToDevice);
+		//cudaMalloc((void**)&bananaRelativePositions, particles * sizeof(float) * 4);
+		//cudaMemcpy(bananaRelativePositions, &m_hPos[4 * start], particles * sizeof(float) * 4, cudaMemcpyHostToDevice);
+
+		//new per particle values
+		float *newRelativePos;
+		checkCudaErrors(cudaMalloc((void**)&newRelativePos, 4 * sizeof(float) * particles));
+		checkCudaErrors(cudaMemcpy(newRelativePos, &m_hPos[4 * start], 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+		float *newParticleVelocity;
+		checkCudaErrors(cudaMalloc((void**)&newParticleVelocity, 4 * sizeof(float) * particles));
+		checkCudaErrors(cudaMemcpy(newParticleVelocity, &m_hVel[4 * start], 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+		float *newPerParticleValues = new float[4 * particles];
+		memset(newPerParticleValues, 0, 4 * sizeof(float) * particles);
+		float *newParticleForce;
+		checkCudaErrors(cudaMalloc((void**)&newParticleForce, 4 * sizeof(float) * particles));
+		checkCudaErrors(cudaMemcpy(newParticleForce, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+		float *newParticleTorque;
+		checkCudaErrors(cudaMalloc((void**)&newParticleTorque, 4 * sizeof(float) * particles));
+		checkCudaErrors(cudaMemcpy(newParticleTorque, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+		float *newParticlePosition;
+		checkCudaErrors(cudaMalloc((void**)&newParticlePosition, 4 * sizeof(float) * particles));
+		checkCudaErrors(cudaMemcpy(newParticlePosition, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+		int *newIndexArray = new int[particles];
+		for (int i = 0; i < particles; i++)
+			newIndexArray[i] = numRigidBodies; //numRigidBodies has not yet increased
+		int *newParticleIndex;
+		checkCudaErrors(cudaMalloc((void**)&newParticleIndex, sizeof(int) * particles));
+		checkCudaErrors(cudaMemcpy(newParticleIndex, newIndexArray, sizeof(int) * particles, cudaMemcpyHostToDevice));
+
+		int *newCountARCollions;
+		checkCudaErrors(cudaMalloc((void**)&newCountARCollions, sizeof(int) * particles));
+		memset(newIndexArray, 0, sizeof(int) * particles); //reset values to zero
+		checkCudaErrors(cudaMemcpy(newCountARCollions, newIndexArray, sizeof(int) * particles, cudaMemcpyHostToDevice));
+
+		delete newIndexArray;
+		delete newPerParticleValues;
+
+		glm::mat3 *newInverseInertia;
+		checkCudaErrors(cudaMalloc((void**)&newInverseInertia, sizeof(glm::mat3)));
+		checkCudaErrors(cudaMemcpy(newInverseInertia, &inertiaTensor, sizeof(glm::mat3), cudaMemcpyHostToDevice));
+
+		glm::vec3 *newRigidBodyAngularAcceleration;
+		glm::vec3 newwdot(0.f, 0.f, 0.f);
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularAcceleration, sizeof(glm::vec3)));
+		checkCudaErrors(cudaMemcpy(newRigidBodyAngularAcceleration, &newwdot, sizeof(glm::vec3), cudaMemcpyHostToDevice));
+
+		glm::quat *newRigidBodyQuaternion;
+		glm::quat newQ(1.f, 0.f, 0.f, 0.f);
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyQuaternion, sizeof(glm::quat)));
+		checkCudaErrors(cudaMemcpy(newRigidBodyQuaternion, &newQ, sizeof(glm::quat), cudaMemcpyHostToDevice));
+
+
+		float *newRigidBodyCM;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
+		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
+		checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyVelocity;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyVelocity, 4 * sizeof(float)));
+		float4 newVel = make_float4(vel.x, vel.y, vel.z, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyVelocity, &newVel, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyAngularVelocity;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularVelocity, 4 * sizeof(float)));
+		float4 newAngVel = make_float4(ang.x, ang.y, ang.z, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyAngularVelocity, &newAngVel, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyForce;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyForce, 4 * sizeof(float)));
+		float4 newForce = make_float4(0, 0, 0, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyForce, &newForce, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyAngularMomentum;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularMomentum, 4 * sizeof(float)));
+		float4 newL = make_float4(0, 0.f, 0, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyAngularMomentum, &newL, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyLinearMomentum;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyLinearMomentum, 4 * sizeof(float)));
+		float4 newP = make_float4(vel.x, vel.y, vel.z, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyLinearMomentum, &newP, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyTorque;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyTorque, 4 * sizeof(float)));
+		float4 newTorque = make_float4(0, 0, 0, 0);
+		checkCudaErrors(cudaMemcpy(newRigidBodyTorque, &newTorque, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyRadius;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
+		float newRadius = maxDistance;
+		checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &newRadius, sizeof(float), cudaMemcpyHostToDevice));
+
+		float *newRigidBodyMass;
+		checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
+		float newMass = 1.f; //ISSUE: change this to simulate rigid bodies of different mass - after changing it also change inertia
+		checkCudaErrors(cudaMemcpy(newRigidBodyMass, &newMass, sizeof(float), cudaMemcpyHostToDevice));
+
+		addRigidBody(start,
+			particles,
+			newRelativePos, //new relative position - 4 * particlesAdded
+			newParticleVelocity, //new particle velocity - 4 * particlesAdded
+			newInverseInertia, //new inverse inertia tensor - 1
+			newRigidBodyCM, //new rigid body center of mass - 4
+			newRigidBodyVelocity, //new rigid body velocity - 4
+			newRigidBodyAngularVelocity, //new rigid body angular velocity - 4
+			newRigidBodyAngularAcceleration, //1
+			newRigidBodyQuaternion, //new rigid body quaternion - 4
+			newRigidBodyForce, //new rigid body force - 4
+			newRigidBodyMass, //1
+			newRigidBodyAngularMomentum, //4
+			newRigidBodyLinearMomentum, //4
+			newRigidBodyTorque, //4
+			newRigidBodyRadius, //1
+			newParticleForce, //4 * particlesAdded
+			newParticleTorque, //4 * particlesAdded
+			newParticlePosition, //4 * particlesAdded
+			newCountARCollions, //particlesAdded
+			newParticleIndex, //particlesAdded
+			true);
+
+		myfile.close();
+	}
+	else
+		std::cout << "Unable to open file" << std::endl;
+}
+
+void ParticleSystem::addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType)
+{
+	float *dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+	mapRelativePositionIndependentParticlesWrapper(
+		(float4 *)dPos, //particle positions
+		(float4 *)relativePos, //relative particle positions
+		rbIndices, //rigid body indices
+		m_numParticles,
+		numThreads);
+	unmapGLBufferObject(m_cuda_posvbo_resource);
+	int start = m_numParticles;
+	int objectIndex = firstObjectIndex[objectType];
+	int particles = particlesPerObjectThrown[objectIndex];
+	m_numParticles += particles;
+	std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
+	//reallocate client (GPU) memory to fit new data
+	float *newRelativePos;
+	checkCudaErrors(cudaMalloc((void**)&newRelativePos, 4 * sizeof(float) * particles));
+	/*std::cout << "Object type: " << objectType << std::endl;
+	std::cout << "Starting position: " << objectParticleStart[objectType] << std::endl;*/
+	checkCudaErrors(cudaMemcpy(newRelativePos, &objectParticlePositions[4 * objectParticleStart[objectType]], 4 * sizeof(float) * particles, cudaMemcpyDeviceToDevice));
+
+	float *newParticleVelocity;
+	checkCudaErrors(cudaMalloc((void**)&newParticleVelocity, 4 * sizeof(float) * particles));
+	checkCudaErrors(cudaMemcpy(newParticleVelocity, &m_hVel[4 * start], 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+	float *newPerParticleValues = new float[4 * particles];
+	memset(newPerParticleValues, 0, 4 * sizeof(float) * particles);
+	float *newParticleForce;
+	checkCudaErrors(cudaMalloc((void**)&newParticleForce, 4 * sizeof(float) * particles));
+	checkCudaErrors(cudaMemcpy(newParticleForce, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+	float *newParticleTorque;
+	checkCudaErrors(cudaMalloc((void**)&newParticleTorque, 4 * sizeof(float) * particles));
+	checkCudaErrors(cudaMemcpy(newParticleTorque, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+	float *newParticlePosition;
+	checkCudaErrors(cudaMalloc((void**)&newParticlePosition, 4 * sizeof(float) * particles));
+	checkCudaErrors(cudaMemcpy(newParticlePosition, newPerParticleValues, 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+
+	int *newIndexArray = new int[particles];
+	for (int i = 0; i < particles; i++)
+		newIndexArray[i] = numRigidBodies; //numRigidBodies has not yet increased
+	int *newParticleIndex;
+	checkCudaErrors(cudaMalloc((void**)&newParticleIndex, sizeof(int) * particles));
+	checkCudaErrors(cudaMemcpy(newParticleIndex, newIndexArray, sizeof(int) * particles, cudaMemcpyHostToDevice));
+
+	int *newCountARCollions;
+	checkCudaErrors(cudaMalloc((void**)&newCountARCollions, sizeof(int) * particles));
+	memset(newIndexArray, 0, sizeof(int) * particles); //reset values to zero
+	checkCudaErrors(cudaMemcpy(newCountARCollions, newIndexArray, sizeof(int) * particles, cudaMemcpyHostToDevice));
+
+	delete newIndexArray;
+	delete newPerParticleValues;
+	glm::mat3 *newInverseInertia;
+	checkCudaErrors(cudaMalloc((void**)&newInverseInertia, sizeof(glm::mat3)));
+	checkCudaErrors(cudaMemcpy(newInverseInertia, &rbInertia[objectIndex], sizeof(glm::mat3), cudaMemcpyDeviceToDevice));
+
+	glm::vec3 *newRigidBodyAngularAcceleration;
+	glm::vec3 newwdot(0.f, 0.f, 0.f);
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularAcceleration, sizeof(glm::vec3)));
+	checkCudaErrors(cudaMemcpy(newRigidBodyAngularAcceleration, &newwdot, sizeof(glm::vec3), cudaMemcpyHostToDevice));
+
+	glm::quat *newRigidBodyQuaternion;
+	glm::quat newQ(1.f, 0.f, 0.f, 0.f);
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyQuaternion, sizeof(glm::quat)));
+	checkCudaErrors(cudaMemcpy(newRigidBodyQuaternion, &newQ, sizeof(glm::quat), cudaMemcpyHostToDevice));
+
+
+	float *newRigidBodyCM;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
+	float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
+	checkCudaErrors(cudaMemcpy(newRigidBodyCM, &newCM, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyVelocity;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyVelocity, 4 * sizeof(float)));
+	float4 newVel = make_float4(vel.x, vel.y, vel.z, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyVelocity, &newVel, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyAngularVelocity;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularVelocity, 4 * sizeof(float)));
+	float4 newAngVel = make_float4(ang.x, ang.y, ang.z, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyAngularVelocity, &newAngVel, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyForce;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyForce, 4 * sizeof(float)));
+	float4 newForce = make_float4(0, 0, 0, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyForce, &newForce, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyAngularMomentum;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyAngularMomentum, 4 * sizeof(float)));
+	float4 newL = make_float4(0, 0, 0, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyAngularMomentum, &newL, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyLinearMomentum;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyLinearMomentum, 4 * sizeof(float)));
+	float4 newP = make_float4(vel.x, vel.y, vel.z, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyLinearMomentum, &newP, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyTorque;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyTorque, 4 * sizeof(float)));
+	float4 newTorque = make_float4(0, 0, 0, 0);
+	checkCudaErrors(cudaMemcpy(newRigidBodyTorque, &newTorque, 4 * sizeof(float), cudaMemcpyHostToDevice));
+
+	float *newRigidBodyRadius;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
+	checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[objectIndex], sizeof(float), cudaMemcpyDeviceToDevice));
+
+	float *newRigidBodyMass;
+	checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
+	float newMass = 1.f; //ISSUE: change this to simulate rigid bodies of different mass - after changing it also change inertia
+	checkCudaErrors(cudaMemcpy(newRigidBodyMass, &newMass, sizeof(float), cudaMemcpyHostToDevice));
+
+	addRigidBody(start,
+		particles,
+		newRelativePos, //new relative position - 4 * particlesAdded
+		newParticleVelocity, //new particle velocity - 4 * particlesAdded
+		newInverseInertia, //new inverse inertia tensor - 1
+		newRigidBodyCM, //new rigid body center of mass - 4
+		newRigidBodyVelocity, //new rigid body velocity - 4
+		newRigidBodyAngularVelocity, //new rigid body angular velocity - 4
+		newRigidBodyAngularAcceleration, //1
+		newRigidBodyQuaternion, //new rigid body quaternion - 4
+		newRigidBodyForce, //new rigid body force - 4
+		newRigidBodyMass, //1
+		newRigidBodyAngularMomentum, //4
+		newRigidBodyLinearMomentum, //4
+		newRigidBodyTorque, //4
+		newRigidBodyRadius, //1
+		newParticleForce, //4 * particlesAdded
+		newParticleTorque, //4 * particlesAdded
+		newParticlePosition, //4 * particlesAdded
+		newCountARCollions, //particlesAdded
+		newParticleIndex, //particlesAdded
+		true);
+}
+
+void ParticleSystem::addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName)
+{
+	
+	int objectType = -1;
+	for (int i = 0; i < modelNameVector.size(); i++)
+	{
+		if (!strcmp(modelName, modelNameVector[i].c_str()))
+			objectType = i;
+	}
+	if (objectType == -1)
+	{
+		modelNameVector.push_back(modelName);
+		objectType = modelNameVector.size();
+		initObject(pos, vel, ang, scale, modelName, objectType);
+	}
+	else
+		addObject(pos, vel, ang, scale, modelName, objectType);
 }

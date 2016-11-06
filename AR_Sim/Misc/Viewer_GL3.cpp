@@ -138,6 +138,7 @@ void Viewer_GL3::init(void)
 	objModels[0].LoadModelFromFile("Data/OBjmodels/bunny.obj");
 	objModels[1].LoadModelFromFile("Data/OBjmodels/teapot.obj");
 	objModels[2].LoadModelFromFile("Data/OBjmodels/banana.obj");
+	objModels[3].LoadModelFromFile("Data/OBjmodels/cube.obj");
 	number_of_objects = 0;
 	CAssimpModel::FinalizeVBO();
 	
@@ -215,6 +216,9 @@ void Viewer_GL3::render(void)
 				break;
 			case M_BANANA:
 				objModels[2].RenderModel();
+				break;
+			case M_CUBE:
+				objModels[3].RenderModel();
 				break;
 			}
 		}
