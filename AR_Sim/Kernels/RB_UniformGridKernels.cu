@@ -773,7 +773,7 @@ SimParams params)
 					contactDistance[originalIndex] = maxDistance;
 					collidingParticleIndex[originalIndex] = originalIndex_2;
 					collidingRigidBodyIndex[originalIndex] = rigidBodyIndex_2;
-					*numCollisions++;
+					(*numCollisions)++;
 				}
 			}
 		}
@@ -840,8 +840,8 @@ SimParams params)
 
 	if (numCollisions)
 		color[originalIndex] = make_float4(1, 0, 0, 0);
-	else
-		color[originalIndex] = make_float4(0, 0, 1, 0);
+	/*else
+		color[originalIndex] = make_float4(0, 0, 1, 0);*/
 }
 
 void FindRigidBodyCollisionsUniformGridWrapper(
@@ -915,7 +915,7 @@ int *collisionCounter)
 				maxDistance = collisionThreshold - dist;
 				contactDistance[originalIndex] = maxDistance;
 				collidingParticleIndex[originalIndex] = gridParticleIndexAR[j];
-				*collisionCounter++;
+				(*collisionCounter)++;
 			}
 		}
 	}
@@ -973,8 +973,17 @@ SimParams params)
 			}
 		}
 	}
+	// manually override collision detection
+	// collide with virtual plane at y = 0.5
+	/*if (pos.y < 0.5)
+	{
+		contactDistance[originalIndex] = 0.5 - pos.y;
+		collisionCounter++;
+	}*/
 	if (collisionCounter)
-		color[index] = make_float4(0, 1, 0, 0);
+		color[originalIndex] = make_float4(0, 1, 0, 0);
+	else
+		color[originalIndex] = make_float4(0, 0, 1, 0);
 }
 
 

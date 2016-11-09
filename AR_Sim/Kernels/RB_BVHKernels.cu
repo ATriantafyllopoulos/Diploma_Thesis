@@ -797,7 +797,6 @@ __global__ void FindRigidBodyCollisionsBVHKernel(
 	int queryRigidBody = rigidBodyIndex[queryIndex]; // rigid body index corresponding to query particle	
 	float maxDistance = contactDistance[queryIndex];
 
-	int numCollisions = 0; // count number of collisions
 	do
 	{
 		//Check each child node for overlap
@@ -828,7 +827,6 @@ __global__ void FindRigidBodyCollisionsBVHKernel(
 				{
 					maxDistance = collisionThreshold - dist;
 					// narrow phase collision detection test
-					numCollisions++;
 					color[queryIndex] = make_float4(1, 0, 0, 0);
 					// report collision
 					contactDistance[queryIndex] = maxDistance;
@@ -851,7 +849,6 @@ __global__ void FindRigidBodyCollisionsBVHKernel(
 				{
 					maxDistance = collisionThreshold - dist;
 					// narrow phase collision detection test
-					numCollisions++;
 					color[queryIndex] = make_float4(1, 0, 0, 0);
 					// report collision
 					contactDistance[queryIndex] = maxDistance;
@@ -875,8 +872,7 @@ __global__ void FindRigidBodyCollisionsBVHKernel(
 		}
 	} while (SoAindex != -1);
 
-	if (!numCollisions)
-		color[queryIndex] = make_float4(1, 1, 1, 0);
+	
 }
 
 void FindRigidBodyCollisionsBVHWrapper(
@@ -957,7 +953,7 @@ __global__ void FindAugmentedRealityCollisionsBVHKernel(
 	// load unsorted variables
 	float queryRad = radii[index]; // load particle radius once - currently all particles have the same radius
 	float maxDistance = contactDistance[index];
-
+	int numCollisions = 0; // count number of collisions
 	do
 	{
 		//Check each child node for overlap
@@ -978,6 +974,7 @@ __global__ void FindAugmentedRealityCollisionsBVHKernel(
 			float collisionThreshold = queryRad + radii[leftSortedIndex]; //sum of radii
 			if (collisionThreshold - dist > maxDistance)
 			{
+				numCollisions++;
 				maxDistance = collisionThreshold - dist;
 				// narrow phase collision detection test
 				color[index] = make_float4(0, 1, 0, 0);
@@ -996,6 +993,7 @@ __global__ void FindAugmentedRealityCollisionsBVHKernel(
 			float collisionThreshold = queryRad + radii[rightSortedIndex]; // sum of radii
 			if (collisionThreshold - dist > maxDistance)
 			{
+				numCollisions++;
 				maxDistance = collisionThreshold - dist;
 				// narrow phase collision detection test
 				color[index] = make_float4(0, 1, 0, 0);
@@ -1018,6 +1016,9 @@ __global__ void FindAugmentedRealityCollisionsBVHKernel(
 				*stackPtr++ = rightChildIndex; // push
 		}
 	} while (SoAindex != -1);
+
+	if (!numCollisions)
+		color[index] = make_float4(1, 1, 1, 0);
 
 }
 

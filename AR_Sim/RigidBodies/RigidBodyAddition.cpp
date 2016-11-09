@@ -1633,14 +1633,30 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		std::cout << "Obj particles corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
 		if (!initializedNow)
 			m_numParticles += particles;
-		inertiaTensor = glm::inverse(inertiaTensor);
-		/*std::cout << modelName << " inverse inertia tensor: " << std::endl;
+		std::cout << modelName << " inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)
 		{
 			for (int col = 0; col < 3; col++)
 				std::cout << inertiaTensor[row][col] << " ";
 			std::cout << std::endl;
-		}*/
+		}
+		inertiaTensor = glm::inverse(inertiaTensor);
+		std::cout << modelName << " max distance: " << maxDistance << std::endl;
+		std::cout << modelName << " inverse inertia tensor: " << std::endl;
+		if (!strcmp(modelName, "cube"))
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 6.f / (0.2188 * 0.2188);
+			inertiaTensor[1][1] = 6.f / (0.2188 * 0.2188);
+			inertiaTensor[2][2] = 6.f / (0.2188 * 0.2188);
+		}
+		for (int row = 0; row < 3; row++)
+		{
+			for (int col = 0; col < 3; col++)
+				std::cout << inertiaTensor[row][col] << " ";
+			std::cout << std::endl;
+		}
+
 		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
 		//reallocate client (GPU) memory to fit new data
 		reAllocateMemory(&objectParticlePositions, 4 * m_numParticles,
