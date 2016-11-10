@@ -682,7 +682,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 		}
 	}
 
-//#define PRINT_COLLISIONS
+#define PRINT_COLLISIONS
 #ifdef PRINT_COLLISIONS
 	std::cout << "Number of collisions: " << collision_counter << std::endl;
 	std::ofstream file("collisions.txt");
@@ -737,7 +737,9 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			current_particle++;
 		}
 	}
-	//file.close();
+#ifdef PRINT_COLLISIONS
+	file.close();
+#endif
 	// solve contacts using SIS
 	
 	const int iterations = 8; // number of iterations per simulation step
