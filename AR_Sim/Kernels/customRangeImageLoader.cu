@@ -164,8 +164,8 @@ __global__ void computeNormals(float4 *staticPos, float4 *staticNorm, int imageW
 	const float3 dxv = make_float3(neighborhood[3] - neighborhood[7]);
 	const float3 dyv = make_float3(neighborhood[5] - neighborhood[1]);
 	float3 normal = normalize(cross(dyv, dxv));
-	//staticNorm[index] = make_float4(normal, 0);
-	staticNorm[index] = make_float4(0, 1, 0, 0);
+	staticNorm[index] = make_float4(normal, 0);
+	//staticNorm[index] = make_float4(0, 1, 0, 0);
 }
 
 cudaError_t loadRangeImage(

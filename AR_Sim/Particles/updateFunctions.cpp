@@ -681,7 +681,12 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			current_particle++;
 		}
 	}
-	//std::cout << "Number of collisions: " << collision_counter << std::endl;
+
+//#define PRINT_COLLISIONS
+#ifdef PRINT_COLLISIONS
+	std::cout << "Number of collisions: " << collision_counter << std::endl;
+	std::ofstream file("collisions.txt");
+#endif
 	// initialize auxiliary contact variables
 	float4 *contactNormal = new float4[collision_counter]; // store one normal per collision
 	float4 *contactPoint = new float4[collision_counter]; // store one contact point per collision
@@ -696,8 +701,8 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 	
 	collision_counter = 0;
 	current_particle = 0;
-	//std::ofstream file("collisions.txt");
-	float epsilon = 0.f;
+
+	float epsilon = 1.f;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -721,10 +726,12 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 				float3 w = make_float3(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
 				float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(contactNormal[collision_counter])); // relative velocity at current contact
 				contactBias[collision_counter] = epsilon * v_rel;
-				//std::cout << "Collision #" << collision_counter + 1 << " initial bias: " << contactBias[collision_counter] << std::endl;
-				//float4 r = relative_CPU[current_particle];//position_CPU[particleIndex] - CMs_CPU[index];
+#ifdef PRINT_COLLISIONS
+				std::cout << "Collision #" << collision_counter + 1 << " initial bias: " << contactBias[collision_counter] << std::endl;
+				float4 r = relative_CPU[current_particle];//position_CPU[particleIndex] - CMs_CPU[index];
 				//std::cout << "Collision #" << collision_counter + 1 << ": (" << r.x << ", " << r.y << ", " << r.z << ")" << std::endl;
-				//file << r.x << " " << r.y << " " << r.z << " " << std::endl;
+				file << r.x << " " << r.y << " " << r.z << " " << std::endl;
+#endif
 				collision_counter++;
 			}
 			current_particle++;
@@ -740,6 +747,8 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 		for (int c = 0; c < collision_counter; c++)
 		{
 			glm::vec3 n(contactNormal[c].x, contactNormal[c].y, contactNormal[c].z); // collision normal
+			//glm::vec3 n(0, sqrt(2.f) / 2, sqrt(2.f) / 2);
+			//glm::vec3 n(0, 1, 0);
 			float4 point = contactPoint[c];
 			int rigidBodyIndex = contactRigidBody[c];
 			float4 r = point - CMs_CPU[rigidBodyIndex];
@@ -753,11 +762,14 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			if (abs(mc) < 0.00001) mc = 1.f;
 			float v_rel = glm::dot(v + glm::cross(w, p), n); // relative velocity at current contact
 			float corrective_impulse = -(v_rel + contactBias[c]) / mc; // corrective impulse magnitude
-			/*std::cout << "Iteration: " << k << std::endl;
+#ifdef PRINT_COLLISIONS
+			std::cout << "Iteration: " << k << std::endl;
 			std::cout << "Contact: " << c << std::endl;
+			std::cout << "Collision normal: (" << n.x << ", " << n.y << ", " << n.z << ")" << std::endl;
 			std::cout << "Relative linear velocity: " << glm::dot(v, n) << std::endl;
 			std::cout << "Relative angular velocity: " << glm::dot(glm::cross(w, p), n) << std::endl;
-			std::cout << "Total relative velocity: " << v_rel << std::endl;*/
+			std::cout << "Total relative velocity: " << v_rel << std::endl;
+#endif
 			//if (corrective_impulse < 0)
 			//	std::cout << "Negative corrective impulse encountered: " << corrective_impulse << std::endl;
 
@@ -774,18 +786,60 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			// apply new clamped corrective impulse difference to velocity
 			glm::vec3 impulse_vector = corrective_impulse * n;
 			v = v + impulse_vector / m;
-			w = w + Iinv * glm::cross(p, impulse_vector);
+			w = w + Iinv * glm::cross(impulse_vector, p);
 
 			vel_CPU[rigidBodyIndex] = make_float4(v.x, v.y, v.z, 0);
 			rbAngularVelocity_CPU[rigidBodyIndex] = make_float4(w.x, w.y, w.z, 0);
 
-			
-			/*std::cout << "Applied impulse: " << corrective_impulse << std::endl;
+#ifdef PRINT_COLLISIONS	
+			std::cout << "Applied impulse: " << corrective_impulse << std::endl;
 			std::cout << "New linear velocity: (" << v.x << ", " << v.y << ", " << v.z << ")" << std::endl;
 			std::cout << "New angular velocity: (" << w.x << ", " << w.y << ", " << w.z << ")" << std::endl;
-			std::cout << std::endl;*/
+			std::cout << std::endl;
+#endif
 		}
 	}
+
+
+	checkCudaErrors(cudaMemcpy(rbPositions, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbVelocities, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
+
+	delete CMs_CPU;
+	delete vel_CPU;
+	delete rbAngularVelocity_CPU;
+	delete rbCurrentInertia_CPU;
+	delete rbMass_CPU;
+
+	delete relative_CPU;
+	delete position_CPU;
+	delete normal_CPU;
+	delete particlePosition_CPU;
+
+	delete contactDistance_CPU;
+	delete collidingParticleIndex_CPU;
+
+	delete contactNormal;
+	delete contactAccumulatedImpulse;
+	delete contactRigidBody;
+	delete contactPoint;
+	delete contactBias;
+
+	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
+		(float4 *)rbVelocities, //rigid body's velocity
+		(float4 *)relativePos, //particle's relative position
+		(float4 *)dPos, //particle's global position
+		(float4 *)m_dVel, //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbIndices, //index of associated rigid body
+		m_numParticles, //number of particles
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 
 	//for (int iteration = 0; iteration < 8; iteration++) // hard-coded number of iterations for now
 	//{
@@ -849,45 +903,6 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 	//	}
 	//}
 
-	checkCudaErrors(cudaMemcpy(rbPositions, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbVelocities, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
-
-	delete CMs_CPU;
-	delete vel_CPU;
-	delete rbAngularVelocity_CPU;
-	delete rbCurrentInertia_CPU;
-	delete rbMass_CPU;
-
-	delete relative_CPU;
-	delete position_CPU;
-	delete normal_CPU;
-	delete particlePosition_CPU;
-
-	delete contactDistance_CPU;
-	delete collidingParticleIndex_CPU;
-
-	delete contactNormal;
-	delete contactAccumulatedImpulse;
-	delete contactRigidBody;
-	delete contactPoint;
-	delete contactBias;
-
-	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
-		(float4 *)rbVelocities, //rigid body's velocity
-		(float4 *)relativePos, //particle's relative position
-		(float4 *)dPos, //particle's global position
-		(float4 *)m_dVel, //particle's world velocity
-		rbQuaternion, //contains current quaternion for each rigid body
-		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
-		rbIndices, //index of associated rigid body
-		m_numParticles, //number of particles
-		numThreads);
-
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 }
 
 /*

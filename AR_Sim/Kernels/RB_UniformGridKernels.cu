@@ -975,11 +975,18 @@ SimParams params)
 	}
 	// manually override collision detection
 	// collide with virtual plane at y = 0.5
-	/*if (pos.y < 0.5)
+	if (pos.y < 0.5)
 	{
 		contactDistance[originalIndex] = 0.5 - pos.y;
 		collisionCounter++;
+	}
+	/*float3 n = make_float3(0, sqrt(2.f) / 2, sqrt(2.f) / 2);
+	if (dot(n, pos) < 0)
+	{
+		contactDistance[originalIndex] = -dot(n, pos);
+		collisionCounter++;
 	}*/
+	// collide with virtual plane at 45 degrees
 	if (collisionCounter)
 		color[originalIndex] = make_float4(0, 1, 0, 0);
 	else

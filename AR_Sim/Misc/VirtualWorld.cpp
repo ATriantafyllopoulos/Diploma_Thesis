@@ -108,7 +108,7 @@ void VirtualWorld::addSphere(int x, int y)
 	glm::vec3 win(xPos, yPos, viewer->getPixelDepth(x, int(yPos)));
 	glm::vec3 worldSpaceCoordinates = glm::unProject(win, viewer->getViewMatrix(), viewer->getProjectionMatrix(), viewPort);
 	glm::vec3 velocity = glm::vec3(0.f, -0.5f, 0.0f);
-	worldSpaceCoordinates.y = 2.01f;
+	worldSpaceCoordinates.y = 3.01f;
 	//if (objectMode == M_BUNNY)
 	//{
 	//	/*psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
@@ -136,10 +136,22 @@ void VirtualWorld::addSphere(int x, int y)
 	//	viewer->addObjectType(M_TEAPOT);*/
 	//	//psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
 	//}
-	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.5f, "cube");
+	/*psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(1.5f);
+	viewer->addObjectType(M_BUNNY);*/
+	/*psystem->addTeapot(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.0f);
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.0002f);
+	viewer->addObjectType(M_TEAPOT);*/
+	psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.025f);
+	viewer->addObjectType(M_BANANA);
+	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0025f);
-	viewer->addObjectType(M_CUBE);
+	viewer->addObjectType(M_CUBE);*/
 }
 
 void VirtualWorld::throwSphere(int x, int y)
