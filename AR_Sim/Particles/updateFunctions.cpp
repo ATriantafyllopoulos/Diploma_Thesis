@@ -682,7 +682,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 		}
 	}
 
-#define PRINT_COLLISIONS
+//#define PRINT_COLLISIONS
 #ifdef PRINT_COLLISIONS
 	std::cout << "Number of collisions: " << collision_counter << std::endl;
 	std::ofstream file("collisions.txt");
@@ -711,7 +711,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				contactNormal[collision_counter] = normal_CPU[particleIndex]; // scene's normal at collision point
-				contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
+				//contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
 				/*float4 cp, cn;
 				findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
@@ -788,7 +788,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			// apply new clamped corrective impulse difference to velocity
 			glm::vec3 impulse_vector = corrective_impulse * n;
 			v = v + impulse_vector / m;
-			w = w + Iinv * glm::cross(impulse_vector, p);
+			w = w + Iinv * glm::cross(p, impulse_vector);
 
 			vel_CPU[rigidBodyIndex] = make_float4(v.x, v.y, v.z, 0);
 			rbAngularVelocity_CPU[rigidBodyIndex] = make_float4(w.x, w.y, w.z, 0);

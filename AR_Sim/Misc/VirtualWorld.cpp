@@ -251,13 +251,13 @@ void VirtualWorld::initDemoMode()
 	//viewer->addObjectType(M_BANANA);
 
 	// banana 1
-	psystem->addBanana(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0.0), glm::vec3(0, 0.0, 0), 2.0f);
+	psystem->addObj(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.02f);
 	viewer->addObjectType(M_BANANA);
 
 	// banana 2
-	psystem->addBanana(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, 0, 0), glm::vec3(0, 0.0, 0), 2.0f);
+	psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.02f);
 	viewer->addObjectType(M_BANANA);
