@@ -209,22 +209,22 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
 	psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
-	//for (float x = -1; x < 1; x += 0.6)
-	//	for (float y = -0.8; y < 0.8; y += 0.6)
-	//		for (float z = 0.1; z < 0.9; z += 0.4)
-	//		{
-	//			glm::vec3 worldSpaceCoordinates(x, y, z);
+	for (float x = -1; x < 1; x += 0.6)
+		for (float y = -0.8; y < 0.8; y += 0.6)
+			for (float z = 0.1; z < 0.9; z += 0.4)
+			{
+				glm::vec3 worldSpaceCoordinates(x, y, z);
 
-	//			glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
-	//					(float)std::rand() / (float)RAND_MAX / 10.f,
-	//					(float)std::rand() / (float)RAND_MAX / 10.f);
-	//			//glm::vec3 velocity(0, 0, 0);
-	//			//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-	//			psystem->addTeapot(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f);
-	//			viewer->increaseNumberOfObjects();
-	//			viewer->addScaleFactor(0.00020f);
-	//			viewer->addObjectType(M_TEAPOT);
-	//		}
+				glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
+						(float)std::rand() / (float)RAND_MAX / 10.f,
+						(float)std::rand() / (float)RAND_MAX / 10.f);
+				//glm::vec3 velocity(0, 0, 0);
+				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
+				psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 1.0, 0), 2.0f, "teapot");
+				viewer->increaseNumberOfObjects();
+				viewer->addScaleFactor(0.00020f);
+				viewer->addObjectType(M_TEAPOT);
+			}
 
 	//// teapot 1
 	//psystem->addTeapot(glm::vec3(0, 0.3, 0.0), glm::vec3(0, -0.1, 0.0), glm::vec3(0, 0.0, 0), 2.0f);
@@ -251,16 +251,16 @@ void VirtualWorld::initDemoMode()
 	//viewer->addObjectType(M_BANANA);
 
 	// banana 1
-	psystem->addObj(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
-	viewer->increaseNumberOfObjects();
-	viewer->addScaleFactor(0.02f);
-	viewer->addObjectType(M_BANANA);
+	//psystem->addObj(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	//viewer->increaseNumberOfObjects();
+	//viewer->addScaleFactor(0.02f);
+	//viewer->addObjectType(M_BANANA);
 
-	// banana 2
-	psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
-	viewer->increaseNumberOfObjects();
-	viewer->addScaleFactor(0.02f);
-	viewer->addObjectType(M_BANANA);
+	//// banana 2
+	//psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	//viewer->increaseNumberOfObjects();
+	//viewer->addScaleFactor(0.02f);
+	//viewer->addObjectType(M_BANANA);
 
 	psystem->initCPU();
 	psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));

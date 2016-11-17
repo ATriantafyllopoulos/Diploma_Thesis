@@ -507,10 +507,10 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	}
 
 	// find collisions between rigid bodies
-	Find_Rigid_Body_Collisions_Uniform_Grid();
+	//Find_Rigid_Body_Collisions_Uniform_Grid();
 
 	// handle collisions between rigid bodies
-	Handle_Rigid_Body_Collisions_Baraff_CPU();
+	//Handle_Rigid_Body_Collisions_Baraff_CPU();
 
 	//// cudaFree contact info variables - uncomment if no collision handling routine is used
 	//checkCudaErrors(cudaFree(collidingRigidBodyIndex));
