@@ -1928,7 +1928,7 @@ void ParticleSystem::addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 
 void ParticleSystem::addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName)
 {
-	
+
 	int objectType = -1;
 	for (int i = 0; i < modelNameVector.size(); i++)
 	{
@@ -1943,4 +1943,8 @@ void ParticleSystem::addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float s
 	}
 	else
 		addObject(pos, vel, ang, scale, modelName, objectType);
+
+	size_t freeSize, totalSize;
+	checkCudaErrors(cudaMemGetInfo(&freeSize, &totalSize));
+	std::cout << "Memory: " << freeSize << " / " << totalSize << std::endl;
 }
