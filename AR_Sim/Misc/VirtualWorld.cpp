@@ -208,14 +208,15 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	/*psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
+	psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
+	psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
 	for (float x = -1; x < 1; x += 0.6)
 		for (float y = -0.8; y < 0.8; y += 0.6)
-			for (float z = 0.1; z < 0.9; z += 0.4)*/
-	psystem->setBBox(make_float3(-15.f, -10.f, -10.f), make_float3(10.f, 10.f, 10.f));
-	for (float x = -5; x < 5; x += 0.6)
-		for (float y = -4; y < 4; y += 0.6)
-			for (float z = 1; z < 3; z += 0.4)
+			for (float z = 0.1; z < 0.9; z += 0.4)
+	/*psystem->setBBox(make_float3(-4.f, -4.f, -4.f), make_float3(4.f, 4.f, 4.f));
+	for (float x = -2; x < 2; x += 0.6)
+		for (float y = -2; y < 2; y += 0.6)
+			for (float z = 1; z < 3; z += 0.4)*/
 			{
 				glm::vec3 worldSpaceCoordinates(x, y, z);
 
@@ -224,7 +225,7 @@ void VirtualWorld::initDemoMode()
 						(float)std::rand() / (float)RAND_MAX / 10.f);
 				//glm::vec3 velocity(0, 0, 0);
 				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 1.0, 0), 2.0f, "teapot");
+				psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f, "teapot");
 				viewer->increaseNumberOfObjects();
 				viewer->addScaleFactor(0.00020f);
 				viewer->addObjectType(M_TEAPOT);
@@ -261,13 +262,13 @@ void VirtualWorld::initDemoMode()
 	//viewer->addObjectType(M_BANANA);
 
 	//// banana 2
-	//psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
-	//viewer->increaseNumberOfObjects();
-	//viewer->addScaleFactor(0.02f);
-	//viewer->addObjectType(M_BANANA);
+	/*psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.02f);
+	viewer->addObjectType(M_BANANA);*/
 
-	psystem->initCPU();
-	psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
+	//psystem->initCPU();
+	//
 }
 
 void VirtualWorld::DemoMode()

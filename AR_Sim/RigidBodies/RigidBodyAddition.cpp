@@ -1944,7 +1944,14 @@ void ParticleSystem::addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float s
 	else
 		addObject(pos, vel, ang, scale, modelName, objectType);
 
-	size_t freeSize, totalSize;
+	/*size_t freeSize, totalSize;
 	checkCudaErrors(cudaMemGetInfo(&freeSize, &totalSize));
-	std::cout << "Memory: " << freeSize << " / " << totalSize << std::endl;
+	std::cout << "GPU Memory: " << freeSize << " / " << totalSize << std::endl;
+
+	MEMORYSTATUSEX status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatusEx(&status);
+
+	std::cout << "CPU Memory: " << status.ullAvailPhys << " / " << status.ullTotalPhys << std::endl;*/
+	
 }

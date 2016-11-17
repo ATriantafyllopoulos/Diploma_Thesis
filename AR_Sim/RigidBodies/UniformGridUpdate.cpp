@@ -501,7 +501,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	{
 		dPos = (float *)m_cudaPosVBO;
 	}
-	float4 *pos = new float4[m_numParticles];
+	/*float4 *pos = new float4[m_numParticles];
 	checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));
 	int total = 0;
 	for (int rb = 0; rb < numRigidBodies; rb++)
@@ -521,7 +521,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 			total++;
 		}
 	}
-	delete pos;
+	delete pos;*/
 	// update constants
 	setParameters(&m_params);
 
@@ -529,7 +529,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	Integrate_RB_System(deltaTime);
 
 	// find and handle wall collisions
-	//Handle_Wall_Collisions();
+	Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -542,10 +542,10 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	}
 
 	// find collisions between rigid bodies
-	//Find_Rigid_Body_Collisions_Uniform_Grid();
+	Find_Rigid_Body_Collisions_Uniform_Grid();
 
 	// handle collisions between rigid bodies
-	//Handle_Rigid_Body_Collisions_Baraff_CPU();
+	Handle_Rigid_Body_Collisions_Baraff_CPU();
 
 	//// cudaFree contact info variables - uncomment if no collision handling routine is used
 	//checkCudaErrors(cudaFree(collidingRigidBodyIndex));
