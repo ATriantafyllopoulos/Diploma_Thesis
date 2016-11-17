@@ -208,10 +208,14 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
+	/*psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
 	for (float x = -1; x < 1; x += 0.6)
 		for (float y = -0.8; y < 0.8; y += 0.6)
-			for (float z = 0.1; z < 0.9; z += 0.4)
+			for (float z = 0.1; z < 0.9; z += 0.4)*/
+	psystem->setBBox(make_float3(-15.f, -10.f, -10.f), make_float3(10.f, 10.f, 10.f));
+	for (float x = -5; x < 5; x += 0.6)
+		for (float y = -4; y < 4; y += 0.6)
+			for (float z = 1; z < 3; z += 0.4)
 			{
 				glm::vec3 worldSpaceCoordinates(x, y, z);
 

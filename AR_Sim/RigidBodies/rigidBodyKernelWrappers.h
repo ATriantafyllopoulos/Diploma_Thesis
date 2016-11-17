@@ -321,4 +321,21 @@ void FindAugmentedRealityCollisionsBVHWrapper(
 	SimParams params, // Input: simulation parameters
 	float *contactDistance, // Output: distance between particles presenting largest penetration
 	int *collidingParticleIndex); // Output: particle of most important contact
+
+void DebugComputeGlobalAttributes(float4 *CMs, //rigid body's center of mass
+	float4 *rigidVel, //rigid body's velocity
+	float4 *relativePos, //particle's relative position
+	float4 *globalPos, //particle's global position
+	float4 *globalVel, //particle's world velocity
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	int *rigidBodyIndex, //index of associated rigid body
+	int startPos, //starting position of rigid body to test
+	int numParticles, //number of particles of rigid body to test
+	int numThreads); //number of threads
+
+void resetQuaternionWrapper(glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	int numRigidBodies, //number of rigid bodies
+	int numThreads);
+
 #endif

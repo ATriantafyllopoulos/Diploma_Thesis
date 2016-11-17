@@ -473,6 +473,21 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 
 void ParticleSystem::updateUniformGrid(float deltaTime)
 {
+	/*int *index = new int[m_numParticles];
+	checkCudaErrors(cudaMemcpy(index, rbIndices, sizeof(int) * m_numParticles, cudaMemcpyDeviceToHost));
+	int total = 0;
+	for (int rb = 0; rb < numRigidBodies; rb++)
+	{
+		for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+		{
+			if (rb != index[total++])
+				std::cout << "Wrong index found @ rigid body: " << rb << " particle:" << p << std::endl;
+		}
+	}
+	delete index;*/
+
+	
+
 	assert(m_bInitialized);
 
 	//float *dPos;
@@ -486,7 +501,27 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	{
 		dPos = (float *)m_cudaPosVBO;
 	}
-
+	float4 *pos = new float4[m_numParticles];
+	checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));
+	int total = 0;
+	for (int rb = 0; rb < numRigidBodies; rb++)
+	{
+		for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+		{
+			if (abs(pos[p].x - pos[total].x) > 0.001 ||
+				abs(pos[p].y - pos[total].y) > 0.001 ||
+				abs(pos[p].z - pos[total].z) > 0.001)
+			{
+				std::cout << "Wrong relative position found @ rigid body: " << rb << " particle:" << p << std::endl;
+				std::cout << "Position 1 is: (" << pos[p].x << ", " <<
+					pos[p].y << ", " << pos[p].z << ", " << pos[p].w << ")" << std::endl;
+				std::cout << "Position 2 is: (" << pos[total].x << ", " <<
+					pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;
+			}
+			total++;
+		}
+	}
+	delete pos;
 	// update constants
 	setParameters(&m_params);
 

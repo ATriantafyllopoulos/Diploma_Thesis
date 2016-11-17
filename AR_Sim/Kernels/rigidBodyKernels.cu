@@ -232,11 +232,11 @@ __global__ void computeGlobalAttributes(float4 *CMs, //rigid body's center of ma
 	//glm::quat quaternion(tempQuat.w, tempQuat.x, tempQuat.y, tempQuat.z);
 	glm::quat quaternion = rbQuaternion[correspondingRigidBody];
 	float4 tempPos = relativePos[index];
-	glm::vec4 pos = glm::vec4(tempPos.x, tempPos.y, tempPos.z, tempPos.w);
+	glm::vec4 pos = glm::vec4(tempPos.x, tempPos.y, tempPos.z, 0.f);
 	glm::mat4 rot = mat4_cast(quaternion);
 	pos = rot * pos;
 	//pos = quaternion * pos * conjugate(quaternion);
-	tempPos = make_float4(pos.x, pos.y, pos.z, pos.w);
+	tempPos = make_float4(pos.x, pos.y, pos.z, 0.f);
 	relativePos[index] = tempPos;
 	globalPos[index] = tempPos + CMs[correspondingRigidBody];
 	//particle's velocity is the same as its associated rigid body's
@@ -246,8 +246,8 @@ __global__ void computeGlobalAttributes(float4 *CMs, //rigid body's center of ma
 	// reset rigid body quaternion
 	// this quaternion corresponds to the last rotation only
 	// since this function is called multiple times during
-	// each update step the rotation must be applied only ones
-	rbQuaternion[correspondingRigidBody] = glm::quat(1, 0, 0, 0);
+	// each update step the rotation must be applied only once
+	
 }
 
 void computeGlobalAttributesWrapper(float4 *CMs, //rigid body's center of mass
@@ -261,8 +261,10 @@ int *rigidBodyIndex, //index of associated rigid body
 int numParticles, //number of particles
 int numThreads) //number of threads
 {
+	
 	dim3 blockDim(numThreads, 1);
 	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+	//std::cout << "Using " << blockDim.x << " threads and " << gridDim.x << " blocks" << std::endl;
 	computeGlobalAttributes << < gridDim, blockDim >> >(CMs, //rigid body's center of mass
 		rigidVel, //rigid body's velocity
 		relativePos, //particle's relative position
@@ -271,6 +273,88 @@ int numThreads) //number of threads
 		rbQuaternion, //contains current quaternion for each rigid body
 		rbAngularVelocity, //contains angular velocities for each rigid body
 		rigidBodyIndex, //index of associated rigid body
+		numParticles); //number of particles
+}
+
+__global__ void resetQuaternionKernel(glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	int numRigidBodies)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numRigidBodies)
+		return;
+	rbQuaternion[index] = glm::quat(1, 0, 0, 0);
+}
+
+void resetQuaternionWrapper(glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	int numRigidBodies, //number of rigid bodies
+	int numThreads)
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numRigidBodies + numThreads - 1) / numThreads, 1);
+	//std::cout << "Using " << blockDim.x << " threads and " << gridDim.x << " blocks" << std::endl;
+	resetQuaternionKernel << < gridDim, blockDim >> >(rbQuaternion, //contains current quaternion for each rigid body
+		numRigidBodies); //number of rigid bodies
+}
+
+__global__ void DebugComputeGlobalAttributes(float4 *CMs, //rigid body's center of mass
+	float4 *rigidVel, //rigid body's velocity
+	float4 *relativePos, //particle's relative position
+	float4 *globalPos, //particle's global position
+	float4 *globalVel, //particle's world velocity
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	int *rigidBodyIndex, //index of associated rigid body
+	int numParticles) //number of particles
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= numParticles)
+		return;
+	int correspondingRigidBody = rigidBodyIndex[index];
+	if (correspondingRigidBody == -1) return; //if this is an independent virtual particle
+	//float4 tempQuat = rbQuaternion[correspondingRigidBody];
+	//glm::quat quaternion(tempQuat.w, tempQuat.x, tempQuat.y, tempQuat.z);
+	glm::quat quaternion = rbQuaternion[correspondingRigidBody];
+	float4 tempPos = relativePos[index];
+	glm::vec4 pos = glm::vec4(tempPos.x, tempPos.y, tempPos.z, 0.f);
+	glm::mat4 rot = mat4_cast(quaternion);
+	pos = rot * pos;
+	//pos = quaternion * pos * conjugate(quaternion);
+	tempPos = make_float4(pos.x, pos.y, pos.z, 0.f);
+	relativePos[index] = tempPos;
+	globalPos[index] = tempPos + CMs[correspondingRigidBody];
+	//particle's velocity is the same as its associated rigid body's
+	//for the moment we ignore angular velocity
+	globalVel[index] = rigidVel[correspondingRigidBody] + make_float4(cross(make_float3(rbAngularVelocity[correspondingRigidBody]), make_float3(tempPos)), 0);
+
+	// reset rigid body quaternion
+	// this quaternion corresponds to the last rotation only
+	// since this function is called multiple times during
+	// each update step the rotation must be applied only once
+	rbQuaternion[correspondingRigidBody] = glm::quat(1, 0, 0, 0);
+}
+
+void DebugComputeGlobalAttributes(float4 *CMs, //rigid body's center of mass
+	float4 *rigidVel, //rigid body's velocity
+	float4 *relativePos, //particle's relative position
+	float4 *globalPos, //particle's global position
+	float4 *globalVel, //particle's world velocity
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	int *rigidBodyIndex, //index of associated rigid body
+	int startPos, //starting position of rigid body to test
+	int numParticles, //number of particles of rigid body to test
+	int numThreads) //number of threads
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+	DebugComputeGlobalAttributes << < gridDim, blockDim >> >(CMs, //rigid body's center of mass
+		rigidVel, //rigid body's velocity
+		&relativePos[startPos], //particle's relative position
+		&globalPos[startPos], //particle's global position
+		&globalVel[startPos], //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		rbAngularVelocity, //contains angular velocities for each rigid body
+		&rigidBodyIndex[startPos], //index of associated rigid body
 		numParticles); //number of particles
 }
 

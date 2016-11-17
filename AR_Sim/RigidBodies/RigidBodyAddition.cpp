@@ -70,7 +70,7 @@ void ParticleSystem::addRigidBody(
 		delete cumulativeQuaternion;
 	cumulativeQuaternion = newCumulativeQuaternion;
 
-	std::cout << "Number of rigid bodies after newest addition: " << numRigidBodies << std::endl;
+	//std::cout << "Number of rigid bodies after newest addition: " << numRigidBodies << std::endl;
 
 
 	unregisterGLBufferObject(m_cuda_posvbo_resource); //unregister old CUDA-GL interop buffer
@@ -1661,8 +1661,6 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		//reallocate client (GPU) memory to fit new data
 		reAllocateMemory(&objectParticlePositions, 4 * m_numParticles,
 			&m_hPos[4 * start], 4 * particles, 4 * (m_numParticles - particles), cudaMemcpyHostToDevice);
-		//cudaMalloc((void**)&bananaRelativePositions, particles * sizeof(float) * 4);
-		//cudaMemcpy(bananaRelativePositions, &m_hPos[4 * start], particles * sizeof(float) * 4, cudaMemcpyHostToDevice);
 
 		//new per particle values
 		float *newRelativePos;
@@ -1805,7 +1803,7 @@ void ParticleSystem::addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 	int objectIndex = firstObjectIndex[objectType];
 	int particles = particlesPerObjectThrown[objectIndex];
 	m_numParticles += particles;
-	std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
+	//std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
 	//reallocate client (GPU) memory to fit new data
 	float *newRelativePos;
 	checkCudaErrors(cudaMalloc((void**)&newRelativePos, 4 * sizeof(float) * particles));
@@ -1815,7 +1813,7 @@ void ParticleSystem::addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 
 	float *newParticleVelocity;
 	checkCudaErrors(cudaMalloc((void**)&newParticleVelocity, 4 * sizeof(float) * particles));
-	checkCudaErrors(cudaMemcpy(newParticleVelocity, &m_hVel[4 * start], 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
+	//checkCudaErrors(cudaMemcpy(newParticleVelocity, &m_hVel[4 * start], 4 * sizeof(float) * particles, cudaMemcpyHostToDevice));
 
 	float *newPerParticleValues = new float[4 * particles];
 	memset(newPerParticleValues, 0, 4 * sizeof(float) * particles);

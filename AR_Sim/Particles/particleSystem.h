@@ -612,6 +612,13 @@ public:
 private:
 	glm::mat4 *modelMatrix; // pointer to model matrix array
 	glm::quat *cumulativeQuaternion;
+
+private: // universal addition methods
+	void newAddObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName);
+	void newInitObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType);
+	void newCopyObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType);
+	void newAddRigidBody();
+
 };
 
 #endif // __PARTICLESYSTEM_H__

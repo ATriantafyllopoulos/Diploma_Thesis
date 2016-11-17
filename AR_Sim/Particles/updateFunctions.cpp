@@ -80,7 +80,6 @@ void integrateRigidBodyCPU(
 
 		glm::vec3 newVelocity(locAng.x, locAng.y, locAng.z);
 		glm::vec3 normalizedVel = normalize(newVelocity);
-
 		float theta = glm::length(newVelocity);
 		if (theta > 0.00001)
 		{
@@ -100,6 +99,12 @@ void integrateRigidBodyCPU(
 		glm::mat3 rot = mat3_cast(quaternion);
 		currentInertia = rot * inertia * transpose(rot);
 
+		/*std::cout << "New velocity for rigid body #" << index + 1 << " is: (" <<
+			newVelocity.x << ", " << newVelocity.y << ", " << newVelocity.z << ")" << std::endl;*/
+		/*std::cout << "New quaternion for rigid body #" << index + 1 << " is: (" << quaternion.w << ", " <<
+			quaternion.x << ", " << quaternion.y << ", " << quaternion.z << ")" << std::endl;*/
+		/*std::cout << "New center of mass for rigid body #" << index + 1 << " is: (" <<
+			locPos.x << ", " << locPos.y << ", " << locPos.z << ")" << std::endl;*/
 
 		/*glm::quat quatVelocity(0, locAng.x, locAng.y, locAng.z);
 		glm::quat qdot = 0.5f * quatVelocity * quaternion;
@@ -1603,6 +1608,118 @@ void ParticleSystem::Integrate_RB_System(float deltaTime)
 		numRigidBodies, //number of rigid bodies
 		m_params); //simulation parameters
 
+	//float4 *pos = new float4[m_numParticles];
+	//checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));
+	//int total = 0;
+	//for (int rb = 0; rb < numRigidBodies; rb++)
+	//{
+	//	for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+	//	{
+	//		
+	//		if (abs(pos[p].x - pos[total].x) > 0.001 ||
+	//			abs(pos[p].y - pos[total].y) > 0.001 ||
+	//			abs(pos[p].z - pos[total].z) > 0.001)
+	//		{
+	//			std::cout << "Wrong relative position found @ rigid body: " << rb << " particle:" << p << std::endl;
+	//			/*std::cout << "Position 1 is: (" << pos[p].x << ", " <<
+	//				pos[p].y << ", " << pos[p].z << ", " << pos[p].w << ")" << std::endl;
+	//			std::cout << "Position 2 is: (" << pos[total].x << ", " <<
+	//				pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;*/
+	//		}
+	//		total++;
+	//	}
+	//}
+	
+	// CPU Test
+//	glm::quat *quaternions = new glm::quat[numRigidBodies];
+//	checkCudaErrors(cudaMemcpy(quaternions, rbQuaternion, sizeof(glm::quat) * numRigidBodies, cudaMemcpyDeviceToHost));
+//	total = 0;
+//	for (int rb = 0; rb < numRigidBodies; rb++)
+//	{
+//		glm::mat4 rot = mat4_cast(quaternions[rb]);
+//		/*std::cout << "Rotation matrix of rigid body #" << rb << " is:" << std::endl;
+//		for (int row = 0; row < 4; row++)
+//		{
+//			for (int col = 0; col < 4; col++)
+//				std::cout << rot[row][col] << " ";
+//			std::cout << std::endl;
+//		}*/
+//
+//		for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+//		{
+//			/*if (total >= 10240 && total <= 10415)
+//				std::cout << "Position @" << total << " is: (" << pos[total].x << ", " <<
+//				pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;
+//*/
+//			glm::vec4 position = glm::vec4(pos[total].x, pos[total].y, pos[total].z, 0.f);
+//			
+//			position = rot * position;
+//			pos[total] = make_float4(position.x, position.y, position.z, 0);
+//			/*if (total >= 10240 && total <= 10415)
+//				std::cout << "Rotated position @" << total << " is: (" << pos[total].x << ", " <<
+//				pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;*/
+//			total++;
+//		}
+//	}
+//
+	
+
+	//total = 0;
+	//for (int rb = 0; rb < numRigidBodies; rb++)
+	//{
+	//	for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+	//	{
+	//		if (abs(pos[p].x - pos[total].x) > 0.001 ||
+	//			abs(pos[p].y - pos[total].y) > 0.001 ||
+	//			abs(pos[p].z - pos[total].z) > 0.001)
+	//		{
+	//			std::cout << "Wrong relative position found @ rigid body: " << rb << " particle:" << p << std::endl;
+	//			/*std::cout << "Position 1 is: (" << pos[p].x << ", " <<
+	//				pos[p].y << ", " << pos[p].z << ", " << pos[p].w << ")" << std::endl;
+	//			std::cout << "Position 2 is: (" << pos[total].x << ", " <<
+	//				pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;*/
+	//		}
+	//		total++;
+	//	}
+	//}
+
+	//int *index = new int[m_numParticles];
+	//checkCudaErrors(cudaMemcpy(index, rbIndices, sizeof(int) * m_numParticles, cudaMemcpyDeviceToHost));
+	//total = 0;
+	//int startIndex = 0;
+	//for (int rb = 0; rb < numRigidBodies; rb++)
+	//{
+	//	if (rb == 23)
+	//		startIndex = total;
+	//	for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+	//	{
+	//		if (rb != index[total])
+	//			std::cout << "Wrong index found @ rigid body: " << rb << " particle:" << p << "(" << index[total] << ")" << std::endl;
+	//		if (abs(quaternions[rb].w - quaternions[index[total]].w) > 0.001 ||
+	//			abs(quaternions[rb].x - quaternions[index[total]].x) > 0.001 ||
+	//			abs(quaternions[rb].y - quaternions[index[total]].y) > 0.001 ||
+	//			abs(quaternions[rb].z - quaternions[index[total]].z) > 0.001)
+	//		{
+	//			std::cout << "Wrong quaternion found @ rigid body: " << rb << " particle:" << p << std::endl;
+	//		}
+	//		total++;
+	//	}
+	//}
+	//delete index;
+	//delete quaternions;
+	//std::cout << "Calling DebugComputeGlobalAttributes for " << particlesPerObjectThrown[23] * 2 << " particles." << std::endl;
+	//DebugComputeGlobalAttributes((float4 *)rbPositions, //rigid body's center of mass
+	//	(float4 *)rbVelocities, //rigid body's velocity
+	//	(float4 *)relativePos, //particle's relative position
+	//	(float4 *)dPos, //particle's global position
+	//	(float4 *)m_dVel, //particle's world velocity
+	//	rbQuaternion, //contains current quaternion for each rigid body
+	//	(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+	//	rbIndices, //index of associated rigid body
+	//	startIndex,
+	//	particlesPerObjectThrown[23] * 2, //number of particles
+	//	numThreads); //number of threads
+
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
@@ -1616,15 +1733,42 @@ void ParticleSystem::Integrate_RB_System(float deltaTime)
 		m_numParticles, //number of particles
 		numThreads);
 
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	resetQuaternionWrapper(rbQuaternion, numRigidBodies, numThreads);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	//std::cout << "Calling computeGlobalAttributesWrapper for " << m_numParticles << " particles." << std::endl;
+	/*checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));
+	total = 0;
+	for (int rb = 0; rb < numRigidBodies; rb++)
+	{
+		for (int p = 0; p < particlesPerObjectThrown[rb]; p++)
+		{
+			if (abs(pos[p].x - pos[total].x) > 0.001 ||
+				abs(pos[p].y - pos[total].y) > 0.001 ||
+				abs(pos[p].z - pos[total].z) > 0.001)
+			{
+				std::cout << "Wrong relative position found @ rigid body: " << rb << " particle:" << total << std::endl;
+				std::cout << "Position 1 is: (" << pos[p].x << ", " <<
+					pos[p].y << ", " << pos[p].z << ", " << pos[p].w << ")" << std::endl;
+				std::cout << "Position 2 is: (" << pos[total].x << ", " <<
+					pos[total].y << ", " << pos[total].z << ", " << pos[total].w << ")" << std::endl;
+			}
+			total++;
+		}
+	}
+	delete pos;*/
 	//integrate
-	integrateSystem(
+	/*integrateSystem(
 		dPos,
 		m_dVel,
 		deltaTime,
 		minPos,
 		maxPos,
 		rbIndices,
-		m_numParticles);
+		m_numParticles);*/
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
