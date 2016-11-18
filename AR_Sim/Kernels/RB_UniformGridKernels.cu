@@ -881,7 +881,7 @@ void FindAugmentedRealityCollisionsUniformGridCell(
 int3 gridPos, // cell to check
 uint originalIndex, // unsorted index of current particle
 uint index, // sorted index of current particle
-float3 pos,// current particle position
+float3 pos, // current particle position
 float4 *ARPos, // sorted scene particle positions
 uint *gridParticleIndexAR, // sorted scene particle indices
 uint *cellStart, // scene cell start

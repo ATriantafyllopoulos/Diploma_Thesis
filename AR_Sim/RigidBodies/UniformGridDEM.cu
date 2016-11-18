@@ -178,7 +178,8 @@ SimParams params)
 
 	if (numCollisions)
 		color[originalIndex] = make_float4(1, 0, 0, 0);
-
+	else
+		color[originalIndex] = make_float4(0, 0, 1, 0);
 	//// now find and handle wall collisions
 	//// NOTE: should this be moved to a separate kernel call
 	//// (clarity and speed?)
@@ -221,8 +222,7 @@ SimParams params)
 	pLinearImpulse[originalIndex] += linear;
 	// tau = r x F
 	pAngularImpulse[originalIndex] += make_float4(cross(make_float3(relativePos[originalIndex]), make_float3(linear)), 0); 
-	/*else
-	color[originalIndex] = make_float4(0, 0, 1, 0);*/
+	/**/
 }
 
 void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
@@ -261,6 +261,183 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 		numParticles,
 		params);
 }
+
+__device__
+void FindAndHandleAugmentedRealityCollisionsUniformGridCell(
+int3 gridPos, // cell to check
+uint index, // sorted index of current particle
+uint originalIndex, // unsorted index of current particle
+float3 pos, // current particle position
+float4 *ARPos, // sorted scene particle positions
+float4 *ARnormals, // unsorted scene normals
+uint *gridParticleIndexAR, // sorted scene particle indices
+uint *cellStart, // scene cell start
+uint *cellEnd, // scene cell end
+float4 *impulse, // impulse acted because of collisions with current cell
+float3 velA, // current particle velocity
+int *numCollisions,
+SimParams params)
+{
+	uint gridHash = calcGridHashAuxilDEM(gridPos, params);
+
+	// get start of bucket for this cell
+	uint startIndex = FETCH(cellStart, gridHash);
+	// contact distance is unsorted
+
+	float collisionThreshold = 2 * params.particleRadius; // assuming all particles have the same radius
+
+	if (startIndex != 0xffffffff)          // cell is not empty
+	{
+		// iterate over particles in this cell
+		uint endIndex = FETCH(cellEnd, gridHash);
+
+		for (uint j = startIndex; j<endIndex; j++)
+		{
+			int originalIndex_2 = gridParticleIndexAR[j];
+			float3 pos2 = make_float3(FETCH(ARPos, j));
+
+			float3 relPos = pos2 - pos;
+			float dist = length(relPos); // distance between two particles
+			if (dist < collisionThreshold)
+			{
+				float3 velB = make_float3(0, 0, 0);
+				// particles are colliding
+				//float3 norm = relPos / dist;
+				//float3 norm = make_float3(FETCH(ARnormals, originalIndex_2));
+				float3 norm = make_float3(0, 1, 0);
+				// relative velocity
+				float3 relVel = velB - velA;
+
+				// relative tangential velocity
+				float3 tanVel = relVel - (dot(relVel, norm) * norm);
+
+				float3 localImpulse = make_float3(0, 0, 0);
+				// spring force
+				localImpulse = -params.spring*(collisionThreshold - dist) * norm;
+				// dashpot (damping) force
+				localImpulse += params.damping*relVel;
+				// tangential shear force
+				localImpulse += params.shear*tanVel;
+				// attraction
+				localImpulse += params.attraction*relPos;
+
+				(*impulse) += make_float4(localImpulse, 0);
+				(*numCollisions)++;
+			}
+		}
+	}
+}
+
+/*
+* Perform simultaneous rigid body and AR collision detection and handling using DEM
+*/
+__global__
+void FindAndHandleAugmentedRealityCollisionsUniformGridKernel(
+float4 *pLinearImpulse, // total linear impulse acting on current particle
+float4 *pAngularImpulse, // total angular impulse acting on current particle
+float4 *color, // particle color
+float4 *sortedPos,  // sorted particle positions
+float4 *sortedVel,  // sorted particle velocities
+float4 *relativePos, // unsorted relative positions
+float4 *ARPos, // sorted scene particle positions
+float4 *ARnormals, // unsorted scene normals
+uint   *gridParticleIndex, // sorted particle indices
+uint *gridParticleIndexAR, // sorted scene particle indices
+uint   *cellStart,
+uint   *cellEnd,
+uint    numParticles,
+SimParams params)
+{
+	uint index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numParticles) return;
+
+	// read particle data from sorted arrays
+	float3 pos = make_float3(FETCH(sortedPos, index));
+	float3 vel = make_float3(FETCH(sortedVel, index));
+	// get address in grid
+	int3 gridPos = calcGridPosAuxilDEM(pos, params);
+
+	// examine neighbouring cells
+	int numCollisions = 0;
+	uint originalIndex = gridParticleIndex[index];
+
+	float4 linear = make_float4(0, 0, 0, 0);
+	for (int z = -1; z <= 1; z++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			for (int x = -1; x <= 1; x++)
+			{
+				float4 localImpulse = make_float4(0, 0, 0, 0);
+				int3 neighbourPos = gridPos + make_int3(x, y, z);
+				FindAndHandleAugmentedRealityCollisionsUniformGridCell(
+					neighbourPos, // cell to check
+					index, // sorted index of current particle
+					originalIndex, // unsorted index of current particle
+					pos, // current particle position
+					ARPos, // sorted scene particle positions
+					ARnormals, // unsorted scene normals
+					gridParticleIndexAR, // sorted scene particle indices
+					cellStart, // scene cell start
+					cellEnd, // scene cell end
+					&localImpulse, // impulse acted because of collisions with current cell
+					vel, // current particle velocity
+					&numCollisions,
+					params);
+				linear += localImpulse;
+			}
+		}
+	}
+
+	if (numCollisions)
+		color[originalIndex] = make_float4(0, 1, 0, 0);
+
+	pLinearImpulse[originalIndex] += linear;
+	// tau = r x F
+	pAngularImpulse[originalIndex] += make_float4(cross(make_float3(relativePos[originalIndex]), make_float3(linear)), 0);
+}
+
+/*
+* Wrapper for rigid body to AR collision handling
+*/
+void FindAndHandleAugmentedRealityCollisionsUniformGridWrapper(
+	float4 *pLinearImpulse, // total linear impulse acting on current particle
+	float4 *pAngularImpulse, // total angular impulse acting on current particle
+	float4 *color, // particle color
+	float4 *sortedPos,  // sorted particle positions
+	float4 *sortedVel,  // sorted particle velocities
+	float4 *relativePos, // unsorted relative positions
+	float4 *ARPos, // sorted scene particle positions
+	float4 *ARnormals, // unsorted scene normals
+	uint   *gridParticleIndex, // sorted particle indices
+	uint   *gridParticleIndexAR, // sorted scene particle indices
+	uint   *cellStart,
+	uint   *cellEnd,
+	uint    numParticles,
+	SimParams params,
+	int numThreads)
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
+
+	FindAndHandleAugmentedRealityCollisionsUniformGridKernel << < gridDim, blockDim >> >(
+		pLinearImpulse, // total linear impulse acting on current particle
+		pAngularImpulse, // total angular impulse acting on current particle
+		color, // particle color
+		sortedPos,  // sorted particle positions
+		sortedVel,  // sorted particle velocities
+		relativePos, // unsorted relative positions
+		ARPos, // sorted scene particle positions
+		ARnormals, // unsorted scene normals
+		gridParticleIndex, // sorted particle indices
+		gridParticleIndexAR, // sorted scene particle indices
+		cellStart,
+		cellEnd,
+		numParticles,
+		params);
+}
+
 
 /* Now apply total impulse to each rigid body*/
 __global__ void CombineReducedImpulses(

@@ -805,7 +805,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 	Integrate_RB_System(deltaTime);
 
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{

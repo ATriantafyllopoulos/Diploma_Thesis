@@ -374,4 +374,21 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 	SimParams params,
 	int numThreads);
 
+void FindAndHandleAugmentedRealityCollisionsUniformGridWrapper(
+	float4 *pLinearImpulse, // total linear impulse acting on current particle
+	float4 *pAngularImpulse, // total angular impulse acting on current particle
+	float4 *color, // particle color
+	float4 *sortedPos,  // sorted particle positions
+	float4 *sortedVel,  // sorted particle velocities
+	float4 *relativePos, // unsorted relative positions
+	float4 *ARPos, // sorted scene particle positions
+	float4 *ARnormals, // unsorted scene normals
+	uint   *gridParticleIndex, // sorted particle indices
+	uint   *gridParticleIndexAR, // sorted scene particle indices
+	uint   *cellStart,
+	uint   *cellEnd,
+	uint    numParticles,
+	SimParams params,
+	int numThreads);
+
 #endif

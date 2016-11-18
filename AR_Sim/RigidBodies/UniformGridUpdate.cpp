@@ -529,7 +529,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	Integrate_RB_System(deltaTime);
 
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -537,8 +537,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 		Find_Augmented_Reality_Collisions_Uniform_Grid();
 
 		// handle collisions between rigid bodies and real scene
-		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
-		Handle_Augmented_Reality_Collisions_Catto_CPU();
+		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		//Handle_Augmented_Reality_Collisions_Catto_CPU();
 	}
 
 	// find collisions between rigid bodies
@@ -560,30 +560,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 
 }
 
-void ParticleSystem::updateUniformGridDEM(float deltaTime)
+void ParticleSystem::Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM()
 {
-	assert(m_bInitialized);
-
-	//float *dPos;
-	//float *dCol;
-	if (m_bUseOpenGL)
-	{
-		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
-		dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
-	}
-	else
-	{
-		dPos = (float *)m_cudaPosVBO;
-	}
-
-	setParameters(&m_params);
-
-	// integrate system of rigid bodies
-	Integrate_RB_System(deltaTime);
-	
-	// pseudo-handle wall collisions
-	Handle_Wall_Collisions();
-
 	// calculate grid hash
 	calcHash(
 		m_dGridParticleHash,
@@ -616,9 +594,7 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	// cudaMemset is mandatory if cudaMalloc takes place once
-	checkCudaErrors(cudaMemset(pForce, 0, sizeof(float) * 4 * m_numParticles));
-	checkCudaErrors(cudaMemset(pTorque, 0, sizeof(float) * 4 * m_numParticles));
+
 
 	FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 		rbIndices, // index of the rigid body each particle belongs to
@@ -639,6 +615,101 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+
+	// after this function returns
+	// rigid body uniform grid variables
+	// have been initialized and are safe to use
+	Uniform_Grid_Initialized = true;
+}
+
+void ParticleSystem::Find_And_Handle_Augmented_Reality_Collisions_Uniform_Grid_DEM()
+{
+	// hash and grid positions have already been calculated for particles belonging to rigid bodies
+
+	assert(Uniform_Grid_Initialized);
+	// calculate grid hash
+	calcHash(
+		staticGridParticleHash,
+		staticGridParticleIndex,
+		staticPos,
+		numberOfRangeData);
+	// sort particles based on hash
+	sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	// reorder particle arrays into sorted order and
+	// find start and end of each cell
+	reorderDataAndFindCellStart(rbIndices, //index of the rigid body each particle belongs to
+		staticCellStart,
+		staticCellEnd,
+		staticSortedPos,
+		staticSortedVel,
+		staticGridParticleHash,
+		staticGridParticleIndex,
+		staticPos,
+		staticVel,
+		numberOfRangeData,
+		m_numGridCells);
+
+	// cudaMemset is mandatory if cudaMalloc takes place once
+	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
+
+	FindAndHandleAugmentedRealityCollisionsUniformGridWrapper(
+		(float4 *)pForce, // total linear impulse acting on current particle
+		(float4 *)pTorque, // total angular impulse acting on current particle
+		(float4 *)dCol, // particle color
+		(float4 *)m_dSortedPos,  // sorted particle positions
+		(float4 *)m_dSortedVel,  // sorted particle velocities
+		(float4 *)relativePos, // unsorted relative positions
+		(float4 *)staticSortedPos, // sorted scene particle positions
+		(float4 *)staticNorm, // unsorted scene normals
+		m_dGridParticleIndex, // sorted particle indices
+		staticGridParticleIndex, // sorted scene particle indices
+		staticCellStart,
+		staticCellEnd,
+		m_numParticles,
+		m_params,
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+}
+
+void ParticleSystem::updateUniformGridDEM(float deltaTime)
+{
+	assert(m_bInitialized);
+	// initialize to false to ensure that rigid body
+	// collision handling procedure is called first
+	Uniform_Grid_Initialized = false;
+	//float *dPos;
+	//float *dCol;
+	if (m_bUseOpenGL)
+	{
+		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+		dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
+	}
+	else
+	{
+		dPos = (float *)m_cudaPosVBO;
+	}
+
+	setParameters(&m_params);
+
+	// integrate system of rigid bodies
+	Integrate_RB_System(deltaTime);
+	
+	// pseudo-handle wall collisions using Baraff in GPU (only largest penetration is handled)
+	//Handle_Wall_Collisions();
+
+	// reset - per particle impulses to zero
+	checkCudaErrors(cudaMemset(pForce, 0, sizeof(float) * 4 * m_numParticles));
+	checkCudaErrors(cudaMemset(pTorque, 0, sizeof(float) * 4 * m_numParticles));
+
+	// handle rigid body to rigid body collisions using DEM first
+	Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM();
+
+	// handle rigid body to rigid body collisions using DEM
+	if (simulateAR)
+		Find_And_Handle_Augmented_Reality_Collisions_Uniform_Grid_DEM();
 
 	ReducePerParticleImpulses(
 		rbIndices, // index of the rigid body each particle belongs to
