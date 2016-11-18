@@ -123,6 +123,8 @@ float4 *color, // particle color
 float4 *sortedPos,  // sorted particle positions
 float4 *sortedVel,  // sorted particle velocities
 float4 *relativePos, // unsorted relative positions
+float3 minPos, // scene's smallest coordinates
+float3 maxPos, // scene's largest coordinates
 uint   *gridParticleIndex, // sorted particle indices
 uint   *cellStart,
 uint   *cellEnd,
@@ -177,6 +179,45 @@ SimParams params)
 	if (numCollisions)
 		color[originalIndex] = make_float4(1, 0, 0, 0);
 
+	//// now find and handle wall collisions
+	//// NOTE: should this be moved to a separate kernel call
+	//// (clarity and speed?)
+	//numCollisions = 0;
+	//if (pos.x < minPos.x + params.particleRadius && vel.x < 0)
+	//{
+	//	linear += make_float4((params.boundaryDamping - 1) * vel.x, 0, 0, 0);
+	//	numCollisions++;
+	//}
+	//if (pos.y < minPos.y + params.particleRadius && vel.y < 0)
+	//{
+	//	linear += make_float4(0, (params.boundaryDamping - 1) * vel.y, 0, 0);
+	//	numCollisions++;
+	//}
+	//if (pos.z < minPos.z + params.particleRadius && vel.z < 0)
+	//{
+	//	linear += make_float4(0, 0, (params.boundaryDamping - 1) * vel.z, 0);
+	//	numCollisions++;
+	//}
+
+	//if (pos.x > maxPos.x - params.particleRadius && vel.x > 0)
+	//{
+	//	linear += make_float4((params.boundaryDamping - 1) * vel.x, 0, 0, 0);
+	//	numCollisions++;
+	//}
+	//if (pos.y > maxPos.y - params.particleRadius && vel.y > 0)
+	//{
+	//	linear += make_float4(0, (params.boundaryDamping - 1) * vel.y, 0, 0);
+	//	numCollisions++;
+	//}
+	//if (pos.z > maxPos.z - params.particleRadius && vel.z > 0)
+	//{
+	//	linear += make_float4(0, 0, (params.boundaryDamping - 1) * vel.z, 0);
+	//	numCollisions++;
+	//}
+	//
+	//if (numCollisions)
+	//	color[originalIndex] = make_float4(1, 1, 1, 0);
+
 	pLinearImpulse[originalIndex] += linear;
 	// tau = r x F
 	pAngularImpulse[originalIndex] += make_float4(cross(make_float3(relativePos[originalIndex]), make_float3(linear)), 0); 
@@ -192,6 +233,8 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 	float4 *sortedPos,  // sorted particle positions
 	float4 *sortedVel,  // sorted particle velocities
 	float4 *relativePos, // unsorted relative positions
+	float3 minPos, // scene's smallest coordinates
+	float3 maxPos, // scene's largest coordinates
 	uint   *gridParticleIndex, // sorted particle indices
 	uint   *cellStart,
 	uint   *cellEnd,
@@ -210,6 +253,8 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 		sortedPos,  // sorted particle positions
 		sortedVel,  // sorted particle velocities
 		relativePos, // unsorted relative positions
+		minPos, // scene's smallest coordinates
+		maxPos, // scene's largest coordinates
 		gridParticleIndex, // sorted particle indices
 		cellStart,
 		cellEnd,

@@ -48,12 +48,17 @@ public:
 	void initDemoMode();
 	void DemoMode();
 	void toggleSimulation(){ runSimulation = !runSimulation; }
-
+	void toggleGravity() { psystem->toggleGravity(); }
+	void changeSpring(const float &x){ psystem->changeSpring(x); }
+	void changeDamping(const float &x){ psystem->changeDamping(x); }
+	void changeGlobalDamping(const float &x){ psystem->changeGlobalDamping(x); }
+	void changeShear(const float &x){ psystem->changeShear(x); }
 private:
 
 	// list of demos
 	void Demo_TwoBananas();
 	void Demo_ThirtySixTeapots();
+	void Demo_FiveHundredTeapots();
 
 	bool runSimulation;
 	int objectMode;

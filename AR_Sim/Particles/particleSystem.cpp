@@ -143,12 +143,20 @@ numThreads(128)
 	m_params.attraction = 0.0f;
 	m_params.boundaryDamping = -0.5f;
 
-	m_params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
+	m_params.gravity = make_float3(0.0f, -0.03f, 0.0f);
 	m_params.globalDamping = 0.9f;
 	simulateAR = true;
 	m_params.ARrestitution = 0.3;
 	imageIndex = 1;
 	imageOffset = 1;
+
+	m_params.spring = 0.5f;
+	m_params.damping = 0.02f;//0.02f;
+	m_params.shear = 0.1f;
+	m_params.attraction = 0.0f;
+	m_params.boundaryDamping = -0.5f;
+	m_params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
+	m_params.globalDamping = 1.0f;
 
 	shVertex.loadShader("Shaders/main_shader.vert", GL_VERTEX_SHADER);
 	shFragment.loadShader("Shaders/main_shader.frag", GL_FRAGMENT_SHADER);
@@ -630,5 +638,56 @@ void ParticleSystem::initCPU()
 	checkCudaErrors(cudaMemcpy(&bunnyInertia, rbInertia, sizeof(glm::mat3), cudaMemcpyDeviceToHost));
 }
 
+void ParticleSystem::toggleGravity()
+{
+	if (m_params.gravity.y < 0)
+	{
+		m_params.gravity.y = 0;
+		std::cout << "Disabling gravity" << std::endl;
+	}
+	else
+	{
+		m_params.gravity.y = -0.0003f;
+		std::cout << "Enabling gravity" << std::endl;
+	}
+}
 
+void ParticleSystem::changeSpring(const float &x)
+{
+	m_params.spring += x;
+	if (m_params.spring < 0.f)
+		m_params.spring = 0.f;
+	else if (m_params.spring > 1.f)
+		m_params.spring = 1.f;
+	std::cout << "Spring set to: " << m_params.spring << std::endl;
+}
 
+void ParticleSystem::changeDamping(const float &x)
+{
+	m_params.damping += x;
+	if (m_params.damping < 0.f)
+		m_params.damping = 0.f;
+	else if (m_params.damping > 0.2f)
+		m_params.damping = 0.2f;
+	std::cout << "Damping set to: " << m_params.damping << std::endl;
+}
+
+void ParticleSystem::changeGlobalDamping(const float &x)
+{
+	m_params.globalDamping += x;
+	if (m_params.globalDamping < 0.f)
+		m_params.globalDamping = 0.f;
+	else if (m_params.globalDamping > 1.f)
+		m_params.globalDamping = 1.f;
+	std::cout << "Global damping set to: " << m_params.globalDamping << std::endl;
+}
+
+void ParticleSystem::changeShear(const float &x)
+{
+	m_params.shear += x;
+	if (m_params.shear < 0.f)
+		m_params.shear = 0.f;
+	else if (m_params.shear > 0.5f)
+		m_params.shear = 0.5f;
+	std::cout << "Shear set to: " << m_params.shear << std::endl;
+}

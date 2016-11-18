@@ -365,6 +365,8 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 	float4 *sortedPos,  // sorted particle positions
 	float4 *sortedVel,  // sorted particle velocities
 	float4 *relativePos, // unsorted relative positions
+	float3 minPos, // scene's smallest coordinates
+	float3 maxPos, // scene's largest coordinates
 	uint   *gridParticleIndex, // sorted particle indices
 	uint   *cellStart,
 	uint   *cellEnd,

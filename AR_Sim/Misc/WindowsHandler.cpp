@@ -120,6 +120,57 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 		world->DemoMode();
 		world->toggleSimulation();
 	}
+	else if (key == GLFW_KEY_G && action == GLFW_PRESS)
+	{
+		world->toggleGravity();
+	}
+	else if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+	{
+		if (mods == GLFW_MOD_SHIFT)
+		{
+			std::cout << "Shift+F1 pressed" << std::endl;
+			world->changeSpring(0.05);
+		}
+		else
+		{
+			std::cout << "F1 pressed" << std::endl;
+			world->changeSpring(-0.05);
+		}	
+	}
+	else if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
+	{
+		if (mods == GLFW_MOD_SHIFT)
+		{
+			world->changeDamping(0.005);
+		}
+		else
+		{
+			world->changeDamping(-0.005);
+		}
+	}
+	else if (key == GLFW_KEY_F3 && action == GLFW_PRESS)
+	{
+		if (mods == GLFW_MOD_SHIFT)
+		{
+			world->changeGlobalDamping(0.05);
+		}
+		else
+		{
+			world->changeGlobalDamping(-0.05);
+		}
+	}
+	else if (key == GLFW_KEY_F4 && action == GLFW_PRESS)
+	{
+		if (mods == GLFW_MOD_SHIFT)
+		{
+			world->changeShear(0.05);
+		}
+		else
+		{
+			world->changeShear(-0.05);
+		}
+	}
+
 }
 
 void WindowsHandler::keyCallbackPure(GLFWwindow* window, int key, int scancode, int action, int mods)

@@ -580,8 +580,8 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 
 	// integrate system of rigid bodies
 	Integrate_RB_System(deltaTime);
-
-	// find and handle wall collisions
+	
+	// pseudo-handle wall collisions
 	Handle_Wall_Collisions();
 
 	// calculate grid hash
@@ -628,6 +628,8 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 		(float4 *)m_dSortedPos,  // sorted particle positions
 		(float4 *)m_dSortedVel,  // sorted particle velocities
 		(float4 *)relativePos, // unsorted relative positions
+		minPos, // scene's smallest coordinates
+		maxPos, // scene's largest coordinates
 		m_dGridParticleIndex, // sorted particle indices
 		m_dCellStart,
 		m_dCellEnd,

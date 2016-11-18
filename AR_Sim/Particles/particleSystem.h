@@ -620,6 +620,12 @@ private: // universal addition methods
 	void newCopyObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float scale, const char* modelName, int objectType);
 	void newAddRigidBody();
 
+public: // GLFW menu
+	void toggleGravity();
+	void changeSpring(const float &x);
+	void changeDamping(const float &x);
+	void changeGlobalDamping(const float &x);
+	void changeShear(const float &x);
 };
 
 #endif // __PARTICLESYSTEM_H__
