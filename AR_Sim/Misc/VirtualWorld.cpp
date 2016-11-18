@@ -315,7 +315,7 @@ void VirtualWorld::Demo_FiveHundredTeapots()
 			(float)std::rand() / (float)RAND_MAX / 10.f);
 		//glm::vec3 velocity(0, 0, 0);
 		//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-		psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 1.0, 0), 2.0f, "teapot");
+		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f, "teapot");
 		viewer->increaseNumberOfObjects();
 		viewer->addScaleFactor(0.00020f);
 		viewer->addObjectType(M_TEAPOT);

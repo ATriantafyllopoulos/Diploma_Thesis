@@ -526,10 +526,10 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	setParameters(&m_params);
 
 	// integrate system of rigid bodies
-	Integrate_RB_System(deltaTime);
-
+	//Integrate_RB_System(deltaTime);
+	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// find and handle wall collisions
-	//Handle_Wall_Collisions();
+	Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -691,14 +691,14 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 	{
 		dPos = (float *)m_cudaPosVBO;
 	}
-
 	setParameters(&m_params);
 
 	// integrate system of rigid bodies
 	//Integrate_RB_System(deltaTime);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
+	
 	// pseudo-handle wall collisions using Baraff in GPU (only largest penetration is handled)
-	//Handle_Wall_Collisions();
+	Handle_Wall_Collisions();
 
 	// reset - per particle impulses to zero
 	checkCudaErrors(cudaMemset(pForce, 0, sizeof(float) * 4 * m_numParticles));
