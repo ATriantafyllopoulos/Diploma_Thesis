@@ -1570,7 +1570,8 @@ void ParticleSystem::update(float deltaTime)
 	{
 		if (collisionMethod == M_UNIFORM_GRID)
         {
-			updateUniformGrid(deltaTime);
+			//updateUniformGrid(deltaTime);
+			updateUniformGridDEM(deltaTime);
 		}
 		else if (collisionMethod == M_BVH)
 		{

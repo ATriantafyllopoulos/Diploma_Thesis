@@ -158,6 +158,9 @@
     <CudaCompile Include="WallCollisions.cu">
       <Filter>Rigid Body\Kernels</Filter>
     </CudaCompile>
+    <CudaCompile Include="RigidBodies\UniformGridDEM.cu">
+      <Filter>Rigid Body\Kernels</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Misc\main.cpp">

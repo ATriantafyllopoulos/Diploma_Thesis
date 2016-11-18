@@ -51,6 +51,10 @@ public:
 
 private:
 
+	// list of demos
+	void Demo_TwoBananas();
+	void Demo_ThirtySixTeapots();
+
 	bool runSimulation;
 	int objectMode;
 	int numberOfParticles;

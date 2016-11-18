@@ -338,4 +338,38 @@ void resetQuaternionWrapper(glm::quat *rbQuaternion, //contains current quaterni
 	int numRigidBodies, //number of rigid bodies
 	int numThreads);
 
+void ResetParticleImpulseWrapper(
+	float4 *pLinearImpulse, // total linear impulse acting on current particle
+	float4 *pAngularImpulse, // total angular impulse acting on current particle
+	int numParticles, //number of rigid bodies
+	int numThreads);
+
+void ReducePerParticleImpulses(
+	int *rbIndices, // index of the rigid body each particle belongs to
+	float4 *pLinearImpulse, // total linear impulse acting on current particle
+	float4 *pAngularImpulse, // total angular impulse acting on current particle
+	float4 *rbVel, // rigid body linear velocity 
+	float4 *rbAng, // rigid body angular velocity 
+	float *rbMass, // rigid body mass
+	glm::mat3 *rbInertia, // rigid body inverse inertia matrix
+	int *particlesPerObject, // number of particles per object
+	int numRigidBodies, // total number of rigid bodies
+	int numParticles, // total number of particles
+	int numThreads);
+
+void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
+	int *rbIndices, // index of the rigid body each particle belongs to
+	float4 *pLinearImpulse, // total linear impulse acting on current particle
+	float4 *pAngularImpulse, // total angular impulse acting on current particle
+	float4 *color, // particle color
+	float4 *sortedPos,  // sorted particle positions
+	float4 *sortedVel,  // sorted particle velocities
+	float4 *relativePos, // unsorted relative positions
+	uint   *gridParticleIndex, // sorted particle indices
+	uint   *cellStart,
+	uint   *cellEnd,
+	uint    numParticles,
+	SimParams params,
+	int numThreads);
+
 #endif

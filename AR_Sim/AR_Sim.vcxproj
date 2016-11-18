@@ -56,6 +56,7 @@
     <CudaCompile Include="Kernels\RB_BVHKernels.cu" />
     <CudaCompile Include="Kernels\RB_UniformGridKernels.cu" />
     <CudaCompile Include="Kernels\rigidBodyKernels.cu" />
+    <CudaCompile Include="RigidBodies\UniformGridDEM.cu" />
     <CudaCompile Include="WallCollisions.cu" />
   </ItemGroup>
   <ItemGroup>

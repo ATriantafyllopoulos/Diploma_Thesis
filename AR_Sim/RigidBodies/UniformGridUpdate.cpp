@@ -559,3 +559,106 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	}
 
 }
+
+void ParticleSystem::updateUniformGridDEM(float deltaTime)
+{
+	assert(m_bInitialized);
+
+	//float *dPos;
+	//float *dCol;
+	if (m_bUseOpenGL)
+	{
+		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+		dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
+	}
+	else
+	{
+		dPos = (float *)m_cudaPosVBO;
+	}
+
+	setParameters(&m_params);
+
+	// integrate system of rigid bodies
+	Integrate_RB_System(deltaTime);
+
+	// find and handle wall collisions
+	Handle_Wall_Collisions();
+
+	// calculate grid hash
+	calcHash(
+		m_dGridParticleHash,
+		m_dGridParticleIndex,
+		dPos,
+		m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	// sort particles based on hash
+	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	// reorder particle arrays into sorted order and
+	// find start and end of each cell
+	reorderDataAndFindCellStart(
+		rbIndices, //index of the rigid body each particle belongs to
+		m_dCellStart,
+		m_dCellEnd,
+		m_dSortedPos,
+		m_dSortedVel,
+		m_dGridParticleHash,
+		m_dGridParticleIndex,
+		dPos,
+		m_dVel,
+		m_numParticles,
+		m_numGridCells);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	// cudaMemset is mandatory if cudaMalloc takes place once
+	checkCudaErrors(cudaMemset(pForce, 0, sizeof(float) * 4 * m_numParticles));
+	checkCudaErrors(cudaMemset(pTorque, 0, sizeof(float) * 4 * m_numParticles));
+
+	FindAndHandleRigidBodyCollisionsUniformGridWrapper(
+		rbIndices, // index of the rigid body each particle belongs to
+		(float4 *)pForce, // total linear impulse acting on current particle
+		(float4 *)pTorque, // total angular impulse acting on current particle
+		(float4 *)dCol, // particle color
+		(float4 *)m_dSortedPos,  // sorted particle positions
+		(float4 *)m_dSortedVel,  // sorted particle velocities
+		(float4 *)relativePos, // unsorted relative positions
+		m_dGridParticleIndex, // sorted particle indices
+		m_dCellStart,
+		m_dCellEnd,
+		m_numParticles,
+		m_params,
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	ReducePerParticleImpulses(
+		rbIndices, // index of the rigid body each particle belongs to
+		(float4 *)pForce, // total linear impulse acting on current particle
+		(float4 *)pTorque, // total angular impulse acting on current particle
+		(float4 *)rbVelocities, // rigid body linear velocity 
+		(float4 *)rbAngularVelocity, // rigid body angular velocity 
+		rbMass, // rigid body mass
+		rbInertia, // rigid body inverse inertia matrix
+		particlesPerObjectThrown, // number of particles per object
+		numRigidBodies, // total number of rigid bodies
+		m_numParticles, // total number of particles
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+
+	if (m_bUseOpenGL)
+	{
+		unmapGLBufferObject(m_cuda_colorvbo_resource);
+		unmapGLBufferObject(m_cuda_posvbo_resource);
+	}
+
+}

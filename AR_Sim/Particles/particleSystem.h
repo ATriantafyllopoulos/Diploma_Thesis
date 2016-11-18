@@ -294,6 +294,7 @@ protected:
 
 	void updateGrid(float deltaTime);
 	void updateUniformGrid(float deltaTime);
+	void updateUniformGridDEM(float deltaTime);
 	void updateStaticParticles(float deltaTime);
 
 	void updateBVHExperimental(float deltaTime);
