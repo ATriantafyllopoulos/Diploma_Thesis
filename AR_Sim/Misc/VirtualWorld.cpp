@@ -171,9 +171,9 @@ void VirtualWorld::throwSphere(int x, int y)
 		viewer->increaseNumberOfObjects();
 		viewer->addScaleFactor(1.5f);
 		viewer->addObjectType(M_BUNNY);*/
-		psystem->addBanana(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.f);
+		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.5f, "banana");
 		viewer->increaseNumberOfObjects();
-		viewer->addScaleFactor(0.02f);
+		viewer->addScaleFactor(0.025f);
 		viewer->addObjectType(M_BANANA);
 		//		psystem->addNewSphere(1024, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);
 		//		psystem->addNewSphere(1, worldSpaceCoordinates, velocity, 10, psystem->getParticleRadius()*2.0f);

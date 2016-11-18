@@ -1633,16 +1633,14 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		std::cout << "Obj particles corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
 		if (!initializedNow)
 			m_numParticles += particles;
-		std::cout << modelName << " inertia tensor: " << std::endl;
+		std::cout << modelName << " custom inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)
 		{
 			for (int col = 0; col < 3; col++)
 				std::cout << inertiaTensor[row][col] << " ";
 			std::cout << std::endl;
 		}
-		inertiaTensor = glm::inverse(inertiaTensor);
-		std::cout << modelName << " max distance: " << maxDistance << std::endl;
-		std::cout << modelName << " inverse inertia tensor: " << std::endl;
+		
 		/*if (!strcmp(modelName, "cube"))
 		{
 			inertiaTensor = glm::mat3(1.f);
@@ -1650,6 +1648,44 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			inertiaTensor[1][1] = 6.f / (0.2188 * 0.2188);
 			inertiaTensor[2][2] = 6.f / (0.2188 * 0.2188);
 		}*/
+		//if (!strcmp(modelName, "banana"))
+		//{
+		//	/*inertiaTensor[0][0] = 0.000023;
+		//	inertiaTensor[0][1] = 0.000021;
+		//	inertiaTensor[0][2] = 0.000000;
+
+		//	inertiaTensor[1][0] = 0.000021;
+		//	inertiaTensor[1][1] = 0.000070;
+		//	inertiaTensor[1][2] = 0.000000;
+
+		//	inertiaTensor[2][0] = 0.000000;
+		//	inertiaTensor[2][1] = 0.000000;
+		//	inertiaTensor[2][2] = 0.000083;*/
+		//	inertiaTensor[0][0] = 2358.788818;
+		//	inertiaTensor[0][1] = 2180.327148;
+		//	inertiaTensor[0][2] = 5.386145;
+
+		//	inertiaTensor[1][0] = 2180.327148;
+		//	inertiaTensor[1][1] = 7156.108398;
+		//	inertiaTensor[1][2] = -7.151738;
+
+		//	inertiaTensor[2][0] = 5.386145;
+		//	inertiaTensor[2][1] = -7.151738;
+		//	inertiaTensor[2][2] = 8533.791016;
+		//}
+		//std::cout << modelName << " meshlab inertia tensor: " << std::endl;
+		//for (int row = 0; row < 3; row++)
+		//{
+		//	for (int col = 0; col < 3; col++)
+		//		std::cout << inertiaTensor[row][col] << " ";
+		//	std::cout << std::endl;
+		//}
+		/*| 0.000023 0.000021 0.000000 |
+		| 0.000021 0.000070 - 0.000000 |
+		| 0.000000 - 0.000000 0.000083 |*/
+		inertiaTensor = glm::inverse(inertiaTensor);
+		std::cout << modelName << " max distance: " << maxDistance << std::endl;
+		std::cout << modelName << " inverse inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)
 		{
 			for (int col = 0; col < 3; col++)

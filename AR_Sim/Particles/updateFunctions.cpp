@@ -569,15 +569,17 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 					float4 impulseVector = cn * impulse;
 
 					// apply linear impulse
-					/*std::cout << "V1 before impulse: (" << vel_CPU[index].x << ", " <<
+					std::cout << "V before impulse: (" << vel_CPU[index].x << ", " <<
 						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
-					std::cout << "Collision normal: (" << cn.x << ", " <<
+					/*std::cout << "Collision normal: (" << cn.x << ", " <<
 						cn.y << ", " << cn.z << ", " << cn.w << ")" << std::endl;*/
+					std::cout << "Linear impulse applied: (" << impulseVector.x << ", " <<
+						impulseVector.y << ", " << impulseVector.z << ", " << impulseVector.w << ")" << std::endl;
 					vel_CPU[index] += impulseVector / mA;
 					vel_CPU[index].w = 0;
-					/*std::cout << "V1 after impulse: (" << vel_CPU[index].x << ", " <<
+					std::cout << "V after impulse: (" << vel_CPU[index].x << ", " <<
 						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
-					std::cout << std::endl;*/
+					std::cout << std::endl;
 					// compute auxiliaries for angular impulse
 					glm::vec3 rA(r1.x, r1.y, r1.z);
 					glm::vec3 impulseVectorGLM(impulseVector.x, impulseVector.y, impulseVector.z);
@@ -585,8 +587,21 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 					// apply angular impulse
 					glm::vec3 AngularImpulse = IinvA *
 						(glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
+
+					glm::vec3 MomentumAdded = (glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
+					std::cout << "Angular momentum added: (" << MomentumAdded.x << ", " <<
+						MomentumAdded.y << ", " << MomentumAdded.z << ")" << std::endl;
+
+					std::cout << "Angular impulse applied: (" << AngularImpulse.x << ", " <<
+						AngularImpulse.y << ", " << AngularImpulse.z  << ")" << std::endl;
+
+					std::cout << "W before impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
+						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
 					rbAngularVelocity_CPU[index] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
 					rbAngularVelocity_CPU[index].w = 0;
+					std::cout << "W after impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
+						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
+					std::cout << std::endl;
 
 				}
 			}
@@ -1566,8 +1581,8 @@ void ParticleSystem::update(float deltaTime)
 	{
 		if (collisionMethod == M_UNIFORM_GRID)
         {
-			updateUniformGrid(deltaTime);
-			//updateUniformGridDEM(deltaTime);
+			//updateUniformGrid(deltaTime);
+			updateUniformGridDEM(deltaTime);
 		}
 		else if (collisionMethod == M_BVH)
 		{

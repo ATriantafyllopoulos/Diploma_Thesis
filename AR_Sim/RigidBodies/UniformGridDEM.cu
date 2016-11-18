@@ -303,8 +303,8 @@ SimParams params)
 				float3 velB = make_float3(0, 0, 0);
 				// particles are colliding
 				//float3 norm = relPos / dist;
-				//float3 norm = make_float3(FETCH(ARnormals, originalIndex_2));
-				float3 norm = make_float3(0, 1, 0);
+				float3 norm = -make_float3(FETCH(ARnormals, originalIndex_2));
+				//float3 norm = make_float3(0, -1, 0);
 				// relative velocity
 				float3 relVel = velB - velA;
 
