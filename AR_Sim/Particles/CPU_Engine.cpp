@@ -408,7 +408,7 @@ float ParticleSystem::computeImpulseMagnitude(
 	std::cout << "Total relative velocity: " << relativeVelocity << std::endl;*/
 	/*if (relativeVelocity > 0)
 		return 0.f;*/
-	float epsilon = 0.f;
+	float epsilon = 1.f;
 	float numerator = -(1 + epsilon) * relativeVelocity;
 	float a = 1.f / mA;
 	float b = glm::dot(glm::cross(IinvA * glm::cross(rA, norm), rA), norm);
