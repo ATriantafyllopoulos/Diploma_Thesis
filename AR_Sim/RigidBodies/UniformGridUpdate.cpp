@@ -695,8 +695,8 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 	setParameters(&m_params);
 
 	// integrate system of rigid bodies
-	Integrate_RB_System(deltaTime);
-	
+	//Integrate_RB_System(deltaTime);
+	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// pseudo-handle wall collisions using Baraff in GPU (only largest penetration is handled)
 	//Handle_Wall_Collisions();
 

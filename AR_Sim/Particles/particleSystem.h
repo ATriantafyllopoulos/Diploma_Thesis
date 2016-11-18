@@ -572,6 +572,7 @@ private:
 private:
 	// GPU physics engine
 	void Integrate_RB_System(float deltaTime);
+	void Integrate_Rigid_Body_System_GPU(float deltaTime);
 	void Handle_Wall_Collisions();
 	void Find_Rigid_Body_Collisions_Uniform_Grid();
 	void Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM();

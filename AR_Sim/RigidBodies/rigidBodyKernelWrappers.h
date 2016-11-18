@@ -391,4 +391,19 @@ void FindAndHandleAugmentedRealityCollisionsUniformGridWrapper(
 	SimParams params,
 	int numThreads);
 
+void GPUintegratorWrapper(float4 *CMs, //rigid body center of mass
+	float4 *vel, //velocity of rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	glm::mat3 *rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	glm::mat4 *modelMatrixGPU, // modelMatrix used for rendering
+	glm::quat *cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+	float deltaTime, //dt
+	float *rbMass, //inverse of total mass of rigid body
+	int numBodies, //number of rigid bodies
+	SimParams params,
+	int numThreads);
+
+
 #endif

@@ -209,6 +209,110 @@ void integrateSystemRigidBodies(float4 *CMs, //rigid body center of mass
 		params); //simulation parameters
 }
 
+
+__global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
+	float4 *vel, //velocity of rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	glm::mat3 *rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	glm::mat4 *modelMatrixGPU, // modelMatrix used for rendering
+	glm::quat *cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+	float deltaTime, //dt
+	float *rbMass, //inverse of total mass of rigid body
+	int numBodies, //number of rigid bodies
+	SimParams params) //simulation parameters
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numBodies)
+		return;
+	//rbAngularMomentum_CPU[index] *= 0.99;
+	//rbLinearMomentum_CPU[index] *= 0.99;
+
+	float4 locPos = CMs[index];
+	float locMass = rbMass[index];
+	glm::quat quaternion = rbQuaternion[index];
+	glm::mat3 inertia = rbInertia[index];
+	glm::mat3 currentInertia = rbCurrentInertia[index];
+	float4 locVel = vel[index];
+	float4 locAng = rbAngularVelocity[index];
+	locPos += locVel * deltaTime;
+
+	glm::vec3 newVelocity(locAng.x, locAng.y, locAng.z);
+	glm::vec3 normalizedVel = normalize(newVelocity);
+	float theta = glm::length(newVelocity);
+	if (theta > 0.00001)
+	{
+		quaternion.w = cos(theta / 2.f);
+		quaternion.x = sin(theta / 2.f) * normalizedVel.x;
+		quaternion.y = sin(theta / 2.f) * normalizedVel.y;
+		quaternion.z = sin(theta / 2.f) * normalizedVel.z;
+	}
+	else
+	{
+		quaternion.w = 1.f;
+		quaternion.x = 0.f;
+		quaternion.y = 0.f;
+		quaternion.z = 0.f;
+	}
+	quaternion = normalize(quaternion);
+	glm::mat3 rot = mat3_cast(quaternion);
+	currentInertia = rot * inertia * transpose(rot);
+
+
+	cumulativeQuaternionGPU[index] = quaternion * cumulativeQuaternionGPU[index];
+	cumulativeQuaternionGPU[index] = normalize(cumulativeQuaternionGPU[index]);
+	rot = mat3_cast(cumulativeQuaternionGPU[index]);
+	glm::mat4 modelMatrix = glm::mat4(1.f);
+	for (int row = 0; row < 3; row++)
+		for (int col = 0; col < 3; col++)
+			modelMatrix[row][col] = rot[row][col];
+	modelMatrix[3][0] = locPos.x;
+	modelMatrix[3][1] = locPos.y;
+	modelMatrix[3][2] = locPos.z;
+	modelMatrixGPU[index] = modelMatrix;
+
+	locVel += make_float4(params.gravity, 0);
+	CMs[index] = locPos;
+	vel[index] = locVel;
+	rbCurrentInertia[index] = currentInertia;
+	rbQuaternion[index] = quaternion;
+	rbAngularVelocity[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0);
+}
+
+void GPUintegratorWrapper(float4 *CMs, //rigid body center of mass
+	float4 *vel, //velocity of rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	glm::mat3 *rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	glm::mat4 *modelMatrixGPU, // modelMatrix used for rendering
+	glm::quat *cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+	float deltaTime, //dt
+	float *rbMass, //inverse of total mass of rigid body
+	int numBodies, //number of rigid bodies
+	SimParams params,
+	int numThreads) //number of threads
+{
+	dim3 blockDim(numThreads, 1);
+	dim3 gridDim((numBodies + numThreads - 1) / numThreads, 1);
+	if (gridDim.x < 1)
+		gridDim.x = 1;
+	GPUintegratorKernel << < gridDim, blockDim >> >(CMs, //rigid body center of mass
+		vel, //velocity of rigid body
+		rbAngularVelocity, //contains angular velocities for each rigid body
+		rbQuaternion, //contains current quaternion for each rigid body
+		rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+		rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+		modelMatrixGPU, // modelMatrix used for rendering
+		cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+		deltaTime, //dt
+		rbMass, //inverse of total mass of rigid body
+		numBodies, //number of rigid bodies
+		params); //simulation parameters
+}
+
 /*
 * Function to calculate the global position of each particle given its relative position to its
 * associated rigid body's center of mass.

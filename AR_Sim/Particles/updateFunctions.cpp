@@ -1596,6 +1596,58 @@ void ParticleSystem::update(float deltaTime)
     }
 }
 
+void ParticleSystem::Integrate_Rigid_Body_System_GPU(float deltaTime)
+{
+	// these mallocs and memcpys could be further optimized by only allocating once
+	// but better to be safe than sorry
+	glm::mat4 *modelMatrixGPU;
+	checkCudaErrors(cudaMalloc((void**)&modelMatrixGPU, sizeof(glm::mat4) * numRigidBodies));
+
+	glm::quat *cumulativeQuaternionGPU;
+	checkCudaErrors(cudaMalloc((void**)&cumulativeQuaternionGPU, sizeof(glm::quat) * numRigidBodies));
+	checkCudaErrors(cudaMemcpy(cumulativeQuaternionGPU, cumulativeQuaternion, sizeof(glm::quat) * numRigidBodies, cudaMemcpyHostToDevice));
+
+	GPUintegratorWrapper((float4 *)rbPositions, //rigid body center of mass
+		(float4 *)rbVelocities, //velocity of rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbQuaternion, //contains current quaternion for each rigid body
+		rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+		rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+		modelMatrixGPU, // modelMatrix used for rendering
+		cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+		deltaTime, //dt
+		rbMass, //inverse of total mass of rigid body
+		numRigidBodies, //number of rigid bodies
+		m_params,
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	checkCudaErrors(cudaMemcpy(cumulativeQuaternion, cumulativeQuaternionGPU, sizeof(glm::quat) * numRigidBodies, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(modelMatrix, modelMatrixGPU, sizeof(glm::mat4) * numRigidBodies, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaFree(cumulativeQuaternionGPU));
+	checkCudaErrors(cudaFree(modelMatrixGPU));
+	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
+		(float4 *)rbVelocities, //rigid body's velocity
+		(float4 *)relativePos, //particle's relative position
+		(float4 *)dPos, //particle's global position
+		(float4 *)m_dVel, //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbIndices, //index of associated rigid body
+		m_numParticles, //number of particles
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+	resetQuaternionWrapper(rbQuaternion, numRigidBodies, numThreads);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+
+}
+
 void ParticleSystem::Integrate_RB_System(float deltaTime)
 {
 	integrateRigidBodyCPU(

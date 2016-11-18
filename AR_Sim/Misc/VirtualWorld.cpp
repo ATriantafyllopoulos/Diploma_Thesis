@@ -206,9 +206,9 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	Demo_TwoBananas();
+	//Demo_TwoBananas();
 	//Demo_ThirtySixTeapots();
-	//Demo_FiveHundredTeapots();
+	Demo_FiveHundredTeapots();
 	//psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
 	
 	//for (float x = -1; x < 1; x += 0.6)
@@ -315,12 +315,12 @@ void VirtualWorld::Demo_FiveHundredTeapots()
 			(float)std::rand() / (float)RAND_MAX / 10.f);
 		//glm::vec3 velocity(0, 0, 0);
 		//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f, "teapot");
+		psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 1.0, 0), 2.0f, "teapot");
 		viewer->increaseNumberOfObjects();
 		viewer->addScaleFactor(0.00020f);
 		viewer->addObjectType(M_TEAPOT);
 			}
-
+	std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
 }
 
 void VirtualWorld::DemoMode()
