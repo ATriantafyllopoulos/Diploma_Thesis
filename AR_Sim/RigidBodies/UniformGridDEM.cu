@@ -40,6 +40,20 @@ __device__ uint calcGridHashAuxilDEM(int3 gridPos, SimParams params)
 	return gridPos.z * params.gridSize.y * params.gridSize.x + gridPos.y * params.gridSize.x + gridPos.x;
 }
 
+__device__ float3 clampLocal(float3 impulse, float3 limit)
+{
+	float3 result;
+
+	if (abs(impulse.x) > limit.x)
+		result.x = impulse.x > 0 ? limit.x : -limit.x;
+	if (abs(impulse.y) > limit.y)
+		result.y = impulse.y > 0 ? limit.y : -limit.y;
+	if (abs(impulse.z) > limit.z)
+		result.z = impulse.z > 0 ? limit.z : -limit.z;
+
+	return result;
+}
+
 __device__
 void FindAndHandleRigidBodyCollisionsUniformGridCell(
 int3 gridPos,
@@ -103,6 +117,8 @@ SimParams params)
 					// attraction
 					localImpulse += params.attraction*relPos;
 
+					// clamp local impulse
+					//localImpulse = clampLocal(localImpulse, 2.f * make_float3(abs(velA.x), abs(velA.y), abs(velA.z)));
 					(*impulse) += make_float4(localImpulse, 0);
 					(*numCollisions)++;
 				}
@@ -180,45 +196,7 @@ SimParams params)
 		color[originalIndex] = make_float4(1, 0, 0, 0);
 	else
 		color[originalIndex] = make_float4(0, 0, 1, 0);
-	//// now find and handle wall collisions
-	//// NOTE: should this be moved to a separate kernel call
-	//// (clarity and speed?)
-	//numCollisions = 0;
-	//if (pos.x < minPos.x + params.particleRadius && vel.x < 0)
-	//{
-	//	linear += make_float4((params.boundaryDamping - 1) * vel.x, 0, 0, 0);
-	//	numCollisions++;
-	//}
-	//if (pos.y < minPos.y + params.particleRadius && vel.y < 0)
-	//{
-	//	linear += make_float4(0, (params.boundaryDamping - 1) * vel.y, 0, 0);
-	//	numCollisions++;
-	//}
-	//if (pos.z < minPos.z + params.particleRadius && vel.z < 0)
-	//{
-	//	linear += make_float4(0, 0, (params.boundaryDamping - 1) * vel.z, 0);
-	//	numCollisions++;
-	//}
-
-	//if (pos.x > maxPos.x - params.particleRadius && vel.x > 0)
-	//{
-	//	linear += make_float4((params.boundaryDamping - 1) * vel.x, 0, 0, 0);
-	//	numCollisions++;
-	//}
-	//if (pos.y > maxPos.y - params.particleRadius && vel.y > 0)
-	//{
-	//	linear += make_float4(0, (params.boundaryDamping - 1) * vel.y, 0, 0);
-	//	numCollisions++;
-	//}
-	//if (pos.z > maxPos.z - params.particleRadius && vel.z > 0)
-	//{
-	//	linear += make_float4(0, 0, (params.boundaryDamping - 1) * vel.z, 0);
-	//	numCollisions++;
-	//}
-	//
-	//if (numCollisions)
-	//	color[originalIndex] = make_float4(1, 1, 1, 0);
-
+	//linear = make_float4(clampLocal(make_float3(linear), 2.f * make_float3(abs(vel.x), abs(vel.y), abs(vel.z))), 0);
 	pLinearImpulse[originalIndex] += linear;
 	// tau = r x F
 	pAngularImpulse[originalIndex] += make_float4(cross(make_float3(relativePos[originalIndex]), make_float3(linear)), 0); 
@@ -462,11 +440,22 @@ __global__ void CombineReducedImpulses(
 		totalLinearImpulse -= reducedLinearImpulse[particlesPerObject[index - 1]];
 		totalAngularImpulse -= reducedAngularImpulse[particlesPerObject[index - 1]];
 	}
+	float4 oldVel = rbVel[index];
+	float4 oldAng = rbAng[index];
+
+	float4 linearVelocityChange = totalLinearImpulse / rbMass[index];
+	linearVelocityChange.x = clamp(linearVelocityChange.x, -2 * abs(oldVel.x), 2 * abs(oldVel.x));
+	linearVelocityChange.y = clamp(linearVelocityChange.y, -2 * abs(oldVel.y), 2 * abs(oldVel.y));
+	linearVelocityChange.z = clamp(linearVelocityChange.z, -2 * abs(oldVel.z), 2 * abs(oldVel.z));
+
 	glm::mat3 inertia = rbInertia[index];
 	glm::vec3 angularImpulse(totalAngularImpulse.x, totalAngularImpulse.y, totalAngularImpulse.z);
 	glm::vec3 w = inertia * angularImpulse;
+	w.x = clamp(w.x, -2 * abs(oldAng.x), 2 * abs(oldAng.x));
+	w.y = clamp(w.y, -2 * abs(oldAng.y), 2 * abs(oldAng.y));
+	w.z = clamp(w.z, -2 * abs(oldAng.z), 2 * abs(oldAng.z));
 
-	rbVel[index] += totalLinearImpulse / rbMass[index];
+	rbVel[index] += linearVelocityChange;
 	rbAng[index] += make_float4(w.x, w.y, w.z, 0);
 }
 

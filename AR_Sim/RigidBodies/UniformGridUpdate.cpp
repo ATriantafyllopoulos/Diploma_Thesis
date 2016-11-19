@@ -323,22 +323,49 @@ void ParticleSystem::updateStaticParticles(float deltaTime)
 
 void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 {
+#define PROFILE_UG
+#ifdef PROFILE_UG
+	static int iterations = 0;
+	static float totalTime = 0;
+	static float CalculateHashTime = 0;
+	static float SortTime = 0;
+	static float ReorderTime = 0;
+	static float FindCollisionsTime = 0;
+#endif
+
+#ifdef PROFILE_UG
+	clock_t start = clock();
+#endif
+
 	// calculate grid hash
 	calcHash(
 		m_dGridParticleHash,
 		m_dGridParticleIndex,
 		dPos,
 		m_numParticles);
-
+#ifdef PROFILE_UG
+	clock_t end = clock();
+	CalculateHashTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// sort particles based on hash
+#ifdef PROFILE_UG
+	start = clock();
+#endif
 	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+#ifdef PROFILE_UG
+	end = clock();
+	SortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// reorder particle arrays into sorted order and
 	// find start and end of each cell
+#ifdef PROFILE_UG
+	start = clock();
+#endif
 	reorderDataAndFindCellStart(
 		rbIndices, //index of the rigid body each particle belongs to
 		m_dCellStart,
@@ -351,13 +378,18 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		m_dVel,
 		m_numParticles,
 		m_numGridCells);
-
+#ifdef PROFILE_UG
+	end = clock();
+	ReorderTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
 	// cudaMemset is mandatory if cudaMalloc takes place once
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
-
+#ifdef PROFILE_UG
+	start = clock();
+#endif
 	FindRigidBodyCollisionsUniformGridWrapper(
 		rbIndices, // index of the rigid body each particle belongs to
 		collidingRigidBodyIndex, // index of rigid body of contact
@@ -371,7 +403,25 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		m_numParticles,
 		m_params,
 		numThreads);
+#ifdef PROFILE_UG
+	end = clock();
+	FindCollisionsTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+#ifdef PROFILE_UG
+	iterations++;
+	if (iterations == 1000)
+	{
+		totalTime = CalculateHashTime + SortTime + ReorderTime + FindCollisionsTime;
+		std::cout << "Avg. times spent on uniform grid collision detection for " << numRigidBodies << " rigid bodies made of " << m_numParticles << " particles" << std::endl;
+		std::cout << "Avg. time spent on calculating hash codes: " << CalculateHashTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on sorting hash codes: " << SortTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on reordering grid: " << ReorderTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on finding collisions: " << FindCollisionsTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on uniform grid collision detection in total: " << totalTime / (float)iterations << std::endl;
 
+		std::cout << std::endl;
+	}
+#endif
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 }
