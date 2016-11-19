@@ -294,8 +294,6 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 	// copy particle variables to CPU
 	float4 *relative_CPU = new float4[m_numParticles];
 	checkCudaErrors(cudaMemcpy(relative_CPU, relativePos, m_numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
-
-
 	// copy contact info to CPU - one contact per particle
 	float *contactDistance_CPU = new float[m_numParticles];
 	int *collidingRigidBodyIndex_CPU = new int[m_numParticles];
@@ -312,9 +310,10 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 		{
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
+				
 				int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				
+				std::cout << current_particle << " collides with " << particleIndex << std::endl;
 				if ((index < rigidBodyIndex || collisionMethod == M_BVH) &&
 					testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
@@ -1588,14 +1587,36 @@ void ParticleSystem::update(float deltaTime)
 		//{
 		//	updateBVHExperimental(deltaTime);
 		//}
+		//updateUniformGrid(deltaTime);
 		updateUniformGrid(deltaTime);
 		//updateBVHExperimental(deltaTime);
+		/*static int iterations = 0;
+		float4 *CM_CPU = new float4[numRigidBodies];
+		checkCudaErrors(cudaMemcpy(CM_CPU, rbPositions, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));
+		for (int rb = 0; rb < numRigidBodies; rb++)
+		{
+			std::ostringstream counter;
+			counter << (rb + 1);
+			std::string fileName("my_body_");
+			fileName += counter.str();
+			fileName += ".txt";
+			if (iterations < 30)
+			{
+				std::ofstream file(fileName.c_str(), std::ofstream::app);
+				file << CM_CPU[rb].x << " " << CM_CPU[rb].y << " " << CM_CPU[rb].z << std::endl;
+				file.close();
+			}
+		}
+		iterations++;
+		delete CM_CPU;*/
 	}
     if (!pauseFrame)
     {
     	updateFrame();
 
     }
+
+
 }
 
 void ParticleSystem::Integrate_Rigid_Body_System_GPU(float deltaTime)

@@ -206,8 +206,8 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	//Demo_TwoBananas();
-	Demo_ThirtySixTeapots();
+	Demo_TwoBananas();
+	//Demo_ThirtySixTeapots();
 	//Demo_FiveHundredTeapots();
 	//psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
 	
@@ -266,7 +266,7 @@ void VirtualWorld::initDemoMode()
 void VirtualWorld::Demo_TwoBananas()
 {
 	//psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
-	psystem->setSceneAABB(make_float3(FLT_MIN, FLT_MIN, FLT_MIN), make_float3(FLT_MAX, FLT_MAX, FLT_MAX));
+	psystem->setSceneAABB(make_float3(-1000, -1000, -1000), make_float3(1000, 1000, 1000));
 	// banana 1
 	psystem->addObj(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();

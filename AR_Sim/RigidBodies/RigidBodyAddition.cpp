@@ -1683,6 +1683,14 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		/*| 0.000023 0.000021 0.000000 |
 		| 0.000021 0.000070 - 0.000000 |
 		| 0.000000 - 0.000000 0.000083 |*/
+		/*if (!strcmp(modelName, "banana"))
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 0.0112532;
+			inertiaTensor[1][1] = 0.0173912;
+			inertiaTensor[2][2] = 0.02457;
+		}*/
+
 		inertiaTensor = glm::inverse(inertiaTensor);
 		std::cout << modelName << " max distance: " << maxDistance << std::endl;
 		std::cout << modelName << " inverse inertia tensor: " << std::endl;
