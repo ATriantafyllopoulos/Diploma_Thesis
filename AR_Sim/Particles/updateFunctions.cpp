@@ -313,7 +313,7 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 				
 				int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				std::cout << current_particle << " collides with " << particleIndex << std::endl;
+				//std::cout << current_particle << " collides with " << particleIndex << std::endl;
 				if ((index < rigidBodyIndex || collisionMethod == M_BVH) &&
 					testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
@@ -444,6 +444,240 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 
 }
 
+void ParticleSystem::Handle_Rigid_Body_Collisions_Catto_CPU()
+{
+	// copy rigid body variables to CPU
+	float4 *CMs_CPU = new float4[numRigidBodies]; //rigid body center of mass
+	float4 *vel_CPU = new float4[numRigidBodies];  //velocity of rigid body
+	float4 *rbAngularVelocity_CPU = new float4[numRigidBodies];  //contains angular velocities for each rigid body
+	glm::mat3 *rbCurrentInertia_CPU = new glm::mat3[numRigidBodies];  //current moment of inertia for each rigid body - 9 values per RB
+	float *rbMass_CPU = new float[numRigidBodies];  //inverse of total mass of rigid body
+
+	checkCudaErrors(cudaMemcpy(CMs_CPU, rbPositions, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(vel_CPU, rbVelocities, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity_CPU, rbAngularVelocity, numRigidBodies * sizeof(float4), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia_CPU, rbCurrentInertia, numRigidBodies * sizeof(glm::mat3), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(rbMass_CPU, rbMass, numRigidBodies * sizeof(float), cudaMemcpyDeviceToHost));
+
+	// copy particle variables to CPU
+	float4 *relative_CPU = new float4[m_numParticles];
+	checkCudaErrors(cudaMemcpy(relative_CPU, relativePos, m_numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
+	float4 *particlePosition_CPU = new float4[m_numParticles];
+	checkCudaErrors(cudaMemcpy(particlePosition_CPU, dPos, m_numParticles * sizeof(float4), cudaMemcpyDeviceToHost));
+	// copy contact info to CPU - one contact per particle
+	// copy contact info to CPU - one contact per particle
+	float *contactDistance_CPU = new float[m_numParticles];
+	int *collidingRigidBodyIndex_CPU = new int[m_numParticles];
+	int *collidingParticleIndex_CPU = new int[m_numParticles];
+
+	checkCudaErrors(cudaMemcpy(contactDistance_CPU, contactDistance, m_numParticles * sizeof(float), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(collidingRigidBodyIndex_CPU, collidingRigidBodyIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(collidingParticleIndex_CPU, collidingParticleIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
+
+	// pre-processing step
+	// count total number of collisions
+
+	int current_particle = 0;
+	int collision_counter = 0;
+	for (int index = 0; index < numRigidBodies; index++)
+	{
+		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
+		{
+			int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
+			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
+			{
+				collision_counter++;
+			}
+			current_particle++;
+		}
+	}
+
+	//#define PRINT_COLLISIONS
+#ifdef PRINT_COLLISIONS
+	std::cout << "Number of collisions: " << collision_counter << std::endl;
+	std::ofstream file("collisions.txt");
+#endif
+	// initialize auxiliary contact variables
+	float4 *contactNormal = new float4[collision_counter]; // store one normal per collision
+	float4 *contactPoint = new float4[collision_counter]; // store one contact point per collision
+	float *contactAccumulatedImpulse = new float[collision_counter]; // store the accumulated impulses per collision
+	int *contactRigidBody_1 = new int[collision_counter]; // index to colliding rigid body
+	int *contactRigidBody_2 = new int[collision_counter]; // index to colliding rigid body
+	float *contactBias = new float[collision_counter]; // bias at each contact point
+	memset(contactBias, 0, sizeof(float) * collision_counter);
+	memset(contactNormal, 0, sizeof(float) * 4 * collision_counter);
+	memset(contactPoint, 0, sizeof(float) * 4 * collision_counter);
+	memset(contactAccumulatedImpulse, 0, sizeof(float) * collision_counter);
+	memset(contactRigidBody_1, 0, sizeof(int) * collision_counter);
+	memset(contactRigidBody_2, 0, sizeof(int) * collision_counter);
+
+	collision_counter = 0;
+	current_particle = 0;
+
+	float epsilon = 1.f;
+	for (int index = 0; index < numRigidBodies; index++)
+	{
+		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
+		{
+			int rigidBodyIndex = collidingRigidBodyIndex_CPU[current_particle];
+			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
+			{
+				int particleIndex = collidingParticleIndex_CPU[current_particle];
+				
+				float4 cp, cn;
+				findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
+					CMs_CPU[rigidBodyIndex] + relative_CPU[particleIndex],
+					m_params.particleRadius,
+					m_params.particleRadius,
+					cp, cn);
+
+				contactNormal[collision_counter] = cn;
+				contactPoint[collision_counter] = cp;
+				contactRigidBody_1[collision_counter] = index;
+				contactRigidBody_2[collision_counter] = rigidBodyIndex;
+
+				float3 v1 = make_float3(vel_CPU[index].x, vel_CPU[index].y, vel_CPU[index].z);
+				float3 w1 = make_float3(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
+
+				float3 v2 = make_float3(vel_CPU[rigidBodyIndex].x, vel_CPU[rigidBodyIndex].y, vel_CPU[rigidBodyIndex].z);
+				float3 w2 = make_float3(rbAngularVelocity_CPU[rigidBodyIndex].x, rbAngularVelocity_CPU[rigidBodyIndex].y, rbAngularVelocity_CPU[rigidBodyIndex].z);
+				
+				float v_rel = dot(v1 + cross(w1, make_float3(relative_CPU[current_particle])), make_float3(contactNormal[collision_counter])) - 
+					dot(v2 + cross(w2, make_float3(relative_CPU[particleIndex])), make_float3(contactNormal[collision_counter])); // relative velocity at current contact
+				
+				contactBias[collision_counter] = epsilon * v_rel;
+#ifdef PRINT_COLLISIONS
+				std::cout << "Collision #" << collision_counter + 1 << " initial bias: " << contactBias[collision_counter] << std::endl;
+				float4 r = relative_CPU[current_particle];//position_CPU[particleIndex] - CMs_CPU[index];
+				//std::cout << "Collision #" << collision_counter + 1 << ": (" << r.x << ", " << r.y << ", " << r.z << ")" << std::endl;
+				file << r.x << " " << r.y << " " << r.z << " " << std::endl;
+#endif
+				collision_counter++;
+			}
+			current_particle++;
+		}
+	}
+#ifdef PRINT_COLLISIONS
+	file.close();
+#endif
+	// solve contacts using SIS
+
+	const int iterations = 8; // number of iterations per simulation step
+	const int UPPER_BOUND = 100; // upper bound for accumulated impulse
+	for (int k = 0; k < iterations; k++)
+	{
+		for (int c = 0; c < collision_counter; c++)
+		{
+			glm::vec3 n(contactNormal[c].x, contactNormal[c].y, contactNormal[c].z); // collision normal
+			//glm::vec3 n(0, sqrt(2.f) / 2, sqrt(2.f) / 2);
+			//glm::vec3 n(0, 1, 0);
+			float4 point = contactPoint[c];
+			int rigidBodyIndex1 = contactRigidBody_1[c];
+			int rigidBodyIndex2 = contactRigidBody_2[c];
+
+			float4 r1 = point - CMs_CPU[rigidBodyIndex1];
+			glm::vec3 p1(r1.x, r1.y, r1.z); // contact to be processed at this iteration
+			glm::mat3 Iinv1 = rbCurrentInertia_CPU[rigidBodyIndex1];
+			float m1 = rbMass_CPU[rigidBodyIndex1];
+			glm::vec3 v1(vel_CPU[rigidBodyIndex1].x, vel_CPU[rigidBodyIndex1].y, vel_CPU[rigidBodyIndex1].z);
+			glm::vec3 w1(rbAngularVelocity_CPU[rigidBodyIndex1].x, rbAngularVelocity_CPU[rigidBodyIndex1].y, rbAngularVelocity_CPU[rigidBodyIndex1].z);
+
+			float4 r2 = point - CMs_CPU[rigidBodyIndex2];
+			glm::vec3 p2(r2.x, r2.y, r2.z); // contact to be processed at this iteration
+			glm::mat3 Iinv2 = rbCurrentInertia_CPU[rigidBodyIndex2];
+			float m2 = rbMass_CPU[rigidBodyIndex2];
+			glm::vec3 v2(vel_CPU[rigidBodyIndex2].x, vel_CPU[rigidBodyIndex2].y, vel_CPU[rigidBodyIndex2].z);
+			glm::vec3 w2(rbAngularVelocity_CPU[rigidBodyIndex2].x, rbAngularVelocity_CPU[rigidBodyIndex2].y, rbAngularVelocity_CPU[rigidBodyIndex2].z);
+
+			float mc = 1 / m1 + 1 / m2 + glm::dot(glm::cross(Iinv1 * glm::cross(p1, n), p1), n) + 
+				glm::dot(glm::cross(Iinv2 * glm::cross(p2, n), p2), n); // active mass at current collision
+			if (abs(mc) < 0.00001) mc = 1.f;
+			float v_rel = glm::dot(v1 + glm::cross(w1, p1), n) - glm::dot(v2 + glm::cross(w2, p2), n); // relative velocity at current contact
+			float corrective_impulse = -(v_rel + contactBias[c]) / mc; // corrective impulse magnitude
+#ifdef PRINT_COLLISIONS
+			std::cout << "Iteration: " << k << std::endl;
+			std::cout << "Contact: " << c << std::endl;
+			std::cout << "Collision normal: (" << n.x << ", " << n.y << ", " << n.z << ")" << std::endl;
+			std::cout << "Relative linear velocity: " << glm::dot(v, n) << std::endl;
+			std::cout << "Relative angular velocity: " << glm::dot(glm::cross(w, p), n) << std::endl;
+			std::cout << "Total relative velocity: " << v_rel << std::endl;
+#endif
+			//if (corrective_impulse < 0)
+			//	std::cout << "Negative corrective impulse encountered: " << corrective_impulse << std::endl;
+
+			float temporary_impulse = contactAccumulatedImpulse[c]; // make a copy of old accumulated impulse
+			temporary_impulse = temporary_impulse + corrective_impulse; // add corrective impulse to accumulated impulse
+			//clamp new accumulated impulse
+			if (temporary_impulse < 0)
+				temporary_impulse = 0; // allow no negative accumulated impulses
+			else if (temporary_impulse > UPPER_BOUND)
+				temporary_impulse = UPPER_BOUND; // max upper bound for accumulated impulse
+			// compute difference between old and new impulse
+			corrective_impulse = temporary_impulse - contactAccumulatedImpulse[c];
+			contactAccumulatedImpulse[c] = temporary_impulse; // store new clamped accumulated impulse
+			// apply new clamped corrective impulse difference to velocity
+			glm::vec3 impulse_vector = corrective_impulse * n;
+			v1 = v1 + impulse_vector / m1;
+			w1 = w1 + Iinv1 * glm::cross(p1, impulse_vector);
+
+			vel_CPU[rigidBodyIndex1] = make_float4(v1.x, v1.y, v1.z, 0);
+			rbAngularVelocity_CPU[rigidBodyIndex1] = make_float4(w1.x, w1.y, w1.z, 0);
+
+			v2 = v2 - impulse_vector / m2;
+			w2 = w2 - Iinv2 * glm::cross(p2, impulse_vector);
+			vel_CPU[rigidBodyIndex2] = make_float4(v2.x, v2.y, v2.z, 0);
+			rbAngularVelocity_CPU[rigidBodyIndex2] = make_float4(w2.x, w2.y, w2.z, 0);
+
+#ifdef PRINT_COLLISIONS	
+			std::cout << "Applied impulse: " << corrective_impulse << std::endl;
+			std::cout << "New linear velocity: (" << v.x << ", " << v.y << ", " << v.z << ")" << std::endl;
+			std::cout << "New angular velocity: (" << w.x << ", " << w.y << ", " << w.z << ")" << std::endl;
+			std::cout << std::endl;
+#endif
+		}
+	}
+
+	checkCudaErrors(cudaMemcpy(rbPositions, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbVelocities, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbCurrentInertia, rbCurrentInertia_CPU, numRigidBodies * sizeof(glm::mat3), cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(rbMass, rbMass_CPU, numRigidBodies * sizeof(float), cudaMemcpyHostToDevice));
+
+	delete CMs_CPU;
+	delete vel_CPU;
+	delete rbAngularVelocity_CPU;
+	delete rbCurrentInertia_CPU;
+	delete rbMass_CPU;
+
+	delete relative_CPU;
+	delete particlePosition_CPU;
+
+	delete contactDistance_CPU;
+	delete collidingParticleIndex_CPU;
+	delete collidingRigidBodyIndex_CPU;
+
+	delete contactNormal;
+	delete contactAccumulatedImpulse;
+	delete contactRigidBody_1;
+	delete contactRigidBody_2;
+	delete contactPoint;
+	delete contactBias;
+
+	computeGlobalAttributesWrapper((float4 *)rbPositions, //rigid body's center of mass
+		(float4 *)rbVelocities, //rigid body's velocity
+		(float4 *)relativePos, //particle's relative position
+		(float4 *)dPos, //particle's global position
+		(float4 *)m_dVel, //particle's world velocity
+		rbQuaternion, //contains current quaternion for each rigid body
+		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+		rbIndices, //index of associated rigid body
+		m_numParticles, //number of particles
+		numThreads);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+}
+
 void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_GPU()
 {
 	HandleRigidBodyCollisionWrapper(
@@ -544,11 +778,11 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
+				/*if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
 					m_params.particleRadius,
 					m_params.particleRadius,
-					CMs_CPU[index]))
+					CMs_CPU[index]))*/
 				{
 					float4 cp, cn;
 					findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
@@ -557,8 +791,14 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						m_params.particleRadius,
 						cp, cn);
 					//cn = normal_CPU[particleIndex];
+					// customly added for collision with horizontal plane
+					// TODO: remove
+					cp = relative_CPU[current_particle];
+					cp.y = 1.5;
 					cn = make_float4(0, 1, 0, 0);
-					float4 r1 = cp - CMs_CPU[index];
+					CMs_CPU[index].y = 1.5 - relative_CPU[current_particle].y;
+					float4 r1 = relative_CPU[current_particle];
+					//float4 r1 = cp - CMs_CPU[index];
 					
 					glm::mat3 IinvA = rbCurrentInertia_CPU[index];
 				
@@ -566,19 +806,23 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 					float impulse = computeImpulseMagnitude(vel_CPU[index], rbAngularVelocity_CPU[index], r1, IinvA, mA, cn);
 
 					float4 impulseVector = cn * impulse;
-
+//#define DEBUG_BARAFF
 					// apply linear impulse
+#ifdef DEBUG_BARAFF
 					std::cout << "V before impulse: (" << vel_CPU[index].x << ", " <<
 						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
-					/*std::cout << "Collision normal: (" << cn.x << ", " <<
-						cn.y << ", " << cn.z << ", " << cn.w << ")" << std::endl;*/
+					std::cout << "Collision normal: (" << cn.x << ", " <<
+						cn.y << ", " << cn.z << ", " << cn.w << ")" << std::endl;
 					std::cout << "Linear impulse applied: (" << impulseVector.x << ", " <<
 						impulseVector.y << ", " << impulseVector.z << ", " << impulseVector.w << ")" << std::endl;
+#endif
 					vel_CPU[index] += impulseVector / mA;
 					vel_CPU[index].w = 0;
+#ifdef DEBUG_BARAFF
 					std::cout << "V after impulse: (" << vel_CPU[index].x << ", " <<
 						vel_CPU[index].y << ", " << vel_CPU[index].z << ")" << std::endl;
 					std::cout << std::endl;
+#endif
 					// compute auxiliaries for angular impulse
 					glm::vec3 rA(r1.x, r1.y, r1.z);
 					glm::vec3 impulseVectorGLM(impulseVector.x, impulseVector.y, impulseVector.z);
@@ -588,6 +832,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						(glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
 
 					glm::vec3 MomentumAdded = (glm::cross(glm::vec3(r1.x, r1.y, r1.z), impulseVectorGLM));
+#ifdef DEBUG_BARAFF
 					std::cout << "Angular momentum added: (" << MomentumAdded.x << ", " <<
 						MomentumAdded.y << ", " << MomentumAdded.z << ")" << std::endl;
 
@@ -596,11 +841,14 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 
 					std::cout << "W before impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
 						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
+#endif
 					rbAngularVelocity_CPU[index] += make_float4(AngularImpulse.x, AngularImpulse.y, AngularImpulse.z, 0);
 					rbAngularVelocity_CPU[index].w = 0;
+#ifdef DEBUG_BARAFF
 					std::cout << "W after impulse: (" << rbAngularVelocity_CPU[index].x << ", " <<
 						rbAngularVelocity_CPU[index].y << ", " << rbAngularVelocity_CPU[index].z << ")" << std::endl;
 					std::cout << std::endl;
+#endif
 
 				}
 			}
@@ -732,7 +980,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				contactNormal[collision_counter] = normal_CPU[particleIndex]; // scene's normal at collision point
-				//contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
+				contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
 				/*float4 cp, cn;
 				findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
@@ -1575,7 +1823,10 @@ void ParticleSystem::initializeRealSoA()
 void ParticleSystem::update(float deltaTime)
 {
 	//updateBVHSoA(deltaTime);
-	
+	deltaTime = 0.01;
+	m_params.spring = 10.f;
+	m_params.damping = 0.04f;
+	m_params.shear = 0.0f;
 	if (m_numParticles)
 	{
 		//if (collisionMethod == M_UNIFORM_GRID)
@@ -1588,8 +1839,9 @@ void ParticleSystem::update(float deltaTime)
 		//	updateBVHExperimental(deltaTime);
 		//}
 		//updateUniformGrid(deltaTime);
-		updateUniformGrid(deltaTime);
+		//updateUniformGrid(deltaTime);
 		//updateBVHExperimental(deltaTime);
+		updateUniformGridDEM(deltaTime);
 		/*static int iterations = 0;
 		float4 *CM_CPU = new float4[numRigidBodies];
 		checkCudaErrors(cudaMemcpy(CM_CPU, rbPositions, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));

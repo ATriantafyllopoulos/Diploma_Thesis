@@ -403,9 +403,10 @@ float ParticleSystem::computeImpulseMagnitude(
 	// if bodies are moving away from one another
 	// then we do not have colliding contact
 	// and we should disregard the collision
-	std::cout << "Relative velocity due to linear motion: " << glm::dot(vA, norm) << std::endl;
+	/*std::cout << "Relative velocity due to linear motion: " << glm::dot(vA, norm) << std::endl;
 	std::cout << "Relative velocity due to angular motion: " << glm::dot(glm::cross(wA, rA), norm) << std::endl;
-	std::cout << "Total relative velocity: " << relativeVelocity << std::endl;
+	std::cout << "Total relative velocity: " << relativeVelocity << std::endl;*/
+
 	if (relativeVelocity > 0)
 		return 0.f;
 	float epsilon = 1.f;

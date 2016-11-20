@@ -579,6 +579,7 @@ private:
 	void Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM();
 	void Handle_Rigid_Body_Collisions_Baraff_GPU();
 	void Handle_Rigid_Body_Collisions_Baraff_CPU();
+	void Handle_Rigid_Body_Collisions_Catto_CPU();
 
 	// augmented reality engine
 	void Find_Augmented_Reality_Collisions_Uniform_Grid();

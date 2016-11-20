@@ -440,20 +440,20 @@ __global__ void CombineReducedImpulses(
 		totalLinearImpulse -= reducedLinearImpulse[particlesPerObject[index - 1]];
 		totalAngularImpulse -= reducedAngularImpulse[particlesPerObject[index - 1]];
 	}
-	float4 oldVel = rbVel[index];
-	float4 oldAng = rbAng[index];
+	/*float4 oldVel = rbVel[index];
+	float4 oldAng = rbAng[index];*/
 
 	float4 linearVelocityChange = totalLinearImpulse / rbMass[index];
-	linearVelocityChange.x = clamp(linearVelocityChange.x, -2 * abs(oldVel.x), 2 * abs(oldVel.x));
-	linearVelocityChange.y = clamp(linearVelocityChange.y, -2 * abs(oldVel.y), 2 * abs(oldVel.y));
-	linearVelocityChange.z = clamp(linearVelocityChange.z, -2 * abs(oldVel.z), 2 * abs(oldVel.z));
+	/*linearVelocityChange.x = clamp(linearVelocityChange.x, -0.2, 0.2);
+	linearVelocityChange.y = clamp(linearVelocityChange.y, -0.2, 0.2);
+	linearVelocityChange.z = clamp(linearVelocityChange.z, -0.2, 0.2);*/
 
 	glm::mat3 inertia = rbInertia[index];
 	glm::vec3 angularImpulse(totalAngularImpulse.x, totalAngularImpulse.y, totalAngularImpulse.z);
 	glm::vec3 w = inertia * angularImpulse;
-	w.x = clamp(w.x, -2 * abs(oldAng.x), 2 * abs(oldAng.x));
-	w.y = clamp(w.y, -2 * abs(oldAng.y), 2 * abs(oldAng.y));
-	w.z = clamp(w.z, -2 * abs(oldAng.z), 2 * abs(oldAng.z));
+	/*w.x = clamp(w.x, -0.2, 0.2);
+	w.y = clamp(w.y, -0.2, 0.2);
+	w.z = clamp(w.z, -0.2, 0.2);*/
 
 	rbVel[index] += linearVelocityChange;
 	rbAng[index] += make_float4(w.x, w.y, w.z, 0);

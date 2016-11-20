@@ -144,14 +144,14 @@ void VirtualWorld::addSphere(int x, int y)
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0002f);
 	viewer->addObjectType(M_TEAPOT);*/
-	psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.025f);
-	viewer->addObjectType(M_BANANA);
-	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
+	viewer->addObjectType(M_BANANA);*/
+	psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0025f);
-	viewer->addObjectType(M_CUBE);*/
+	viewer->addObjectType(M_CUBE);
 }
 
 void VirtualWorld::throwSphere(int x, int y)
@@ -310,7 +310,7 @@ void VirtualWorld::Demo_ThirtySixTeapots()
 
 void VirtualWorld::Demo_FiveHundredTeapots()
 {
-	psystem->setBBox(make_float3(-4.f, -4.f, -4.f), make_float3(4.f, 4.f, 4.f));
+	psystem->setBBox(make_float3(-4.f, -3.f, -4.f), make_float3(4.f, 4.f, 4.f));
 	for (float x = -2; x < 2; x += 0.6)
 		for (float y = -2; y < 2; y += 0.6)
 			for (float z = 1; z < 3; z += 0.4)
@@ -322,7 +322,7 @@ void VirtualWorld::Demo_FiveHundredTeapots()
 			(float)std::rand() / (float)RAND_MAX / 10.f);
 		//glm::vec3 velocity(0, 0, 0);
 		//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-		psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 1.0, 0), 2.0f, "teapot");
+		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f, "teapot");
 		viewer->increaseNumberOfObjects();
 		viewer->addScaleFactor(0.00020f);
 		viewer->addObjectType(M_TEAPOT);
@@ -342,17 +342,26 @@ void VirtualWorld::DemoMode()
 	psystem->setCollideAttraction(collideAttraction);*/
 	static int iterations = 0;
 	static float totalTime = 0;
-	
+	const int iterationLimit = 5000;
 	if (runSimulation)
 	{
 		clock_t start = clock();
 		psystem->update(timestep);
 		iterations++;
 		clock_t end = clock();
-		totalTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+		float localTime = (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+		totalTime += localTime;
+		/*if (iterations < iterationLimit)
+		{
+			std::ofstream file("profiling.txt", std::ofstream::app);
+			file << localTime << std::endl;
+			file.close();
+		}*/
 	}
-	if (iterations == 1000)
+	
+	if (iterations == iterationLimit)
 	{
+		std::cout << "Profiling stopped" << std::endl;
 		std::cout << "Avg time spent on update for " << psystem->getNumberOfObjects() << ": " << totalTime / (float)iterations << std::endl;
 	}
 		//psystem->updateCPU(timestep);

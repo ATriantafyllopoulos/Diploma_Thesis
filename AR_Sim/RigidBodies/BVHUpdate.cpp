@@ -874,8 +874,8 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 	Find_Rigid_Body_Collisions_BVH();
 
 	// handle collisions between rigid bodies
-	Handle_Rigid_Body_Collisions_Baraff_CPU();
-
+	//Handle_Rigid_Body_Collisions_Baraff_CPU();
+	Handle_Rigid_Body_Collisions_Catto_CPU();
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	if (m_bUseOpenGL)
 	{

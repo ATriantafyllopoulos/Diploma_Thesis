@@ -579,7 +579,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	//Integrate_RB_System(deltaTime);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -587,8 +587,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 		Find_Augmented_Reality_Collisions_Uniform_Grid();
 
 		// handle collisions between rigid bodies and real scene
-		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
-		Handle_Augmented_Reality_Collisions_Catto_CPU();
+		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		//Handle_Augmented_Reality_Collisions_Catto_CPU();
 	}
 
 	// find collisions between rigid bodies
@@ -596,6 +596,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 
 	// handle collisions between rigid bodies
 	Handle_Rigid_Body_Collisions_Baraff_CPU();
+	//Handle_Rigid_Body_Collisions_Catto_CPU();
 
 	//// cudaFree contact info variables - uncomment if no collision handling routine is used
 	//checkCudaErrors(cudaFree(collidingRigidBodyIndex));
@@ -748,7 +749,7 @@ void ParticleSystem::updateUniformGridDEM(float deltaTime)
 	Integrate_Rigid_Body_System_GPU(deltaTime);
 	
 	// pseudo-handle wall collisions using Baraff in GPU (only largest penetration is handled)
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	// reset - per particle impulses to zero
 	checkCudaErrors(cudaMemset(pForce, 0, sizeof(float) * 4 * m_numParticles));
