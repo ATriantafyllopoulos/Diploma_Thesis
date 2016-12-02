@@ -105,7 +105,7 @@ void ParticleSystem::addRigidBody(
 	reAllocateMemory(&relativePos, 4 * m_numParticles, newRelativePos, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
 	reAllocateMemory(&m_dVel, 4 * m_numParticles, newParticleVelocity, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
 	reAllocateMemory(&pForce, 4 * m_numParticles, newParticleForce, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
-	reAllocateMemory(&pPositions, 4 * m_numParticles, newParticlePosition, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
+	//reAllocateMemory(&pPositions, 4 * m_numParticles, newParticlePosition, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
 	reAllocateMemory(&pTorque, 4 * m_numParticles, newParticleTorque, 4 * particlesAdded, 4 * previousParticleCount, cudaMemcpyDeviceToDevice);
 	reAllocateMemory(&rbIndices, m_numParticles, newParticleIndex, particlesAdded, previousParticleCount, cudaMemcpyDeviceToDevice); //new rigid body index array
 	reAllocateMemory(&pCountARCollions, m_numParticles, newCountARCollions, particlesAdded, previousParticleCount, cudaMemcpyDeviceToDevice);
@@ -116,9 +116,9 @@ void ParticleSystem::addRigidBody(
 	//new per rigid body values
 	reAllocateMemory(&rbInertia, numRigidBodies, newInverseInertia, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice);
 	reAllocateMemory(&rbCurrentInertia, numRigidBodies, newInverseInertia, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice);
-	reAllocateMemory(&rbAngularAcceleration, numRigidBodies, newRigidBodyAngularAcceleration, 1, numRigidBodies - 1, cudaMemcpyDeviceToDevice); //new rigid body angular velocity array
+	//reAllocateMemory(&rbAngularAcceleration, numRigidBodies, newRigidBodyAngularAcceleration, 1, numRigidBodies - 1, cudaMemcpyDeviceToDevice); //new rigid body angular velocity array
 	reAllocateMemory(&rbQuaternion, numRigidBodies, newRigidBodyQuaternion, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body quaternion array
-	reAllocateMemory(&rbRadii, numRigidBodies, newRigidBodyRadius, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body radius array
+	//reAllocateMemory(&rbRadii, numRigidBodies, newRigidBodyRadius, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body radius array
 	reAllocateMemory(&rbMass, numRigidBodies, newRigidBodyMass, 1, (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body mass array
 
 	checkCudaErrors(cudaGetLastError());
@@ -127,10 +127,10 @@ void ParticleSystem::addRigidBody(
 	reAllocateMemory(&rbPositions, 4 * numRigidBodies, newRigidBodyCM, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body center of mass array
 	reAllocateMemory(&rbVelocities, 4 * numRigidBodies, newRigidBodyVelocity, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice);//new rigid body velocity array
 	reAllocateMemory(&rbAngularVelocity, 4 * numRigidBodies, newRigidBodyAngularVelocity, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body angular velocity array
-	reAllocateMemory(&rbForces, 4 * numRigidBodies, newRigidBodyForce, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
-	reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, newRigidBodyAngularMomentum, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
-	reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, newRigidBodyLinearMomentum, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
-	reAllocateMemory(&rbTorque, 4 * numRigidBodies, newRigidBodyTorque, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body torque array - possibly not needed
+	//reAllocateMemory(&rbForces, 4 * numRigidBodies, newRigidBodyForce, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
+	//reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, newRigidBodyAngularMomentum, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
+	//reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, newRigidBodyLinearMomentum, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body force array
+	//reAllocateMemory(&rbTorque, 4 * numRigidBodies, newRigidBodyTorque, 4, 4 * (numRigidBodies - 1), cudaMemcpyDeviceToDevice); //new rigid body torque array - possibly not needed
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
@@ -612,7 +612,7 @@ void ParticleSystem::addBunny(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float
 
 	float *newRigidBodyRadius;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
-	checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstBunnyIndex], sizeof(float), cudaMemcpyDeviceToDevice));
+	//checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstBunnyIndex], sizeof(float), cudaMemcpyDeviceToDevice));
 
 	float *newRigidBodyMass;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
@@ -1027,7 +1027,7 @@ void ParticleSystem::addTeapot(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 
 	float *newRigidBodyRadius;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
-	checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstTeapotIndex], sizeof(float), cudaMemcpyDeviceToDevice));
+	//checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstTeapotIndex], sizeof(float), cudaMemcpyDeviceToDevice));
 
 	float *newRigidBodyMass;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
@@ -1442,7 +1442,7 @@ void ParticleSystem::addBanana(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 
 	float *newRigidBodyRadius;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
-	checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstBananaIndex], sizeof(float), cudaMemcpyDeviceToDevice));
+	//checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[firstBananaIndex], sizeof(float), cudaMemcpyDeviceToDevice));
 
 	float *newRigidBodyMass;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
@@ -1940,7 +1940,7 @@ void ParticleSystem::addObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, floa
 
 	float *newRigidBodyRadius;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyRadius, sizeof(float)));
-	checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[objectIndex], sizeof(float), cudaMemcpyDeviceToDevice));
+	//checkCudaErrors(cudaMemcpy(newRigidBodyRadius, &rbRadii[objectIndex], sizeof(float), cudaMemcpyDeviceToDevice));
 
 	float *newRigidBodyMass;
 	checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));

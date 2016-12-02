@@ -43,23 +43,23 @@ numRigidBodies(0),
 numThreads(128)
 {
     std::cout << "Attempting to initialize particle system." << std::endl;
-	rbRadii = NULL;
+	//rbRadii = NULL;
 	rbMass = NULL;
 	relativePos = NULL;
 	rbIndices = NULL;
-	rbForces = NULL;
-	rbTorque = NULL;
+	//rbForces = NULL;
+	//rbTorque = NULL;
 	rbVelocities = NULL;
 	rbPositions = NULL;
 	rbAngularVelocity = NULL;
-	rbAngularMomentum = NULL; 
-	rbLinearMomentum = NULL;
-	rbAngularAcceleration = NULL;
+	//rbAngularMomentum = NULL; 
+	//rbLinearMomentum = NULL;
+	//rbAngularAcceleration = NULL;
 	rbInertia = NULL;
 	rbCurrentInertia = NULL;
 	rbQuaternion = NULL;
 	pForce = NULL;
-	pPositions = NULL;
+	//pPositions = NULL;
 	pTorque = NULL;
 	pCountARCollions = NULL;
 	particlesPerObjectThrown = NULL;
@@ -621,10 +621,10 @@ void ParticleSystem::initCPU()
 	checkCudaErrors(cudaMemcpy(CM_CPU, rbPositions, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(V_CPU, rbVelocities, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(W_CPU, rbAngularVelocity, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(P_CPU, rbLinearMomentum, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(L_CPU, rbAngularMomentum, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(F_CPU, rbForces, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(T_CPU, rbTorque, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(P_CPU, rbLinearMomentum, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(L_CPU, rbAngularMomentum, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(F_CPU, rbForces, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(T_CPU, rbTorque, 4 * sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(Iinv_CPU, rbInertia, sizeof(glm::mat3) * numRigidBodies, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(Q_CPU, rbQuaternion, sizeof(glm::quat) * numRigidBodies, cudaMemcpyDeviceToHost));
 
@@ -633,7 +633,7 @@ void ParticleSystem::initCPU()
 	checkCudaErrors(cudaMemcpy(displacement, relativePos, 4 * sizeof(float) * m_numParticles, cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(indexRB, rbIndices, sizeof(int) * m_numParticles, cudaMemcpyDeviceToHost));
 
-	checkCudaErrors(cudaMemcpy(&bunnyRadius, rbRadii, sizeof(float), cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(&bunnyRadius, rbRadii, sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(&bunnyMass, rbMass, sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(&bunnyInertia, rbInertia, sizeof(glm::mat3), cudaMemcpyDeviceToHost));
 }

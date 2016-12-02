@@ -178,11 +178,11 @@ void ParticleSystem::flushAndPrintRigidBodyParameters()
 	float *mass = new float[numRigidBodies];
 	checkCudaErrors(cudaMemcpy(mass, rbMass, sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
 	float *torqueTest = new float[4 * numRigidBodies];
-	checkCudaErrors(cudaMemcpy(torqueTest, rbTorque, sizeof(float) * 4 * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(torqueTest, rbTorque, sizeof(float) * 4 * numRigidBodies, cudaMemcpyDeviceToHost));
 	float *LTest = new float[4 * numRigidBodies];
-	checkCudaErrors(cudaMemcpy(LTest, rbAngularMomentum, sizeof(float) * 4 * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(LTest, rbAngularMomentum, sizeof(float) * 4 * numRigidBodies, cudaMemcpyDeviceToHost));
 	glm::vec3 *ldot = new glm::vec3[numRigidBodies];
-	checkCudaErrors(cudaMemcpy(ldot, rbAngularAcceleration, sizeof(glm::vec3) * numRigidBodies, cudaMemcpyDeviceToHost));
+	//checkCudaErrors(cudaMemcpy(ldot, rbAngularAcceleration, sizeof(glm::vec3) * numRigidBodies, cudaMemcpyDeviceToHost));
 	for(int i = 0; i < numRigidBodies; i++)
 	{
 
@@ -250,8 +250,10 @@ void ParticleSystem::Handle_Wall_Collisions()
 		maxPos, // scene AABB's largest coordinates
 		(float4 *)rbVelocities, // rigid body linear velocity
 		(float4 *)rbAngularVelocity, // rigid body angular velocity
-		(float4 *)rbLinearMomentum, // rigid body linear momentum
-		(float4 *)rbAngularMomentum, // rigid body angular momentum
+		//(float4 *)rbLinearMomentum, // rigid body linear momentum
+		//(float4 *)rbAngularMomentum, // rigid body angular momentum
+		NULL,
+		NULL,
 		rbCurrentInertia, // current rigid body inverse inertia tensor
 		rbMass, // rigid body mass
 		rbIndices, // index showing where each particle belongs
@@ -685,8 +687,10 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_GPU()
 		(float4 *)rbPositions, // rigid body center of mass
 		(float4 *)rbVelocities, // rigid body linear velocity
 		(float4 *)rbAngularVelocity, // rigid body angular velocity
-		(float4 *)rbLinearMomentum, // rigid body linear momentum
-		(float4 *)rbAngularMomentum, // rigid body angular momentum
+		//(float4 *)rbLinearMomentum, // rigid body linear momentum
+		//(float4 *)rbAngularMomentum, // rigid body angular momentum
+		NULL,
+		NULL,
 		rbCurrentInertia, // current rigid body inverse inertia tensor
 		rbMass, // rigid body mass
 		rbIndices, // index showing where each particle belongs
@@ -716,8 +720,10 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_GPU()
 		(float4 *)rbPositions, // rigid body center of mass
 		(float4 *)rbVelocities, // rigid body linear velocity
 		(float4 *)rbAngularVelocity, // rigid body angular velocity
-		(float4 *)rbLinearMomentum, // rigid body linear momentum
-		(float4 *)rbAngularMomentum, // rigid body angular momentum
+		//(float4 *)rbLinearMomentum, // rigid body linear momentum
+		//(float4 *)rbAngularMomentum, // rigid body angular momentum
+		NULL,
+		NULL,
 		rbCurrentInertia, // current rigid body inverse inertia tensor
 		rbMass, // rigid body mass
 		rbIndices, // index showing where each particle belongs
@@ -1954,27 +1960,27 @@ void ParticleSystem::Integrate_Rigid_Body_System_GPU(float deltaTime)
 
 void ParticleSystem::Integrate_RB_System(float deltaTime)
 {
-	integrateRigidBodyCPU(
-		cumulativeQuaternion,
-		modelMatrix, // model matrix array used for rendering
-		(float4 *)rbPositions, //rigid body center of mass
-		(float4 *)rbVelocities, //velocity of rigid body
-		(float4 *)rbForces, //total force applied to rigid body due to previous collisions
-		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
-		rbQuaternion, //contains current quaternion for each rigid body
-		(float4 *)rbTorque, //torque applied to rigid body due to previous collisions
-		(float4 *)rbAngularMomentum, //cumulative angular momentum of the rigid body
-		(float4 *)rbLinearMomentum, //cumulative linear momentum of the rigid body
-		rbInertia, //original moment of inertia for each rigid body - 9 values per RB
-		rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
-		rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
-		deltaTime, //dt
-		rbRadii, //radius chosen for each rigid body sphere
-		rbMass, //total mass of rigid body
-		minPos, //smallest coordinate of scene's bounding box
-		maxPos, //largest coordinate of scene's bounding box
-		numRigidBodies, //number of rigid bodies
-		m_params); //simulation parameters
+	//integrateRigidBodyCPU(
+	//	cumulativeQuaternion,
+	//	modelMatrix, // model matrix array used for rendering
+	//	(float4 *)rbPositions, //rigid body center of mass
+	//	(float4 *)rbVelocities, //velocity of rigid body
+	//	(float4 *)rbForces, //total force applied to rigid body due to previous collisions
+	//	(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
+	//	rbQuaternion, //contains current quaternion for each rigid body
+	//	(float4 *)rbTorque, //torque applied to rigid body due to previous collisions
+	//	(float4 *)rbAngularMomentum, //cumulative angular momentum of the rigid body
+	//	(float4 *)rbLinearMomentum, //cumulative linear momentum of the rigid body
+	//	rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	//	rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	//	rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
+	//	deltaTime, //dt
+	//	rbRadii, //radius chosen for each rigid body sphere
+	//	rbMass, //total mass of rigid body
+	//	minPos, //smallest coordinate of scene's bounding box
+	//	maxPos, //largest coordinate of scene's bounding box
+	//	numRigidBodies, //number of rigid bodies
+	//	m_params); //simulation parameters
 
 	//float4 *pos = new float4[m_numParticles];
 	//checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));

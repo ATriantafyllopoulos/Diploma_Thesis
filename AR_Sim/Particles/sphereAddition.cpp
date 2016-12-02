@@ -115,7 +115,7 @@ void ParticleSystem::addSphere(int start, glm::vec3 pos, glm::vec3 vel, int r, f
 	float *newValue = new float[4 * m_numParticles];
 	memset(newValue, 0, 4 * m_numParticles * sizeof(float));
 	allocateMemory(&pForce, 4 * m_numParticles, newValue);
-	allocateMemory(&pPositions, 4 * m_numParticles, newValue);
+	//allocateMemory(&pPositions, 4 * m_numParticles, newValue);
 	allocateMemory(&pTorque, 4 * m_numParticles, newValue);
 	delete newValue;
 
@@ -255,7 +255,7 @@ void ParticleSystem::addNewSphere(int particles, glm::vec3 pos, glm::vec3 vel, i
 	float *newValue = new float[4 * particles]; //all zeros (I hope)
 	memset(newValue, 0, 4 * particles * sizeof(float));
 	reAllocateMemory(&pForce, 4 * m_numParticles, newValue, 4 * (m_numParticles - start), 4 * start);
-	reAllocateMemory(&pPositions, 4 * m_numParticles, newValue, 4 * (m_numParticles - start), 4 * start);
+	//reAllocateMemory(&pPositions, 4 * m_numParticles, newValue, 4 * (m_numParticles - start), 4 * start);
 	reAllocateMemory(&pTorque, 4 * m_numParticles, newValue, 4 * (m_numParticles - start), 4 * start);
 	delete newValue;
 
@@ -480,7 +480,7 @@ void ParticleSystem::addRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel,
 	newValue = make_float4(0, 0, 0, 0);
 	reAllocateMemory(&rbAngularVelocity, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body angular velocity array
 	glm::vec3 newAngularAcceleration(0, 0, 0);
-	reAllocateMemory(&rbAngularAcceleration, numRigidBodies, &newAngularAcceleration, 1, numRigidBodies - 1); //new rigid body angular velocity array
+	//reAllocateMemory(&rbAngularAcceleration, numRigidBodies, &newAngularAcceleration, 1, numRigidBodies - 1); //new rigid body angular velocity array
 	reAllocateMemory(&rbInertia, numRigidBodies, &inertiaTensor, 1, (numRigidBodies - 1));//new rigid body inertia array
 	reAllocateMemory(&rbCurrentInertia, numRigidBodies, &inertiaTensor, 1, (numRigidBodies - 1));//new rigid body inertia array
 
@@ -489,20 +489,20 @@ void ParticleSystem::addRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel,
 
 
 	newValue = make_float4(0, 0, 0, 0);
-	reAllocateMemory(&rbForces, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbForces, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 
 	//ISSUE: rigid bodies have the same mass as particles
 	float newMass = 1.f / 15.f;//(float)(m_numParticles - start); //all rigid bodies have a mass of 1
 	reAllocateMemory(&rbMass, numRigidBodies, &newMass, 1, (numRigidBodies - 1)); //new rigid body mass array
 	newValue = make_float4(0, 0, 0, 0);
-	reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 	newValue = make_float4(vel.x , vel.y, vel.z, 0) / newMass;
-	reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 	newValue = make_float4(0, 0, 0, 0);
-	reAllocateMemory(&rbTorque, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body torque array - possibly not needed
+	//reAllocateMemory(&rbTorque, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body torque array - possibly not needed
 
 	float newRadius = m_params.particleRadius*2.0f*r;
-	reAllocateMemory(&rbRadii, numRigidBodies, &newRadius, 1, (numRigidBodies - 1)); //new rigid body radius array
+	//reAllocateMemory(&rbRadii, numRigidBodies, &newRadius, 1, (numRigidBodies - 1)); //new rigid body radius array
 
 
 
@@ -534,7 +534,7 @@ void ParticleSystem::addRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel,
 	float *newParticleValue = new float[4 * particles]; //all zeros (I hope)
 	memset(newParticleValue, 0, 4 * particles * sizeof(float));
 	reAllocateMemory(&pForce, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
-	reAllocateMemory(&pPositions, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
+	//reAllocateMemory(&pPositions, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
 	reAllocateMemory(&pTorque, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
 	delete newParticleValue;
 
@@ -688,29 +688,29 @@ void ParticleSystem::initRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel
 	newValue = make_float4(0, 0, 0, 0);
 	reAllocateMemory(&rbAngularVelocity, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body angular velocity array
 	glm::vec3 newAngularAcceleration(0, 0, 0);
-	reAllocateMemory(&rbAngularAcceleration, numRigidBodies, &newAngularAcceleration, 1, numRigidBodies - 1); //new rigid body angular velocity array
+	//reAllocateMemory(&rbAngularAcceleration, numRigidBodies, &newAngularAcceleration, 1, numRigidBodies - 1); //new rigid body angular velocity array
 	reAllocateMemory(&rbInertia, numRigidBodies, &inertiaTensor, 1, (numRigidBodies - 1));//new rigid body inertia array
 	reAllocateMemory(&rbCurrentInertia, numRigidBodies, &inertiaTensor, 1, (numRigidBodies - 1));//new rigid body inertia array
 
 	glm::quat newQuatValue(1, 0, 0, 0);
 	reAllocateMemory(&rbQuaternion, numRigidBodies, &newQuatValue, 1, (numRigidBodies - 1)); //new rigid body quaternion array
 	newValue = make_float4(0, 0, 0, 0);
-	reAllocateMemory(&rbForces, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbForces, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 
 	//ISSUE: rigid bodies have the same mass as particles
 	float newMass = 1.f / 15.f;//(float)(m_numParticles); //all rigid bodies have a mass of 1
 	reAllocateMemory(&rbMass, numRigidBodies, &newMass, 1, (numRigidBodies - 1)); //new rigid body mass array
 
 	newValue = make_float4(0, 0, 0, 0);
-	reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbAngularMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 	newValue = make_float4(vel.x , vel.y, vel.z, 0) / newMass;
-	reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
+	//reAllocateMemory(&rbLinearMomentum, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body force array
 	newValue = make_float4(0, 0, 0, 0);
 
-	reAllocateMemory(&rbTorque, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body torque array - possibly not needed
+	//reAllocateMemory(&rbTorque, 4 * numRigidBodies, &newValue, 4, 4 * (numRigidBodies - 1)); //new rigid body torque array - possibly not needed
 
 	float newRadius = m_params.particleRadius*2.0f*r;
-	reAllocateMemory(&rbRadii, numRigidBodies, &newRadius, 1, (numRigidBodies - 1)); //new rigid body radius array
+	//reAllocateMemory(&rbRadii, numRigidBodies, &newRadius, 1, (numRigidBodies - 1)); //new rigid body radius array
 
 
 
@@ -742,7 +742,7 @@ void ParticleSystem::initRigidSphere(int particles, glm::vec3 pos, glm::vec3 vel
 	float *newParticleValue = new float[4 * particles]; //all zeros (I hope)
 	memset(newParticleValue, 0, 4 * particles * sizeof(float));
 	reAllocateMemory(&pForce, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
-	reAllocateMemory(&pPositions, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
+	//reAllocateMemory(&pPositions, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
 	reAllocateMemory(&pTorque, 4 * m_numParticles, newParticleValue, 4 * (m_numParticles - start), 4 * start);
 	delete newParticleValue;
 

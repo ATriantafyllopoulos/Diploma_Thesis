@@ -325,25 +325,26 @@ public:
 private:
 	//rigid body associated variables
 	int numRigidBodies; //number of rigid bodies
-	float *rbForces, *rbPositions, *rbVelocities; //rigid body parameters
-	float *rbTorque; //rigid body torque
-	float *rbAngularMomentum; //rigid body angular momentum
-	float *rbLinearMomentum; //cumulative linear momentum of the rigid body
+	float *rbPositions, *rbVelocities; //rigid body parameters
+	//float *rbForces; // rigid body force
+	//float *rbTorque; //rigid body torque
+	//float *rbAngularMomentum; //rigid body angular momentum
+	//float *rbLinearMomentum; //cumulative linear momentum of the rigid body
 	float *rbAngularVelocity; //rigid body angular velocity
-	glm::vec3 *rbAngularAcceleration; //current angular acceleration due to misaligned angular momentum and velocity
+	//glm::vec3 *rbAngularAcceleration; //current angular acceleration due to misaligned angular momentum and velocity
 	glm::mat3 *rbInertia; //rigid body inertia tensor
 	glm::mat3 *rbCurrentInertia; //rigid body inertia tensor
 	glm::quat *rbQuaternion; //rigid body quaternion
 	float *relativePos; //particles relative positions
 	int *rbIndices; //index of associated rigid body for each particle
-	float *rbRadii; //radii of each sphere
+	//float *rbRadii; //radii of each sphere
 	float *rbMass; //total mass of rigid body
 	
 	void flushAndPrintRigidBodyParameters();
 	//auxiliary variables used to pre-load, and subsequently reduce, rigid body results from collision detection
 	float *pForce;
 	float *pTorque;
-	float *pPositions;
+	//float *pPositions;
 	int *pCountARCollions; //count number of AR collisions per particle
 
 	//CPU counter of particles for each rigid body

@@ -70,17 +70,23 @@ void ParticleSystem::updateGrid(float deltaTime)
 		modelMatrix, // model matrix array used for rendering
 		(float4 *)rbPositions, //rigid body center of mass
 		(float4 *)rbVelocities, //velocity of rigid body
-		(float4 *)rbForces, //total force applied to rigid body due to previous collisions
+		//(float4 *)rbForces, //total force applied to rigid body due to previous collisions
+		NULL,
 		(float4 *)rbAngularVelocity, //contains angular velocities for each rigid body
 		rbQuaternion, //contains current quaternion for each rigid body
-		(float4 *)rbTorque, //torque applied to rigid body due to previous collisions
-		(float4 *)rbAngularMomentum, //cumulative angular momentum of the rigid body
-		(float4 *)rbLinearMomentum, //cumulative linear momentum of the rigid body
+		//(float4 *)rbTorque, //torque applied to rigid body due to previous collisions
+		//(float4 *)rbAngularMomentum, //cumulative angular momentum of the rigid body
+		//(float4 *)rbLinearMomentum, //cumulative linear momentum of the rigid body
+		NULL,
+		NULL,
+		NULL,
 		rbInertia, //original moment of inertia for each rigid body - 9 values per RB
 		rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
-		rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
+		//rbAngularAcceleration, //current angular acceleration due to misaligned angular momentum and velocity
+		NULL,
 		deltaTime, //dt
-		rbRadii, //radius chosen for each rigid body sphere
+		//rbRadii, //radius chosen for each rigid body sphere
+		NULL,
 		rbMass, //total mass of rigid body
 		minPos, //smallest coordinate of scene's bounding box
 		maxPos, //largest coordinate of scene's bounding box
@@ -185,12 +191,15 @@ void ParticleSystem::updateGrid(float deltaTime)
 
 	bool toExit = false;
 	ReduceRigidBodyVariables(
-		(float4 *)rbForces, //Output: rigid body forces - one element per rigid body
-		(float4 *)rbTorque, //Output: rigid body torques - one element per rigid body
+		//(float4 *)rbForces, //Output: rigid body forces - one element per rigid body
+		//(float4 *)rbTorque, //Output: rigid body torques - one element per rigid body
+		NULL,
+		NULL,
 		(float4 *)rbPositions, //Output: rigid body positions - one element per rigid body
 		(float4 *)pForce, //Input: rigid body forces - one element per particle
 		(float4 *)pTorque, //Input: rigid body torques - one element per particle
-		(float4 *)pPositions, //Input: rigid body positions - one element per particle
+		//(float4 *)pPositions, //Input: rigid body positions - one element per particle
+		NULL,
 		particlesPerObjectThrown, //Auxil.: number of particles for each rigid body - one element per thrown objects
 		isRigidBody, //Auxil.: flag indicating whether thrown object is a rigid body
 		objectsThrown, //Auxil.: number of objects thrown - rigid bodies AND point sprites
@@ -299,12 +308,15 @@ void ParticleSystem::updateStaticParticles(float deltaTime)
 	//			m_numParticles, //number of threads to use
 	//			&toExit);
 	ReduceRigidBodyARVariables(
-		(float4 *)rbForces, //Output: rigid body forces - one element per rigid body
-		(float4 *)rbTorque, //Output: rigid body torques - one element per rigid body
+		//(float4 *)rbForces, //Output: rigid body forces - one element per rigid body
+		//(float4 *)rbTorque, //Output: rigid body torques - one element per rigid body
+		NULL,
+		NULL,
 		(float4 *)rbPositions, //Output: rigid body positions - one element per rigid body
 		(float4 *)pForce, //Input: rigid body forces - one element per particle
 		(float4 *)pTorque, //Input: rigid body torques - one element per particle
-		(float4 *)pPositions, //Input: rigid body positions - one element per particle
+		//(float4 *)pPositions, //Input: rigid body positions - one element per particle
+		NULL,
 		pCountARCollions, //Input: AR collisions - one element per particle
 		particlesPerObjectThrown, //Auxil.: number of particles for each rigid body - one element per thrown objects
 		isRigidBody, //Auxil.: flag indicating whether thrown object is a rigid body
