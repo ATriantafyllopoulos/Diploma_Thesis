@@ -1864,7 +1864,7 @@ void ParticleSystem::update(float deltaTime)
 		//	updateBVHExperimental(deltaTime);
 		//}
 		//updateUniformGrid(deltaTime);
-		updateUniformGrid(deltaTime);
+		//updateUniformGrid(deltaTime);
 		//updateBVHExperimental(deltaTime);
 		//updateUniformGridDEM(deltaTime);
 		/*static int iterations = 1;

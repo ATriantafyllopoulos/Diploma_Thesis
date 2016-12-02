@@ -654,8 +654,13 @@ void ParticleSystem::Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM()
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// sort particles based on hash
-	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
-
+	//sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+	sortParticlesPreallocated(
+		&m_dGridParticleHash,
+		&m_dGridParticleIndex,
+		&m_dSortedGridParticleHash,
+		&m_dSortedGridParticleIndex,
+		m_numParticles);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// reorder particle arrays into sorted order and
@@ -716,7 +721,13 @@ void ParticleSystem::Find_And_Handle_Augmented_Reality_Collisions_Uniform_Grid_D
 		staticPos,
 		numberOfRangeData);
 	// sort particles based on hash
-	sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	//sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	sortParticlesPreallocated(
+		&staticGridParticleHash,
+		&staticGridParticleIndex,
+		&sortedStaticGridParticleHash,
+		&sortedStaticGridParticleIndex,
+		m_numParticles);
 	// reorder particle arrays into sorted order and
 	// find start and end of each cell
 	reorderDataAndFindCellStart(rbIndices, //index of the rigid body each particle belongs to
