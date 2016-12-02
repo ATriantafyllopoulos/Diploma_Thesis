@@ -55,12 +55,24 @@ void sortParticlesPreallocated(
 	uint **sortedGridParticleIndex,
 	uint numParticles);
 
+void createMortonCodesPreallocated(
+	float4 *positions,
+	unsigned int **mortonCodes,
+	int **indices,
+	unsigned int **sortedMortonCodes,
+	int **sortedIndices,
+	float4 minPos,
+	float4 maxPos,
+	int elements,
+	int numberOfThreads);
+
 void staticCalcHash(uint  *gridParticleHash,
 	uint  *gridParticleIndex,
 	float *pos,
 	int    numParticles,
 	int imageWidth,
 	int imageHeight);
+
 void staticReorderDataAndFindCellStart(uint  *cellStart,
 	uint  *cellEnd,
 	float3 *sortedPos,
@@ -69,6 +81,7 @@ void staticReorderDataAndFindCellStart(uint  *cellStart,
 	float *oldPos,
 	uint   numParticles,
 	uint   numCells);
+
 void staticCollide(float4 *dCol,
 	float4 *rbForces, //total force applied to rigid body
 	int *rbIndices, //index of the rigid body each particle belongs to

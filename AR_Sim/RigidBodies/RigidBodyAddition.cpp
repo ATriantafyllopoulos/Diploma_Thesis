@@ -55,6 +55,8 @@ void ParticleSystem::addRigidBody(
 			newMatrix[row][col] = rot[row][col];
 	float4 newPos;
 	checkCudaErrors(cudaMemcpy(&newPos, newRigidBodyCM, sizeof(float) * 4, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 	newMatrix[3][0] = newPos.x;
 	newMatrix[3][1] = newPos.y;
 	newMatrix[3][2] = newPos.z;
@@ -62,6 +64,9 @@ void ParticleSystem::addRigidBody(
 	if (modelMatrix)
 		delete modelMatrix;
 	modelMatrix = newModelMatrix;
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 
 	glm::quat *newCumulativeQuaternion = new glm::quat[numRigidBodies];
 	memcpy(newCumulativeQuaternion, cumulativeQuaternion, sizeof(glm::quat) * (numRigidBodies - 1));
@@ -76,7 +81,8 @@ void ParticleSystem::addRigidBody(
 	unregisterGLBufferObject(m_cuda_posvbo_resource); //unregister old CUDA-GL interop buffer
 	unregisterGLBufferObject(m_cuda_colorvbo_resource); //unregister old CUDA-GL interop buffer
 	unsigned int memSize = sizeof(float) * 4 * m_numParticles;
-
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 	//create new VAO
 	glGenVertexArrays(1, &m_virtualVAO);
 	glBindVertexArray(m_virtualVAO);
@@ -1640,8 +1646,7 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 				std::cout << inertiaTensor[row][col] << " ";
 			std::cout << std::endl;
 		}
-		
-		
+
 		//if (!strcmp(modelName, "banana"))
 		//{
 		//	/*inertiaTensor[0][0] = 0.000023;
@@ -1704,8 +1709,16 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 
 		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
 		//reallocate client (GPU) memory to fit new data
-		reAllocateMemory(&objectParticlePositions, 4 * m_numParticles,
-			&m_hPos[4 * start], 4 * particles, 4 * (m_numParticles - particles), cudaMemcpyHostToDevice);
+
+		int numberOfParticlesSoFar = 0;
+		for (int i = 0; i < objectType - 1; i++)
+			numberOfParticlesSoFar += particlesPerObjectThrown[firstObjectIndex[i]];
+
+		/*reAllocateMemory(&objectParticlePositions, 4 * m_numParticles,
+			&m_hPos[4 * start], 4 * particles, 4 * (m_numParticles - particles), cudaMemcpyHostToDevice);*/
+
+		reAllocateMemory(&objectParticlePositions, 4 * (numberOfParticlesSoFar + particles),
+			&m_hPos[4 * start], 4 * particles, 4 * numberOfParticlesSoFar, cudaMemcpyHostToDevice);
 
 		//new per particle values
 		float *newRelativePos;
@@ -1759,7 +1772,6 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		checkCudaErrors(cudaMalloc((void**)&newRigidBodyQuaternion, sizeof(glm::quat)));
 		checkCudaErrors(cudaMemcpy(newRigidBodyQuaternion, &newQ, sizeof(glm::quat), cudaMemcpyHostToDevice));
 
-
 		float *newRigidBodyCM;
 		checkCudaErrors(cudaMalloc((void**)&newRigidBodyCM, 4 * sizeof(float)));
 		float4 newCM = make_float4(pos.x, pos.y, pos.z, 0.f);
@@ -1804,7 +1816,7 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		checkCudaErrors(cudaMalloc((void**)&newRigidBodyMass, sizeof(float)));
 		float newMass = 1.f; //ISSUE: change this to simulate rigid bodies of different mass - after changing it also change inertia
 		checkCudaErrors(cudaMemcpy(newRigidBodyMass, &newMass, sizeof(float), cudaMemcpyHostToDevice));
-
+		
 		addRigidBody(start,
 			particles,
 			newRelativePos, //new relative position - 4 * particlesAdded

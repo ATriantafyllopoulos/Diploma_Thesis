@@ -691,6 +691,30 @@ __global__ void generateMortonCodes(float4 *positions, unsigned int *mortonCodes
 	indices[index] = index;
 }
 
+__global__ void generateMortonCodes(float4 *positions, unsigned int *mortonCodes, int *indices, const int numberOfPrimitives,
+	float4 minPos, float4 maxPos)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numberOfPrimitives)
+		return;
+
+	float min_x = minPos.x;
+	float min_y = minPos.y;
+	float min_z = minPos.z;
+	float max_x = maxPos.x;
+	float max_y = maxPos.y;
+	float max_z = maxPos.z;
+
+	float3 p = make_float3(positions[index].x, positions[index].y, positions[index].z);
+
+	float x = (p.x - min_x) / (max_x - min_x);
+	float y = (p.y - min_y) / (max_y - min_y);
+	float z = (p.z - min_z) / (max_z - min_z);
+	mortonCodes[index] = morton3D(x, y, z);//*/
+	indices[index] = index;
+}
+
 template <typename BoundingVolume>
 __global__
 void collideBVH(float4 *color,

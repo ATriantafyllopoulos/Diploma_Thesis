@@ -1865,7 +1865,7 @@ void ParticleSystem::update(float deltaTime)
 		//}
 		//updateUniformGrid(deltaTime);
 		//updateUniformGrid(deltaTime);
-		//updateBVHExperimental(deltaTime);
+		updateBVHExperimental(deltaTime);
 		//updateUniformGridDEM(deltaTime);
 		/*static int iterations = 1;
 		float4 *VEL_CPU = new float4[numRigidBodies];

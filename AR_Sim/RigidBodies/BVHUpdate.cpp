@@ -619,13 +619,21 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 #ifdef PROFILE_BVH
 	clock_t start = clock();
 #endif
-	checkCudaErrors(createMortonCodes((float4 *)dPos,
+	/*checkCudaErrors(createMortonCodes((float4 *)dPos,
 		&mortonCodes,
 		&indices,
 		&sortedMortonCodes,
 		&sortedIndices,
 		m_numParticles,
-		numThreads));
+		numThreads));*/
+	createMortonCodesPreallocated((float4 *)dPos,
+		&mortonCodes,
+		&indices,
+		&sortedMortonCodes,
+		&sortedIndices,
+		make_float4(minPos), make_float4(maxPos),
+		m_numParticles,
+		numThreads);
 #ifdef PROFILE_BVH
 	clock_t end = clock();
 	MortonTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
@@ -870,7 +878,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 	//Integrate_RB_System(deltaTime);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// find and handle wall collisions
-	//Handle_Wall_Collisions();
+	Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -887,7 +895,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 
 	// handle collisions between rigid bodies
 	//Handle_Rigid_Body_Collisions_Baraff_CPU();
-	//Handle_Rigid_Body_Collisions_Catto_CPU();
+	Handle_Rigid_Body_Collisions_Catto_CPU();
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	if (m_bUseOpenGL)
 	{
