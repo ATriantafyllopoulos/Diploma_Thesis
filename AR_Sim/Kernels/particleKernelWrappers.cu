@@ -416,6 +416,123 @@ Error:
 #endif
 }
 
+void sortParticlesPreallocated(
+	uint **dGridParticleHash,
+	uint **dGridParticleIndex,
+	uint **sortedGridParticleHash,
+	uint **sortedGridParticleIndex,
+	uint numParticles)
+{
+#define PROFILE_SORT
+#ifdef PROFILE_SORT
+	static float RadixSortTime = 0;
+	static float totalMemTime = 0;
+	static int iterations = 0;
+#endif
+	/*thrust::sort_by_key(thrust::device_ptr<uint>(dGridParticleHash),
+	thrust::device_ptr<uint>(dGridParticleHash + numParticles),
+	thrust::device_ptr<uint>(dGridParticleIndex));*/
+#ifdef PROFILE_SORT
+	clock_t start = clock();
+#endif
+
+	cub::DoubleBuffer<uint> sortKeys; //keys to sort by 
+	cub::DoubleBuffer<uint> sortValues; //also sort corresponding particles by key
+
+	////intermediate memory to initialize geometry indices
+	//uint *sortedGridParticleHash;
+
+	////intermediate variable used to deallocate memory used to store the sorted Morton codes
+	////if it is not used, we soon run out of memory
+	//uint *sortedGridParticleIndex;
+	cudaError_t cudaStatus;
+
+	cub::CachingDeviceAllocator  g_allocator(true);
+	size_t  temp_storage_bytes = 0;
+	void    *d_temp_storage = NULL;
+
+
+
+	/*cudaStatus = cudaMalloc((void**)&sortedGridParticleHash, sizeof(uint) * numParticles);
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+
+	cudaStatus = cudaMalloc((void**)&sortedGridParticleIndex, sizeof(uint) * numParticles);
+	if (cudaStatus != cudaSuccess)
+		goto Error;*/
+
+	//presumambly, there is no need to allocate space for the current buffers
+	sortKeys.d_buffers[0] = *dGridParticleHash;
+	sortValues.d_buffers[0] = *dGridParticleIndex;
+
+	sortKeys.d_buffers[1] = *sortedGridParticleHash;
+	sortValues.d_buffers[1] = *sortedGridParticleIndex;
+
+#ifdef PROFILE_SORT
+	clock_t end = clock();
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+	// Allocate temporary storage
+#ifdef PROFILE_SORT
+	start = clock();
+#endif
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numParticles);
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+
+	cudaStatus = g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes);
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+
+	// Run sort
+	//Note: why do I need to sort the particles themselves?
+	//The code I found does nothing of the kind.
+	cudaStatus = cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numParticles);
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+
+#ifdef PROFILE_SORT
+	end = clock();
+	RadixSortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_SORT
+	start = clock();
+#endif
+
+	cudaStatus = cudaDeviceSynchronize();
+	if (cudaStatus != cudaSuccess)
+		goto Error;
+	*dGridParticleHash = sortKeys.Current();
+	*sortedGridParticleHash = sortKeys.Alternate();
+
+	*dGridParticleIndex = sortValues.Current();
+	*sortedGridParticleIndex = sortValues.Alternate();
+Error:
+	if (d_temp_storage)
+		cudaFree(d_temp_storage);
+	/*if (sortedGridParticleHash)
+		cudaFree(sortedGridParticleHash);
+	if (sortedGridParticleIndex)
+		cudaFree(sortedGridParticleIndex);*/
+
+#ifdef PROFILE_SORT
+	end = clock();
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_SORT
+	if (++iterations == 1000)
+	{
+		std::cout << "Average compute times for last " << iterations << " iterations..." << std::endl;
+		std::cout << "Average time spent on memory operations: " << totalMemTime / (float)iterations << " (ms)" << std::endl;
+		std::cout << "Average time spent on radix sort: " << RadixSortTime / (float)iterations << " (ms)" << std::endl;
+		std::cout << std::endl;
+	}
+#endif
+}
+
 void staticCollide(float4 *dCol,
 		float4 *pForces, //total force applied to rigid body
 	int *rbIndices, //index of the rigid body each particle belongs to

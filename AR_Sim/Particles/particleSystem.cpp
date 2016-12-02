@@ -296,6 +296,9 @@ ParticleSystem::_initialize(int numParticles)
 	allocateArray((void **)&m_dGridParticleHash, m_numParticles*sizeof(uint));
 	allocateArray((void **)&m_dGridParticleIndex, m_numParticles*sizeof(uint));
 
+	allocateArray((void **)&m_dSortedGridParticleHash, m_numParticles*sizeof(uint));
+	allocateArray((void **)&m_dSortedGridParticleIndex, m_numParticles*sizeof(uint));
+
 	allocateArray((void **)&m_dCellStart, m_numGridCells*sizeof(uint));
 	allocateArray((void **)&m_dCellEnd, m_numGridCells*sizeof(uint));
 
@@ -341,6 +344,8 @@ void ParticleSystem::reallocGridAuxiliaries()
 	if(m_dSortedVel)checkCudaErrors(cudaFree(m_dSortedVel));
 	if(m_dGridParticleHash)checkCudaErrors(cudaFree(m_dGridParticleHash));
 	if(m_dGridParticleIndex)checkCudaErrors(cudaFree(m_dGridParticleIndex));
+	if(m_dSortedGridParticleHash)checkCudaErrors(cudaFree(m_dSortedGridParticleHash));
+	if(m_dSortedGridParticleIndex)checkCudaErrors(cudaFree(m_dSortedGridParticleIndex));
 	if(m_dCellStart)checkCudaErrors(cudaFree(m_dCellStart));
 	if(m_dCellEnd)checkCudaErrors(cudaFree(m_dCellEnd));
 
@@ -351,6 +356,8 @@ void ParticleSystem::reallocGridAuxiliaries()
 	allocateArray((void **)&m_dSortedVel, memSize);
 	allocateArray((void **)&m_dGridParticleHash, m_numParticles*sizeof(uint));
 	allocateArray((void **)&m_dGridParticleIndex, m_numParticles*sizeof(uint));
+	allocateArray((void **)&m_dSortedGridParticleHash, m_numParticles*sizeof(uint));
+	allocateArray((void **)&m_dSortedGridParticleIndex, m_numParticles*sizeof(uint));
 	allocateArray((void **)&m_dCellStart, m_numGridCells*sizeof(uint));
 	allocateArray((void **)&m_dCellEnd, m_numGridCells*sizeof(uint));
 }
@@ -370,6 +377,8 @@ ParticleSystem::_finalize()
 	if(m_dSortedVel)checkCudaErrors(cudaFree(m_dSortedVel));
 	if(m_dGridParticleHash)checkCudaErrors(cudaFree(m_dGridParticleHash));
 	if(m_dGridParticleIndex)checkCudaErrors(cudaFree(m_dGridParticleIndex));
+	if(m_dSortedGridParticleHash)checkCudaErrors(cudaFree(m_dSortedGridParticleHash));
+	if(m_dSortedGridParticleIndex)checkCudaErrors(cudaFree(m_dSortedGridParticleIndex));
 	if(m_dCellStart)checkCudaErrors(cudaFree(m_dCellStart));
 	if(m_dCellEnd)checkCudaErrors(cudaFree(m_dCellEnd));
 

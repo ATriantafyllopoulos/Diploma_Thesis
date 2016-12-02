@@ -47,6 +47,14 @@ void collide(float4 *pForce, //total force applied to rigid body
 	uint   numParticles,
 	uint   numCells);
 void sortParticles(uint **dGridParticleHash, uint **dGridParticleIndex, uint numParticles);
+
+void sortParticlesPreallocated(
+	uint **dGridParticleHash,
+	uint **dGridParticleIndex,
+	uint **sortedGridParticleHash,
+	uint **sortedGridParticleIndex,
+	uint numParticles);
+
 void staticCalcHash(uint  *gridParticleHash,
 	uint  *gridParticleIndex,
 	float *pos,

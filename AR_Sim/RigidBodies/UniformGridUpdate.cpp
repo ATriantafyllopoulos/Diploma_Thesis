@@ -365,12 +365,18 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 #ifdef PROFILE_UG
 	start = clock();
 #endif
-	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+	//sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+	sortParticlesPreallocated(
+		&m_dGridParticleHash,
+		&m_dGridParticleIndex,
+		&m_dSortedGridParticleHash,
+		&m_dSortedGridParticleIndex,
+		m_numParticles);
+
 #ifdef PROFILE_UG
 	end = clock();
 	SortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// reorder particle arrays into sorted order and
