@@ -34,6 +34,8 @@ staticSortedPos(0),
 staticSortedVel(0),
 staticGridParticleHash(0),
 staticGridParticleIndex(0),
+sortedStaticGridParticleHash(0),
+sortedStaticGridParticleIndex(0),
 staticCellStart(0),
 staticCellEnd(0),
 m_gridSize(gridSize),
@@ -322,6 +324,8 @@ void ParticleSystem::initializeStaticParticles()
 	if (staticSortedPos)freeArray(staticSortedPos);
 	if (staticGridParticleHash)freeArray(staticGridParticleHash);
 	if (staticGridParticleIndex)freeArray(staticGridParticleIndex);
+	if (sortedStaticGridParticleHash)freeArray(sortedStaticGridParticleHash);
+	if (sortedStaticGridParticleIndex)freeArray(sortedStaticGridParticleIndex);
 	if (staticCellStart)freeArray(staticCellStart);
 	if (staticCellEnd)freeArray(staticCellEnd);
 
@@ -332,6 +336,8 @@ void ParticleSystem::initializeStaticParticles()
 	allocateArray((void **)&staticSortedPos, memSize);
 	allocateArray((void **)&staticGridParticleHash, numberOfRangeData*sizeof(uint));
 	allocateArray((void **)&staticGridParticleIndex, numberOfRangeData*sizeof(uint));
+	allocateArray((void **)&sortedStaticGridParticleHash, numberOfRangeData*sizeof(uint));
+	allocateArray((void **)&sortedStaticGridParticleIndex, numberOfRangeData*sizeof(uint));
 	allocateArray((void **)&staticCellStart, m_numGridCells*sizeof(uint));
 	allocateArray((void **)&staticCellEnd, m_numGridCells*sizeof(uint));
 
@@ -400,6 +406,10 @@ ParticleSystem::_finalize()
 	if (staticSortedPos)checkCudaErrors(cudaFree(staticSortedPos));
 	if (staticGridParticleHash)checkCudaErrors(cudaFree(staticGridParticleHash));
 	if (staticGridParticleIndex)checkCudaErrors(cudaFree(staticGridParticleIndex));
+
+	if (sortedStaticGridParticleHash)checkCudaErrors(cudaFree(sortedStaticGridParticleHash));
+	if (sortedStaticGridParticleIndex)checkCudaErrors(cudaFree(sortedStaticGridParticleIndex));
+
 	if (staticCellStart)checkCudaErrors(cudaFree(staticCellStart));
 	if (staticCellEnd)checkCudaErrors(cudaFree(staticCellEnd));
 	//cudaFree everything

@@ -319,6 +319,10 @@ protected:
 	uint  *staticCellStart;        // index of start of each cell in sorted list
 	uint  *staticCellEnd;          // index of end of cell
 
+	// sort auxiliaries
+	uint  *sortedStaticGridParticleHash;
+	uint  *sortedStaticGridParticleIndex;
+
 public:
 	//auxiliary functions used to update variables of particle renderer
     const int getNumberOfRangeData(void) { return numberOfRangeData; }

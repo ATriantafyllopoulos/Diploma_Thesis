@@ -122,9 +122,9 @@ int main(void)
 	viewer.addParticleRenderer(renderer);
 	virtualWorld.setViewer(&viewer);
 	window.setWorld(&virtualWorld); //set rendering window's virtual world
-	//window.Run();
-	virtualWorld.initDemoMode();
-	window.Demo();
+	window.Run();
+	//virtualWorld.initDemoMode();
+	//window.Demo();
 
 	checkCudaErrors(cudaDeviceReset());
 	if (psystem) delete psystem;

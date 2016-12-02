@@ -348,13 +348,14 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 #ifdef PROFILE_UG
 	clock_t start = clock();
 #endif
-
+	
 	// calculate grid hash
-	calcHash(
-		m_dGridParticleHash,
-		m_dGridParticleIndex,
-		dPos,
-		m_numParticles);
+	
+	if (!simulateAR)calcHash(
+			m_dGridParticleHash,
+			m_dGridParticleIndex,
+			dPos,
+			m_numParticles);
 #ifdef PROFILE_UG
 	clock_t end = clock();
 	CalculateHashTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
@@ -366,7 +367,7 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 	start = clock();
 #endif
 	//sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
-	sortParticlesPreallocated(
+	if (!simulateAR)sortParticlesPreallocated(
 		&m_dGridParticleHash,
 		&m_dGridParticleIndex,
 		&m_dSortedGridParticleHash,
@@ -384,7 +385,7 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 #ifdef PROFILE_UG
 	start = clock();
 #endif
-	reorderDataAndFindCellStart(
+	if (!simulateAR)reorderDataAndFindCellStart(
 		rbIndices, //index of the rigid body each particle belongs to
 		m_dCellStart,
 		m_dCellEnd,
@@ -456,7 +457,13 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// sort particles based on hash
-	sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+	//sortParticles(&m_dGridParticleHash, &m_dGridParticleIndex, m_numParticles);
+	sortParticlesPreallocated(
+		&m_dGridParticleHash,
+		&m_dGridParticleIndex,
+		&m_dSortedGridParticleHash,
+		&m_dSortedGridParticleIndex,
+		m_numParticles);
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
@@ -485,7 +492,13 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 		staticPos,
 		numberOfRangeData);
 	// sort particles based on hash
-	sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	//sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
+	sortParticlesPreallocated(
+		&staticGridParticleHash,
+		&staticGridParticleIndex,
+		&sortedStaticGridParticleHash,
+		&sortedStaticGridParticleIndex,
+		m_numParticles);
 	// reorder particle arrays into sorted order and
 	// find start and end of each cell
 	reorderDataAndFindCellStart(rbIndices, //index of the rigid body each particle belongs to
