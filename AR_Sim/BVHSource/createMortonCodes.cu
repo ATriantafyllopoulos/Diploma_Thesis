@@ -111,41 +111,71 @@ cudaError_t createMortonCodes(float4 *positions,
 	int numberOfPrimitives,
 	int numberOfThreads)
 {
+#define PROFILE_MORTON
+#ifdef PROFILE_MORTON
 	static float totalAABBtime = 0;
 	static float totalRadixSortTime = 0;
 	static float totalGenMortonCodesTime = 0;
+	static float totalMemTime = 0;
 	static int iterations = 0;
+#endif
 	//float3 *temp;
 	//find bounding box
 	//use it to normalize positions and create Morton codes
 	//Morton codes require vertex input to be in the unit cube
 	//checkCudaErrors(cudaMalloc((void**)&temp, sizeof(float) * 3 * numberOfPrimitives));
 	float4 cpuMin, cpuMax, *gpuMin, *gpuMax;
+
+#ifdef PROFILE_MORTON
+	clock_t start = clock();
+#endif
 	checkCudaErrors(cudaMalloc((void**)&gpuMin, sizeof(float4)));
 	checkCudaErrors(cudaMalloc((void**)&gpuMax, sizeof(float4)));
-	clock_t start = clock();
+#ifdef PROFILE_MORTON
+	clock_t end = clock();
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_MORTON
+	start = clock();
+#endif
 	checkCudaErrors(findAABBCub(positions, cpuMin, cpuMax, gpuMin, gpuMax, numberOfPrimitives));
 	//checkCudaErrors(findAABB(positions, temp, numberOfPrimitives));
-	clock_t end = clock();
+#ifdef PROFILE_MORTON
+	end = clock();
 	totalAABBtime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
 	dim3 blockDim(numberOfThreads, 1);
 	dim3 gridDim((numberOfPrimitives + numberOfThreads - 1) / numberOfThreads, 1);
 	if (gridDim.x < 1) gridDim.x = 1;
+#ifdef PROFILE_MORTON
 	start = clock();
+#endif
 	generateMortonCodes << <gridDim, blockDim >> >(positions, *mortonCodes, *indices, numberOfPrimitives,
 		gpuMin, gpuMax);
+#ifdef PROFILE_MORTON
 	end = clock();
 	totalGenMortonCodesTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	//checkCudaErrors(cudaPeekAtLastError());
 	//checkCudaErrors(cudaDeviceSynchronize());
 	//checkCudaErrors(cudaFree(temp));
+#ifdef PROFILE_MORTON
+	start = clock();
+#endif
 	checkCudaErrors(cudaFree(gpuMin));
 	checkCudaErrors(cudaFree(gpuMax));
-	start = clock();
+#ifdef PROFILE_MORTON
+	end = clock();
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
+#ifdef PROFILE_MORTON
+	start = clock();
+#endif
 
 	cub::CachingDeviceAllocator  g_allocator(true);
 	cub::DoubleBuffer<unsigned int> sortKeys; //keys to sort by - Morton codes
@@ -168,26 +198,49 @@ cudaError_t createMortonCodes(float4 *positions,
 
 	checkCudaErrors(cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, sortKeys, sortValues, numberOfPrimitives));
 
+	
+#ifdef PROFILE_MORTON
+	end = clock();
+	totalRadixSortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	//checkCudaErrors(cudaDeviceSynchronize());
 
+#ifdef PROFILE_MORTON
+	start = clock();
+#endif
 	*sortedIndices = sortValues.Current();
 	*sortedMortonCodes = sortKeys.Current();
 
 	*indices = sortValues.Alternate();
 	*mortonCodes = sortKeys.Alternate();
-
+#ifdef PROFILE_MORTON
 	end = clock();
-	totalRadixSortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
-	if (++iterations == 2000)
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+
+
+#ifdef PROFILE_MORTON
+	start = clock();
+#endif
+	if (d_temp_storage)
+		cudaFree(d_temp_storage);
+#ifdef PROFILE_MORTON
+	end = clock();
+	totalMemTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_MORTON
+	if (++iterations == 1000)
 	{
 		std::cout << "Average compute times for last " << iterations << " iterations..." << std::endl;
+		std::cout << "Average time spent on memory operations: " << totalMemTime / iterations << " (ms)" << std::endl;
 		std::cout << "Average time spent on finding AABB: " << totalAABBtime / iterations << " (ms)" << std::endl;
 		std::cout << "Average time spent on creating Morton codes: " << totalGenMortonCodesTime / iterations << " (ms)" << std::endl;
 		std::cout << "Average time spent on binary radix sort: " << totalRadixSortTime / iterations << " (ms)" << std::endl;
+		std::cout << std::endl;
 	}
-
-	if (d_temp_storage)
-		cudaFree(d_temp_storage);
+#endif
 
 	//checkCudaErrors(cudaPeekAtLastError());
 	//checkCudaErrors(cudaDeviceSynchronize());

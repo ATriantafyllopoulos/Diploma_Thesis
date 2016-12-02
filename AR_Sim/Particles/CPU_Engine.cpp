@@ -443,7 +443,10 @@ float ParticleSystem::computeImpulseMagnitude(
 	glm::vec3 velB = vB + glm::cross(wB, rB);
 
 	float epsilon = 1.f;
-	float numerator = -(1.f + epsilon) *(glm::dot(velA, norm) - glm::dot(velB, norm));
+	float v_rel = glm::dot(velA - velB, norm);
+	if (v_rel < 0)
+		return 0;
+	float numerator = -(1.f + epsilon) * v_rel;
 	float a = 1.f / m1;
 	float b = 1.f / m2;
 	float c = glm::dot(glm::cross(Iinv1 * glm::cross(rA, norm), rA), norm);

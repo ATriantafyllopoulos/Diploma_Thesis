@@ -858,7 +858,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 	//Integrate_RB_System(deltaTime);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -875,7 +875,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 
 	// handle collisions between rigid bodies
 	//Handle_Rigid_Body_Collisions_Baraff_CPU();
-	Handle_Rigid_Body_Collisions_Catto_CPU();
+	//Handle_Rigid_Body_Collisions_Catto_CPU();
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	if (m_bUseOpenGL)
 	{

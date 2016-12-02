@@ -771,18 +771,26 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 	checkCudaErrors(cudaMemcpy(collidingParticleIndex_CPU, collidingParticleIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
 
 	int current_particle = 0;
+	//static int iterations = 0;
+	
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
 		{
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
+				/*if (iterations < 120)
+				{
+					std::ofstream file("collision_iteration.txt");
+					file << iterations << std::endl;
+					file.close();
+				}*/
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				/*if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
+				if (testParticleCollision(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
 					m_params.particleRadius,
 					m_params.particleRadius,
-					CMs_CPU[index]))*/
+					CMs_CPU[index]))
 				{
 					float4 cp, cn;
 					findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
@@ -790,13 +798,13 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						m_params.particleRadius,
 						m_params.particleRadius,
 						cp, cn);
-					//cn = normal_CPU[particleIndex];
+					cn = normal_CPU[particleIndex];
 					// customly added for collision with horizontal plane
 					// TODO: remove
 					cp = relative_CPU[current_particle];
-					cp.y = 1.5;
+					/*cp.y = 1.5;
 					cn = make_float4(0, 1, 0, 0);
-					CMs_CPU[index].y = 1.5 - relative_CPU[current_particle].y;
+					CMs_CPU[index].y = 1.5 - relative_CPU[current_particle].y;*/
 					float4 r1 = relative_CPU[current_particle];
 					//float4 r1 = cp - CMs_CPU[index];
 					
@@ -856,7 +864,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 		}
 
 	}
-
+	//iterations++;
 	checkCudaErrors(cudaMemcpy(rbPositions, CMs_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(rbVelocities, vel_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(rbAngularVelocity, rbAngularVelocity_CPU, numRigidBodies * sizeof(float4), cudaMemcpyHostToDevice));
@@ -939,6 +947,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 
 	int current_particle = 0;
 	int collision_counter = 0;
+	//static int iteration = 1;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -946,11 +955,17 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
 				collision_counter++;
+				/*if (iteration < 120)
+				{
+					std::ofstream file("collision_iteration.txt");
+					file << iteration << std::endl;
+					file.close();
+				}*/
 			}
 			current_particle++;
 		}
 	}
-
+	//iteration++;
 //#define PRINT_COLLISIONS
 #ifdef PRINT_COLLISIONS
 	std::cout << "Number of collisions: " << collision_counter << std::endl;
@@ -980,7 +995,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				contactNormal[collision_counter] = normal_CPU[particleIndex]; // scene's normal at collision point
-				contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
+				//contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
 				/*float4 cp, cn;
 				findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
@@ -1824,9 +1839,13 @@ void ParticleSystem::update(float deltaTime)
 {
 	//updateBVHSoA(deltaTime);
 	deltaTime = 0.01;
-	m_params.spring = 10.f;
-	m_params.damping = 0.04f;
-	m_params.shear = 0.0f;
+	/*m_params.spring = 0.9f;
+	m_params.damping = 0.01f;
+	m_params.shear = 0.0f;*/
+	//m_params.gravity.y = -0.008;
+	m_params.spring = 100.0f;
+	m_params.damping = 0.0f;
+	m_params.shear = 0.1f;
 	if (m_numParticles)
 	{
 		//if (collisionMethod == M_UNIFORM_GRID)
@@ -1839,28 +1858,38 @@ void ParticleSystem::update(float deltaTime)
 		//	updateBVHExperimental(deltaTime);
 		//}
 		//updateUniformGrid(deltaTime);
-		//updateUniformGrid(deltaTime);
+		updateUniformGrid(deltaTime);
 		//updateBVHExperimental(deltaTime);
-		updateUniformGridDEM(deltaTime);
-		/*static int iterations = 0;
-		float4 *CM_CPU = new float4[numRigidBodies];
-		checkCudaErrors(cudaMemcpy(CM_CPU, rbPositions, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));
+		//updateUniformGridDEM(deltaTime);
+		/*static int iterations = 1;
+		float4 *VEL_CPU = new float4[numRigidBodies];
+		float4 *ANG_CPU = new float4[numRigidBodies];
+		checkCudaErrors(cudaMemcpy(VEL_CPU, rbVelocities, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));
+		checkCudaErrors(cudaMemcpy(ANG_CPU, rbAngularVelocity, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));
 		for (int rb = 0; rb < numRigidBodies; rb++)
 		{
-			std::ostringstream counter;
-			counter << (rb + 1);
-			std::string fileName("my_body_");
-			fileName += counter.str();
-			fileName += ".txt";
-			if (iterations < 30)
+			if (iterations < 120)
 			{
+				std::ostringstream counter;
+				counter << (rb + 1);
+				std::string fileName("my_body_");
+				fileName += counter.str();
+				fileName += "_vel.txt";
 				std::ofstream file(fileName.c_str(), std::ofstream::app);
-				file << CM_CPU[rb].x << " " << CM_CPU[rb].y << " " << CM_CPU[rb].z << std::endl;
+				file << VEL_CPU[rb].x << " " << VEL_CPU[rb].y << " " << VEL_CPU[rb].z << std::endl;
 				file.close();
+
+				fileName = "my_body_";
+				fileName += counter.str();
+				fileName += "_ang.txt";
+				std::ofstream file2(fileName.c_str(), std::ofstream::app);
+				file2 << ANG_CPU[rb].x << " " << ANG_CPU[rb].y << " " << ANG_CPU[rb].z << std::endl;
+				file2.close();
 			}
 		}
 		iterations++;
-		delete CM_CPU;*/
+		delete ANG_CPU;
+		delete VEL_CPU;*/
 	}
     if (!pauseFrame)
     {

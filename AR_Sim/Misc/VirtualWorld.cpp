@@ -107,8 +107,8 @@ void VirtualWorld::addSphere(int x, int y)
 
 	glm::vec3 win(xPos, yPos, viewer->getPixelDepth(x, int(yPos)));
 	glm::vec3 worldSpaceCoordinates = glm::unProject(win, viewer->getViewMatrix(), viewer->getProjectionMatrix(), viewPort);
-	glm::vec3 velocity = glm::vec3(0.f, -0.5f, 0.0f);
-	worldSpaceCoordinates.y = 3.01f;
+	glm::vec3 velocity = glm::vec3(0.f, -0.1f, 0.0f);
+	worldSpaceCoordinates.y = 0.4f;
 	//if (objectMode == M_BUNNY)
 	//{
 	//	/*psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
@@ -144,14 +144,14 @@ void VirtualWorld::addSphere(int x, int y)
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0002f);
 	viewer->addObjectType(M_TEAPOT);*/
-	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
+	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.025f);
-	viewer->addObjectType(M_BANANA);*/
-	psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
+	viewer->addObjectType(M_BANANA);
+	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0025f);
-	viewer->addObjectType(M_CUBE);
+	viewer->addObjectType(M_CUBE);*/
 }
 
 void VirtualWorld::throwSphere(int x, int y)
@@ -206,8 +206,9 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	Demo_TwoBananas();
-	//Demo_ThirtySixTeapots();
+	//Demo_TwoBananas();
+	//Demo_TwoTeapots();
+	Demo_ThirtySixTeapots();
 	//Demo_FiveHundredTeapots();
 	//psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
 	
@@ -261,6 +262,23 @@ void VirtualWorld::initDemoMode()
 	std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
 	//psystem->initCPU();
 	//
+}
+
+void VirtualWorld::Demo_TwoTeapots()
+{
+	//psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
+	psystem->setSceneAABB(make_float3(-1000, -1000, -1000), make_float3(1000, 1000, 1000));
+	// banana 1
+	psystem->addObj(glm::vec3(0.4, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0.28, 0), 2.0f, "teapot");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.00020f);
+	viewer->addObjectType(M_TEAPOT);
+
+	// banana 2
+	psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 0), glm::vec3(0, 0, 0), 2.0f, "teapot");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.00020f);
+	viewer->addObjectType(M_TEAPOT);
 }
 
 void VirtualWorld::Demo_TwoBananas()

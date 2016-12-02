@@ -57,6 +57,7 @@ private:
 
 	// list of demos
 	void Demo_TwoBananas();
+	void Demo_TwoTeapots();
 	void Demo_ThirtySixTeapots();
 	void Demo_FiveHundredTeapots();
 
