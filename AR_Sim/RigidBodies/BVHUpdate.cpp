@@ -634,12 +634,12 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		make_float4(minPos), make_float4(maxPos),
 		m_numParticles,
 		numThreads);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	clock_t end = clock();
 	MortonTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	start = clock();
 #endif
@@ -653,12 +653,12 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		sortedMortonCodes,
 		numThreads,
 		m_numParticles);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	end = clock();
 	RadixTreeTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 
 	initializeRadiiWrapper(radii,
 		m_params.particleRadius,
@@ -685,12 +685,12 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		m_params.particleRadius, //common radius parameter
 		numThreads,
 		m_numParticles);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	end = clock();
 	LeafNodesTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	start = clock();
 #endif
@@ -701,13 +701,13 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		bounds, //array containing bounding volume for each node - currently templated Array of Structures
 		numThreads,
 		m_numParticles);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	end = clock();
 	InternalNodesTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
 
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 
 	// cudaMemset is mandatory if cudaMalloc takes place once
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
@@ -732,6 +732,9 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		contactDistance, // Output: distance between particles presenting largest penetration
 		collidingParticleIndex, // Output: particle of most important contact
 		collidingRigidBodyIndex); // Output: rigid body of most important contact
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_BVH
 	end = clock();
 	TraverseTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
@@ -752,8 +755,6 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 		std::cout << std::endl;
 	}
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 
 }
 
@@ -895,7 +896,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 
 	// handle collisions between rigid bodies
 	//Handle_Rigid_Body_Collisions_Baraff_CPU();
-	Handle_Rigid_Body_Collisions_Catto_CPU();
+	//Handle_Rigid_Body_Collisions_Catto_CPU();
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	if (m_bUseOpenGL)
 	{

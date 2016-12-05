@@ -350,18 +350,18 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 #endif
 	
 	// calculate grid hash
-	
 	if (!simulateAR)calcHash(
 			m_dGridParticleHash,
 			m_dGridParticleIndex,
 			dPos,
 			m_numParticles);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_UG
 	clock_t end = clock();
 	CalculateHashTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 	// sort particles based on hash
 #ifdef PROFILE_UG
 	start = clock();
@@ -373,13 +373,13 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		&m_dSortedGridParticleHash,
 		&m_dSortedGridParticleIndex,
 		m_numParticles);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 
 #ifdef PROFILE_UG
 	end = clock();
 	SortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 	// reorder particle arrays into sorted order and
 	// find start and end of each cell
 #ifdef PROFILE_UG
@@ -397,18 +397,19 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		m_dVel,
 		m_numParticles,
 		m_numGridCells);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_UG
 	end = clock();
 	ReorderTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 
-	// cudaMemset is mandatory if cudaMalloc takes place once
-	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
+	
 #ifdef PROFILE_UG
 	start = clock();
 #endif
+	// cudaMemset is mandatory if cudaMalloc takes place once
+	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
 	FindRigidBodyCollisionsUniformGridWrapper(
 		rbIndices, // index of the rigid body each particle belongs to
 		collidingRigidBodyIndex, // index of rigid body of contact
@@ -422,6 +423,8 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		m_numParticles,
 		m_params,
 		numThreads);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
 #ifdef PROFILE_UG
 	end = clock();
 	FindCollisionsTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
@@ -441,8 +444,6 @@ void ParticleSystem::Find_Rigid_Body_Collisions_Uniform_Grid()
 		std::cout << std::endl;
 	}
 #endif
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
 }
 
 void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
@@ -566,13 +567,20 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 		}
 	}
 	delete index;*/
-
+//#define PROFILE_UG_UPDATE
+#ifdef PROFILE_UG_UPDATE
+	static int iterations = 0;
+	static float IntegrationTime = 0;
+	static float MappingTime = 0;
+#endif
 	
-
-	assert(m_bInitialized);
 
 	//float *dPos;
 	//float *dCol;
+#ifdef PROFILE_UG_UPDATE
+	clock_t start = clock();
+#endif
+	assert(m_bInitialized);
 	if (m_bUseOpenGL)
 	{
 		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
@@ -582,6 +590,10 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	{
 		dPos = (float *)m_cudaPosVBO;
 	}
+#ifdef PROFILE_UG_UPDATE
+	clock_t end = clock();
+	MappingTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif
 	/*float4 *pos = new float4[m_numParticles];
 	checkCudaErrors(cudaMemcpy(pos, relativePos, sizeof(float) * 4 * m_numParticles, cudaMemcpyDeviceToHost));
 	int total = 0;
@@ -604,13 +616,22 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	}
 	delete pos;*/
 	// update constants
-	setParameters(&m_params);
 
 	// integrate system of rigid bodies
 	//Integrate_RB_System(deltaTime);
+	
+
+#ifdef PROFILE_UG_UPDATE
+	start = clock();
+#endif
+	setParameters(&m_params);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
+#ifdef PROFILE_UG_UPDATE
+	end = clock();
+	IntegrationTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif	
 	// find and handle wall collisions
-	//Handle_Wall_Collisions();
+	Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -634,11 +655,26 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	//checkCudaErrors(cudaFree(collidingParticleIndex));
 	//checkCudaErrors(cudaFree(contactDistance));
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
+#ifdef PROFILE_UG_UPDATE
+	start = clock();
+#endif
 	if (m_bUseOpenGL)
 	{
 		unmapGLBufferObject(m_cuda_colorvbo_resource);
 		unmapGLBufferObject(m_cuda_posvbo_resource);
 	}
+#ifdef PROFILE_UG_UPDATE
+	end = clock();
+	MappingTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif
+#ifdef PROFILE_UG_UPDATE
+	if (++iterations == 1000)
+	{
+		std::cout << "Avg. time spent on integration: " << IntegrationTime / (float)iterations << "ms" << std::endl;
+		std::cout << "Avg. time spent on mapping: " << MappingTime / (float)iterations << "ms" << std::endl;
+		std::cout << std::endl;
+	}
+#endif
 
 }
 

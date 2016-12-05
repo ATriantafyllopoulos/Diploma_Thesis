@@ -992,7 +992,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 	collision_counter = 0;
 	current_particle = 0;
 
-	float epsilon = 1.f;
+	float epsilon = 0.5f;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -1849,6 +1849,7 @@ void ParticleSystem::update(float deltaTime)
 	m_params.damping = 0.01f;
 	m_params.shear = 0.0f;*/
 	//m_params.gravity.y = -0.008;
+	//m_params.gravity.y = -0.012;
 	m_params.spring = 100.0f;
 	m_params.damping = 0.0f;
 	m_params.shear = 0.1f;
@@ -1864,8 +1865,21 @@ void ParticleSystem::update(float deltaTime)
 		//	updateBVHExperimental(deltaTime);
 		//}
 		//updateUniformGrid(deltaTime);
-		//updateUniformGrid(deltaTime);
-		updateBVHExperimental(deltaTime);
+		/*static int iterations = 0;
+		static float totalTime = 0;
+		clock_t start = clock();*/
+		
+		/*iterations++;
+		clock_t end = clock();
+		totalTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+
+		if (iterations == 1000)
+		{
+			std::cout << "Avg time spent on uniform grid update: " << totalTime / (float)iterations << std::endl;
+			std::cout << std::endl;
+		}*/
+		updateUniformGrid(deltaTime);
+		//updateBVHExperimental(deltaTime);
 		//updateUniformGridDEM(deltaTime);
 		/*static int iterations = 1;
 		float4 *VEL_CPU = new float4[numRigidBodies];
@@ -1897,11 +1911,11 @@ void ParticleSystem::update(float deltaTime)
 		delete ANG_CPU;
 		delete VEL_CPU;*/
 	}
-    if (!pauseFrame)
+    /*if (!pauseFrame)
     {
     	updateFrame();
 
-    }
+    }*/
 
 
 }

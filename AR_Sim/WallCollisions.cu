@@ -530,48 +530,11 @@ void WallCollisionWrapper(
 	checkCudaErrors(cudaMalloc((void**)&rigid_body_flags_GPU, sizeof(int) * numParticles));
 	checkCudaErrors(cudaMemcpy(rigid_body_flags_GPU, rigid_body_flags_CPU, sizeof(int) * numParticles, cudaMemcpyHostToDevice));
 
-
-	//float *distances_CPU = new float[numParticles];
-	//float4 *positions_CPU = new float4[numParticles];
-	//checkCudaErrors(cudaMemcpy(distances_CPU, contactDistance, sizeof(float) * numParticles, cudaMemcpyDeviceToHost));
-	//checkCudaErrors(cudaMemcpy(positions_CPU, particlePos, sizeof(float) * 4 * numParticles, cudaMemcpyDeviceToHost));
-	//bool toPrint = false;
-	//for (int i = 0; i < numParticles; i++)
-	//{
-	//	if (distances_CPU[i] > 0)
-	//	{
-	//		toPrint = true;
-	//		break;
-	//	}
-	//}
-
-	//Cub_Double_Sort(contactDistance, rigid_body_flags_GPU, &particleIndicesGPU, numParticles);
-	//std::cout << "Pre-sort..." << std::endl;
-	//int *debug_indices = new int[numParticles];
-	//checkCudaErrors(cudaMemcpy(debug_indices, particleIndicesGPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-	//if (toPrint)for (int i = numParticles - 50; i < numParticles; i++)
-	//	std::cout << "Sorted particle index @: " << i << " is: " << debug_indices[i] << std::endl;
-
 	Cub_Sort_By_Key_Wrapper<int, float>(&particleIndicesGPU, &contactDistance, numParticles);
-
-	//std::cout << "After float-key sorting..." << std::endl;
-	//checkCudaErrors(cudaMemcpy(debug_indices, particleIndicesGPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-	//if(toPrint)for (int i = numParticles - 50; i < numParticles; i++)
-	//	std::cout << "Sorted particle index @: " << i << " is: " << debug_indices[i] << std::endl;
 
 	Cub_Sort_By_Key_Wrapper<int, float>(&rigid_body_flags_GPU, &contactDistance, numParticles);
 
-	//std::cout << "After float-key sorting int keys..." << std::endl;
-	//checkCudaErrors(cudaMemcpy(debug_indices, rigid_body_flags_GPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-	//if (toPrint)for (int i = numParticles - 50; i < numParticles; i++)
-	//	std::cout << "Sorted particle flag @: " << i << " is: " << debug_indices[i] << std::endl;
-
 	Cub_Sort_By_Key_Wrapper<int, int>(&particleIndicesGPU, &rigid_body_flags_GPU, numParticles);
-
-	//std::cout << "After int-key sorting..." << std::endl;
-	//checkCudaErrors(cudaMemcpy(debug_indices, particleIndicesGPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-	//if (toPrint)for (int i = numParticles - 50; i < numParticles; i++)
-	//	std::cout << "Sorted particle index @: " << i << " is: " << debug_indices[i] << std::endl;
 
 	//delete debug_indices;
 	int *cum_sum_indices_CPU = new int[numRigidBodies];
@@ -583,80 +546,6 @@ void WallCollisionWrapper(
 	int *cum_sum_indices_GPU;
 	checkCudaErrors(cudaMalloc((void**)&cum_sum_indices_GPU, sizeof(int) * numRigidBodies));
 	checkCudaErrors(cudaMemcpy(cum_sum_indices_GPU, cum_sum_indices_CPU, sizeof(int) * numRigidBodies, cudaMemcpyHostToDevice));
-
-	
-
-	//std::vector<TestNode> test;
-	//test.resize(numParticles);
-	//for (int i = 0; i < numParticles; i++)
-	//{
-	//	test[i].value = i;
-	//	test[i].intKey = rigid_body_flags_CPU[i];
-	//	test[i].floatKey = distances_CPU[i];
-	//}
-
-	//std::sort(test.begin(), test.end(), comparison);
-
-	//int *particleIndicesCPU = new int[numParticles];
-	//checkCudaErrors(cudaMemcpy(particleIndicesCPU, particleIndicesGPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-
-
-	//if (toPrint)
-	//	for (int i = 0; i < numParticles; i++)
-	//	{
-	//		std::cout << "CPU Node: " << std::endl;
-	//		std::cout << "Index: " << test[i].intKey << " ";
-	//		std::cout << "Distance: " << test[i].floatKey << " ";
-	//		std::cout << "Value: " << test[i].value << " ";
-	//	}
-	//for (int i = 0; i < numParticles; i++)
-	//{
-	//	if (test[i].value != particleIndicesCPU[i])
-	//	{
-	//		std::cout << "Problem @: " << i << std::endl;
-	//		std::cout << "CPU Node: " << std::endl;
-	//		std::cout << "Index: " << test[i].intKey << " ";
-	//		std::cout << "Distance: " << test[i].floatKey << " ";
-	//		std::cout << "Value: " << test[i].value << " "; 
-	//		std::cout << std::endl;
-	//		std::cout << "GPU Node: " << std::endl;
-	//		std::cout << "Index: " << rigid_body_flags_CPU[particleIndicesCPU[i]] << " ";
-	//		std::cout << "Distance: " << distances_CPU[particleIndicesCPU[i]] << " ";
-	//		std::cout << "Value: " << particleIndicesCPU[i] << " ";
-	//		std::cout << std::endl;
-	//	}
-	//}
-	//delete particleIndicesCPU;
-
-	//for (int i = 0; i < numParticles; i++)
-	//{
-	//	if (distances_CPU[i] > 0)
-	//	{
-	//		float4 p = positions_CPU[i];
-	//		float r = params.particleRadius;
-
-	//		float4 unit = make_float4(1, 1, 1, 1);
-	//		float sign = dot(n, unit); // 1 if n is positive and -1 if n negative
-	//		float4 normN = n * sign;
-	//		float distance = sign * (dot(p, normN) - wallPos + r * sign);
-
-	//		std::cout << "GPU distance: " << distances_CPU[i] << std::endl;
-	//		std::cout << "CPU distance: " << distance << std::endl;
-	//		std::cout << "Left wall distance: " << p.x - maxPos.x + r << std::endl;
-	//		std::cout << "Top wall distance: " << p.y - maxPos.y + r << std::endl;
-	//		std::cout << "Far wall distance: " << p.z - maxPos.z + r << std::endl;
-	//		std::cout << "Right wall distance: " << -(p.x - minPos.x - r) << std::endl;
-	//		std::cout << "Bottom wall distance: " << -(p.y - minPos.y - r) << std::endl;
-	//		std::cout << "Near wall distance: " << -(p.z - minPos.z - r) << std::endl;
-
-	//	}
-	//}
-	//float4 *RB_CPU_POS = new float4[numRigidBodies];
-	//checkCudaErrors(cudaMemcpy(RB_CPU_POS, rbPos, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
-	//float4 *RB_CPU_VEL = new float4[numRigidBodies];
-	//checkCudaErrors(cudaMemcpy(RB_CPU_VEL, rbVel, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
-	//float4 *RB_CPU_ANG = new float4[numRigidBodies];
-	//checkCudaErrors(cudaMemcpy(RB_CPU_ANG, rbAng, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
 
 	// we have now found the most important contacts for
 	// all the rigid bodies in the scene
@@ -684,137 +573,7 @@ void WallCollisionWrapper(
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
-	//if (toPrint)for (int i = 0; i < numParticles; i++)
-	//	if (distances_CPU[i] > 0){
-	//	std::cout << "GPU distance @: " << i << " is: " << distances_CPU[i] << std::endl;
-	//	}
 
-	//if (toPrint)
-	//{
-	//	float4 *RB_GPU_POS = new float4[numRigidBodies];
-	//	checkCudaErrors(cudaMemcpy(RB_GPU_POS, rbPos, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
-	//	float4 *RB_GPU_VEL = new float4[numRigidBodies];
-	//	checkCudaErrors(cudaMemcpy(RB_GPU_VEL, rbVel, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
-	//	float4 *RB_GPU_ANG = new float4[numRigidBodies];
-	//	checkCudaErrors(cudaMemcpy(RB_GPU_ANG, rbAng, sizeof(float4) * numRigidBodies, cudaMemcpyDeviceToHost));
-
-	//	glm::mat3 *invInertia = new glm::mat3[numRigidBodies]; 
-	//	checkCudaErrors(cudaMemcpy(invInertia, Iinv, sizeof(glm::mat3) * numRigidBodies, cudaMemcpyDeviceToHost));
-	//	
-	//	float *mass = new float[numRigidBodies];
-	//	checkCudaErrors(cudaMemcpy(mass, rbMass, sizeof(float) * numRigidBodies, cudaMemcpyDeviceToHost));
-
-	//	int *contactID = new int[numParticles];
-	//	checkCudaErrors(cudaMemcpy(contactID, particleIndicesGPU, sizeof(int) * numParticles, cudaMemcpyDeviceToHost));
-	//	int currentParticle = 0;
-	//	//for (int i = 0; i < numParticles; i++)
-	//		//std::cout << "Sorted particle index @: " << i << " is: " << contactID[i] << std::endl;
-
-	//	for (int i = 0; i < numParticles; i++)
-	//		if (distances_CPU[contactID[i]] > 0){
-	//		std::cout << "GPU distance @ GPU index: " << contactID[i] << " is: " << distances_CPU[contactID[i]] << std::endl;
-	//		}
-
-	//	for (int index = 0; index < numRigidBodies; index++)
-	//	{
-
-	//		int contactIndex = currentParticle;
-	//		float distance = distances_CPU[contactIndex];
-	//		for (int particle = currentParticle + 1; particle < currentParticle + particlesPerRB[index]; particle++)
-	//		{
-	//			if (distances_CPU[particle] > distance)
-	//			{
-	//				contactIndex = particle;
-	//				distance = distances_CPU[contactIndex];
-	//			}
-	//		}
-	//		currentParticle += particlesPerRB[index];
-
-	//		int contactIndex_GPU = contactID[cum_sum_indices_CPU[index] - 1];
-	//		float distance_GPU = distances_CPU[contactIndex_GPU];
-
-
-	//		if (distance <= 0)
-	//			continue;
-
-	//		if (contactIndex_GPU != contactIndex)
-	//		{
-	//			std::cout << "GPU and CPU results are different for rigid body No. " << index + 1 << std::endl;
-	//			int gpuIndex = -1;
-	//			for (int i = 0; i < numParticles; i++)
-	//			{
-	//				if (contactID[i] == contactIndex)
-	//				{
-	//					gpuIndex = i;
-	//					break;
-	//				}
-	//			}
-	//			std::cout << "CPU index found @: " << gpuIndex << " (" << contactID[gpuIndex] << ")" << std::endl;
-	//		}
-
-	//		std::cout << "Changing CM of rigid body No." << index + 1 << std::endl;
-	//		std::cout << "CPU colliding particle: " << contactIndex << " and distance: " << distance << std::endl;
-	//		std::cout << "GPU colliding particle: " << contactIndex_GPU << " and distance: " << distance_GPU << std::endl;
-	//		std::cout << "GPU contact info index @: " << cum_sum_indices_CPU[index] - 1 << std::endl;
-	//		float radius = params.particleRadius;
-	//		
-	//		float4 p = positions_CPU[contactIndex];
-	//		float4 radiusAuxil = radius * n;
-	//		float4 wallPosAuxil = n * dot(maxPos, make_float3(n));
-	//		float4 particlePosAuxil = n * dot(p, n);
-
-	//		float4 disp = p - RB_CPU_POS[index];
-
-	//		RB_CPU_POS[index] += wallPosAuxil - radiusAuxil - particlePosAuxil; // move center of mass in the direction of the normal
-
-	//		float4 newP = RB_CPU_POS[index] + disp;
-	//		float4 cn, cp;
-	//		findExactContactPointTest(newP, newP + n * radius, radius, 0, cp, cn);
-	//		float4 r = RB_CPU_POS[index] - cp;
-	//		float4 localforce = cn * computeImpulseMagnitudeTest(RB_CPU_VEL[index], RB_CPU_ANG[index], r, invInertia[index], mass[index], cn);
-	//		RB_CPU_VEL[index] += localforce / mass[index];
-	//		glm::vec3 torque = invInertia[index] * (glm::cross(glm::vec3(r.x, r.y, r.z), glm::vec3(localforce.x, localforce.y, localforce.z)));
-	//		RB_CPU_ANG[index] += make_float4(torque.x, torque.y, torque.z, 0);
-
-	//		std::cout << "Showing results for rigid body No." << index + 1 << std::endl;
-	//		std::cout << "CPU CM: (" << RB_CPU_POS[index].x << ", " <<
-	//			RB_CPU_POS[index].y << ", " << RB_CPU_POS[index].z <<
-	//			", " << RB_CPU_POS[index].w << ")" << std::endl;
-
-	//		std::cout << "GPU CM: (" << RB_GPU_POS[index].x << ", " <<
-	//			RB_GPU_POS[index].y << ", " << RB_GPU_POS[index].z <<
-	//			", " << RB_GPU_POS[index].w << ")" << std::endl;
-
-	//		std::cout << "CPU VEL: (" << RB_CPU_VEL[index].x << ", " <<
-	//			RB_CPU_VEL[index].y << ", " << RB_CPU_VEL[index].z <<
-	//			", " << RB_CPU_VEL[index].w << ")" << std::endl;
-
-	//		std::cout << "GPU VEL: (" << RB_GPU_VEL[index].x << ", " <<
-	//			RB_GPU_VEL[index].y << ", " << RB_GPU_VEL[index].z <<
-	//			", " << RB_GPU_VEL[index].w << ")" << std::endl;
-
-	//		std::cout << "CPU ANG: (" << RB_CPU_ANG[index].x << ", " <<
-	//			RB_CPU_ANG[index].y << ", " << RB_CPU_ANG[index].z <<
-	//			", " << RB_CPU_ANG[index].w << ")" << std::endl;
-
-	//		std::cout << "GPU ANG: (" << RB_GPU_ANG[index].x << ", " <<
-	//			RB_GPU_ANG[index].y << ", " << RB_GPU_ANG[index].z <<
-	//			", " << RB_GPU_ANG[index].w << ")" << std::endl;
-	//	}
-	//	delete contactID;
-	//	delete RB_GPU_POS;
-	//	delete RB_GPU_VEL;
-	//	delete RB_GPU_ANG;
-	//	delete mass;
-	//	delete invInertia;
-	//}
-	//delete distances_CPU;
-	//delete positions_CPU;
-
-	//delete RB_CPU_POS;
-	//delete RB_CPU_VEL;
-	//delete RB_CPU_ANG;
-	//
 	// clean-up stray pointers
 	if (particleIndicesGPU)
 		checkCudaErrors(cudaFree(particleIndicesGPU));

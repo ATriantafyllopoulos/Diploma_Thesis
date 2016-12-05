@@ -108,7 +108,7 @@ void VirtualWorld::addSphere(int x, int y)
 	glm::vec3 win(xPos, yPos, viewer->getPixelDepth(x, int(yPos)));
 	glm::vec3 worldSpaceCoordinates = glm::unProject(win, viewer->getViewMatrix(), viewer->getProjectionMatrix(), viewPort);
 	glm::vec3 velocity = glm::vec3(0.f, -0.1f, 0.0f);
-	worldSpaceCoordinates.y = 0.4f;
+	worldSpaceCoordinates.y = 0.2f;
 	//if (objectMode == M_BUNNY)
 	//{
 	//	/*psystem->addBunny(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f);
@@ -144,9 +144,9 @@ void VirtualWorld::addSphere(int x, int y)
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0002f);
 	viewer->addObjectType(M_TEAPOT);*/
-	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.5f, "banana");
+	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.0f, "banana");
 	viewer->increaseNumberOfObjects();
-	viewer->addScaleFactor(0.025f);
+	viewer->addScaleFactor(0.020f);
 	viewer->addObjectType(M_BANANA);
 	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
 	viewer->increaseNumberOfObjects();
@@ -306,10 +306,13 @@ void VirtualWorld::Demo_ThirtySixTeapots()
 	for (float x = -1; x < 1; x += 0.6)
 	//for (float x = -2; x < 2; x += 0.6)
 	//for (float x = -3; x < 3; x += 0.6)
-		for (float y = -0.8; y < 0.8; y += 0.6)
+		//for (float y = -0.8; y < 0.8; y += 0.6)
 		//for (float y = -1.8; y < 1.8; y += 0.6)
+		for (float y = -1.8; y < 2.8; y += 0.6)
 		//for (float y = -2.8; y < 2.8; y += 0.6)
+		//for (float y = -3.8; y < 2.8; y += 0.6)
 			for (float z = 0.1; z < 0.9; z += 0.4)
+			//for (float z = 0.1; z < 1.4; z += 0.4)
 			{
 				glm::vec3 worldSpaceCoordinates(x, y, z);
 
@@ -318,11 +321,29 @@ void VirtualWorld::Demo_ThirtySixTeapots()
 						(float)std::rand() / (float)RAND_MAX / 10.f);
 				//glm::vec3 velocity(0, 0, 0);
 				//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
-				psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0.0, 0), 2.0f, "teapot");
+				psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 0.3, 0), 2.0f, "teapot");
 				viewer->increaseNumberOfObjects();
 				viewer->addScaleFactor(0.00020f);
 				viewer->addObjectType(M_TEAPOT);
+				//std::cout << "Virtual rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
 			}
+	//for (float x = 0; x < 10; x += 1)
+	//	for (float y = 0; y < 10; y += 1)
+	//		for (float z = 0; z < 3; z += 1)
+	//		{
+	//			glm::vec3 worldSpaceCoordinates(x, y, z);
+
+	//			glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
+	//					(float)std::rand() / (float)RAND_MAX / 10.f,
+	//					(float)std::rand() / (float)RAND_MAX / 10.f);
+	//			//glm::vec3 velocity(0, 0, 0);
+	//			//psystem->addBunny(worldSpaceCoordinates, glm::vec3(0, 0, 0), glm::vec3(0, 0.1, 0));
+	//			psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 0.3, 0), 2.0f, "teapot");
+	//			viewer->increaseNumberOfObjects();
+	//			viewer->addScaleFactor(0.00020f);
+	//			viewer->addObjectType(M_TEAPOT);
+	//			//std::cout << "Virtual rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
+	//		}
 
 }
 
@@ -360,7 +381,7 @@ void VirtualWorld::DemoMode()
 	psystem->setCollideAttraction(collideAttraction);*/
 	static int iterations = 0;
 	static float totalTime = 0;
-	const int iterationLimit = 5000;
+	const int iterationLimit = 1000;
 	if (runSimulation)
 	{
 		clock_t start = clock();
@@ -380,7 +401,7 @@ void VirtualWorld::DemoMode()
 	if (iterations == iterationLimit)
 	{
 		std::cout << "Profiling stopped" << std::endl;
-		std::cout << "Avg time spent on update for " << psystem->getNumberOfObjects() << ": " << totalTime / (float)iterations << std::endl;
+		std::cout << "Avg time spent on update for " << psystem->getNumberOfObjects() << " rigid bodies: " << totalTime / (float)iterations << std::endl;
 	}
 		//psystem->updateCPU(timestep);
 
