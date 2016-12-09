@@ -441,6 +441,131 @@ ParticleSystem::_finalize()
 	if (r_CMs)cudaFree(r_CMs);
 }
 
+void ParticleSystem::Empty_Particle_System()
+{
+	assert(m_bInitialized);
+
+	if (m_hPos)delete[] m_hPos;
+	if (m_hVel)delete[] m_hVel;
+	if (m_hCellStart)delete[] m_hCellStart;
+	if (m_hCellEnd)delete[] m_hCellEnd;
+
+	if (m_dVel){checkCudaErrors(cudaFree(m_dVel)); m_dVel = NULL;}
+	if (m_dSortedPos){ checkCudaErrors(cudaFree(m_dSortedPos)); m_dSortedPos = NULL; }
+	if (m_dSortedVel){ checkCudaErrors(cudaFree(m_dSortedVel)); m_dSortedVel = NULL; }
+	if (m_dGridParticleHash){ checkCudaErrors(cudaFree(m_dGridParticleHash)); m_dGridParticleHash = NULL; }
+	if (m_dGridParticleIndex){ checkCudaErrors(cudaFree(m_dGridParticleIndex)); m_dGridParticleIndex = NULL; }
+	if (m_dSortedGridParticleHash){ checkCudaErrors(cudaFree(m_dSortedGridParticleHash)); m_dSortedGridParticleHash = NULL; }
+	if (m_dSortedGridParticleIndex){ checkCudaErrors(cudaFree(m_dSortedGridParticleIndex)); m_dSortedGridParticleIndex = NULL; }
+	if (m_dCellStart){ checkCudaErrors(cudaFree(m_dCellStart)); m_dCellStart = NULL; }
+	if (m_dCellEnd){ checkCudaErrors(cudaFree(m_dCellEnd)); m_dCellEnd = NULL; }
+
+	if (m_bUseOpenGL)
+	{
+		unregisterGLBufferObject(m_cuda_posvbo_resource);
+		glDeleteBuffers(1, (const GLuint *)&m_posVbo);
+		glDeleteBuffers(1, (const GLuint *)&m_colorVBO);
+	}
+	else
+	{
+		checkCudaErrors(cudaFree(m_cudaPosVBO));
+		checkCudaErrors(cudaFree(m_cudaColorVBO));
+	}
+	if (staticPos){ checkCudaErrors(cudaFree(staticPos)); staticPos = NULL; }
+	if (staticNorm){ checkCudaErrors(cudaFree(staticNorm)); staticNorm = NULL; }
+	if (staticVel){ checkCudaErrors(cudaFree(staticVel)); staticVel = NULL; }
+	if (staticSortedVel){ checkCudaErrors(cudaFree(staticSortedVel)); staticSortedVel = NULL; }
+	if (staticSortedPos){ checkCudaErrors(cudaFree(staticSortedPos)); staticSortedPos = NULL; }
+	if (staticGridParticleHash){ checkCudaErrors(cudaFree(staticGridParticleHash)); staticGridParticleHash = NULL; }
+	if (staticGridParticleIndex){ checkCudaErrors(cudaFree(staticGridParticleIndex)); staticGridParticleIndex = NULL; }
+
+	if (sortedStaticGridParticleHash){ checkCudaErrors(cudaFree(sortedStaticGridParticleHash)); sortedStaticGridParticleHash = NULL; }
+	if (sortedStaticGridParticleIndex){ checkCudaErrors(cudaFree(sortedStaticGridParticleIndex)); sortedStaticGridParticleIndex = NULL; }
+
+	if (staticCellStart){checkCudaErrors(cudaFree(staticCellStart)); staticCellStart = NULL;}
+	if (staticCellEnd){ checkCudaErrors(cudaFree(staticCellEnd)); staticCellEnd = NULL; }
+	//cudaFree everything
+	if (r_mortonCodes){ checkCudaErrors(cudaFree(r_mortonCodes)); r_mortonCodes = NULL; }
+	if (r_sortedMortonCodes){ checkCudaErrors(cudaFree(r_sortedMortonCodes)); r_sortedMortonCodes = NULL; }
+	if (r_indices){ checkCudaErrors(cudaFree(r_indices)); r_indices = NULL; }
+	if (r_sortedIndices){ checkCudaErrors(cudaFree(r_sortedIndices)); r_sortedIndices = NULL; }
+	if (r_parentIndices){ checkCudaErrors(cudaFree(r_parentIndices)); r_parentIndices = NULL; }
+	if (r_leftIndices){ checkCudaErrors(cudaFree(r_leftIndices)); r_leftIndices = NULL; }
+	if (r_rightIndices){ checkCudaErrors(cudaFree(r_rightIndices)); r_rightIndices = NULL; }
+	if (r_radii){ checkCudaErrors(cudaFree(r_radii)); r_radii = NULL; }
+	if (r_minRange){ checkCudaErrors(cudaFree(r_minRange)); r_minRange = NULL; }
+	if (r_maxRange){ checkCudaErrors(cudaFree(r_maxRange)); r_maxRange = NULL; }
+	if (r_bounds){ checkCudaErrors(cudaFree(r_bounds)); r_bounds = NULL; }
+	if (r_isLeaf){ checkCudaErrors(cudaFree(r_isLeaf)); r_isLeaf = NULL; }
+	if (r_CMs){ checkCudaErrors(cudaFree(r_CMs)); r_CMs = NULL; }
+
+	if (mortonCodes){ checkCudaErrors(cudaFree(mortonCodes)); mortonCodes = NULL; }
+	if (sortedMortonCodes){ checkCudaErrors(cudaFree(sortedMortonCodes)); sortedMortonCodes = NULL; }
+	if (indices){ checkCudaErrors(cudaFree(indices)); indices = NULL; }
+	if (sortedIndices){ checkCudaErrors(cudaFree(sortedIndices)); sortedIndices = NULL; }
+	if (parentIndices){ checkCudaErrors(cudaFree(parentIndices)); parentIndices = NULL; }
+	if (leftIndices){ checkCudaErrors(cudaFree(leftIndices)); leftIndices = NULL; }
+	if (rightIndices){ checkCudaErrors(cudaFree(rightIndices)); rightIndices = NULL; }
+	if (radii){ checkCudaErrors(cudaFree(radii)); radii = NULL; }
+	if (minRange){ checkCudaErrors(cudaFree(minRange)); minRange = NULL; }
+	if (maxRange){ checkCudaErrors(cudaFree(maxRange)); maxRange = NULL; }
+	if (bounds){ checkCudaErrors(cudaFree(bounds)); bounds = NULL; }
+	if (isLeaf){ checkCudaErrors(cudaFree(isLeaf)); isLeaf = NULL; }
+	if (CMs){ checkCudaErrors(cudaFree(CMs)); CMs = NULL; }
+	if (collidingRigidBodyIndex){ checkCudaErrors(cudaFree(collidingRigidBodyIndex)); collidingRigidBodyIndex = NULL; }
+	if (collidingParticleIndex){ checkCudaErrors(cudaFree(collidingParticleIndex)); collidingParticleIndex = NULL; }
+	if (contactDistance){ checkCudaErrors(cudaFree(contactDistance)); contactDistance = NULL; }
+
+	if (m_dPos){ checkCudaErrors(cudaFree(m_dPos)); m_dPos = NULL; }
+	if (m_dVel){ checkCudaErrors(cudaFree(m_dVel)); m_dVel = NULL; }
+	if (m_dGridParticleHash){ checkCudaErrors(cudaFree(m_dGridParticleHash)); m_dGridParticleHash = NULL; }
+	if (m_dGridParticleIndex){ checkCudaErrors(cudaFree(m_dGridParticleIndex)); m_dGridParticleIndex = NULL; }
+	if (m_dCellStart){ checkCudaErrors(cudaFree(m_dCellStart)); m_dCellStart = NULL; }
+	if (m_dCellEnd){ checkCudaErrors(cudaFree(m_dCellEnd)); m_dCellEnd = NULL; }
+	if (m_dSortedPos){ checkCudaErrors(cudaFree(m_dSortedPos)); m_dSortedPos = NULL; }
+	if (m_dSortedVel){ checkCudaErrors(cudaFree(m_dSortedVel)); m_dSortedVel = NULL; }
+	if (m_dSortedGridParticleHash){ checkCudaErrors(cudaFree(m_dSortedGridParticleHash)); m_dSortedGridParticleHash = NULL; }
+	if (m_dSortedGridParticleIndex){ checkCudaErrors(cudaFree(m_dSortedGridParticleIndex)); m_dSortedGridParticleIndex = NULL; }
+	if (staticPos){ checkCudaErrors(cudaFree(staticPos)); staticPos = NULL; }
+	if (staticNorm){ checkCudaErrors(cudaFree(staticNorm)); staticNorm = NULL; }
+	if (staticVel){ checkCudaErrors(cudaFree(staticVel)); staticVel = NULL; }
+	if (staticSortedPos){ checkCudaErrors(cudaFree(staticSortedPos)); staticSortedPos = NULL; }
+	if (staticSortedVel){ checkCudaErrors(cudaFree(staticSortedVel)); staticSortedVel = NULL; }
+	if (staticGridParticleHash){ checkCudaErrors(cudaFree(staticGridParticleHash)); staticGridParticleHash = NULL; }
+	if (staticGridParticleIndex){ checkCudaErrors(cudaFree(staticGridParticleIndex)); staticGridParticleIndex = NULL; }
+	if (staticCellStart){ checkCudaErrors(cudaFree(staticCellStart)); staticCellStart = NULL; }
+	if (staticCellEnd){ checkCudaErrors(cudaFree(staticCellEnd)); staticCellEnd = NULL; }
+	if (sortedStaticGridParticleHash){ checkCudaErrors(cudaFree(sortedStaticGridParticleHash)); sortedStaticGridParticleHash = NULL; }
+	if (sortedStaticGridParticleIndex){ checkCudaErrors(cudaFree(sortedStaticGridParticleIndex)); sortedStaticGridParticleIndex = NULL; }
+	if (rbPositions){ checkCudaErrors(cudaFree(rbPositions)); rbPositions = NULL; }
+	if (rbVelocities){ checkCudaErrors(cudaFree(rbVelocities)); rbVelocities = NULL; }
+	if (rbAngularVelocity){ checkCudaErrors(cudaFree(rbAngularVelocity)); rbAngularVelocity = NULL; }
+	if (rbInertia){ checkCudaErrors(cudaFree(rbInertia)); rbInertia = NULL; }
+	if (rbCurrentInertia){ checkCudaErrors(cudaFree(rbCurrentInertia)); rbCurrentInertia = NULL; }
+	if (rbQuaternion){ checkCudaErrors(cudaFree(rbQuaternion)); rbQuaternion = NULL; }
+	if (relativePos){ checkCudaErrors(cudaFree(relativePos)); relativePos = NULL; }
+	if (rbIndices){ checkCudaErrors(cudaFree(rbIndices)); rbIndices = NULL; }
+	if (rbMass){ checkCudaErrors(cudaFree(rbMass)); rbMass = NULL; }
+	if (pForce){ checkCudaErrors(cudaFree(pForce)); pForce = NULL; }
+	if (pTorque){ checkCudaErrors(cudaFree(pTorque)); pTorque = NULL; }
+	if (pCountARCollions){ checkCudaErrors(cudaFree(pCountARCollions)); pCountARCollions = NULL; }
+	if (objectParticlePositions){ checkCudaErrors(cudaFree(objectParticlePositions)); objectParticlePositions = NULL; }
+
+	if (isRigidBody){ delete isRigidBody; isRigidBody = NULL; }
+	if (particlesPerObjectThrown){ delete particlesPerObjectThrown; particlesPerObjectThrown = NULL; }
+	if (firstObjectIndex){ delete firstObjectIndex; firstObjectIndex = NULL; }
+	if (objectParticleStart){ delete objectParticleStart; objectParticleStart = NULL; }
+	if (modelMatrix){ delete modelMatrix; modelMatrix = NULL; }
+	if (cumulativeQuaternion){ delete cumulativeQuaternion; cumulativeQuaternion = NULL; }
+
+	m_numParticles = 0;
+	numRigidBodies = 0;
+	objectsUsed = 0;
+	objectsThrown = 0;
+	modelNameVector.resize(0);
+
+}
+
 void
 ParticleSystem::dumpGrid()
 {
@@ -656,6 +781,7 @@ void ParticleSystem::initCPU()
 	checkCudaErrors(cudaMemcpy(&bunnyMass, rbMass, sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(&bunnyInertia, rbInertia, sizeof(glm::mat3), cudaMemcpyDeviceToHost));
 }
+
 
 void ParticleSystem::toggleGravity()
 {

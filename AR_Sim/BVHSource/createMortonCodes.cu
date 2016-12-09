@@ -263,7 +263,7 @@ void createMortonCodesPreallocated(
 	int elements,
 	int numberOfThreads)
 {
-#define PROFILE_MORTON
+//#define PROFILE_MORTON
 #ifdef PROFILE_MORTON
 	static float totalRadixSortTime = 0;
 	static float totalGenMortonCodesTime = 0;

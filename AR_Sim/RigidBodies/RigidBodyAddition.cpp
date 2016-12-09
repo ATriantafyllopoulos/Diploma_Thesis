@@ -218,7 +218,9 @@ void ParticleSystem::addRigidBody(
 	if (newParticleForce)cudaFree(newParticleForce);
 	if (newParticleTorque)cudaFree(newParticleTorque);
 	if (newParticlePosition)cudaFree(newParticlePosition);
+	if (newCountARCollions)cudaFree(newCountARCollions);
 	if (newParticleIndex)cudaFree(newParticleIndex);
+
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 }
@@ -1510,14 +1512,14 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 		const int start = m_numParticles;
 		if (!m_numParticles)
 		{
-			std::cout << "System has " << m_numParticles << " particles" << std::endl;
+			//std::cout << "System has " << m_numParticles << " particles" << std::endl;
 			_initialize(particles);
 			initializedNow = true;
 		}
-		std::cout << modelName << " object has " << particles << " particles" << std::endl;
+		//std::cout << modelName << " object has " << particles << " particles" << std::endl;
 		
 		objectsUsed++;
-		std::cout << "Number of objects used is " << objectsUsed << std::endl;
+		//std::cout << "Number of objects used is " << objectsUsed << std::endl;
 		int *newObjectIndex = new int[objectsUsed];
 		memcpy(newObjectIndex, firstObjectIndex, sizeof(int) * (objectsUsed - 1));
 		newObjectIndex[objectsUsed - 1] = numRigidBodies;
@@ -1598,18 +1600,26 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 
 		}
 		cm = cm / (float)particles;
-		std::cout << "Obj particles model center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
+		//std::cout << "Obj particles model center of mass: (" << cm.x << ", " << cm.y << ", " << cm.z << ")" << std::endl;
 		glm::vec3 test(0, 0, 0);
+		float xAxisOffset = 0;
 		float yAxisOffset = 0;
+		float zAxisOffset = 0;
+		if (!strcmp(modelName, "bunny"))
+		{
+			xAxisOffset = -m_params.particleRadius;
+			yAxisOffset = m_params.particleRadius;
+			zAxisOffset = -m_params.particleRadius;
+		}
 		if (!strcmp(modelName, "banana"))
 			yAxisOffset = 3 * m_params.particleRadius;
 		else if (!strcmp(modelName, "teapot"))
 			yAxisOffset = 2 * m_params.particleRadius;
 		for (int i = start; i < start + particles; i++)
 		{
-			m_hPos[4 * i] -= cm.x;
+			m_hPos[4 * i] -= cm.x + xAxisOffset;
 			m_hPos[4 * i + 1] -= cm.y + yAxisOffset;
-			m_hPos[4 * i + 2] -= cm.z;
+			m_hPos[4 * i + 2] -= cm.z + zAxisOffset;
 			m_hPos[4 * i + 3] = 0.f;
 
 			float x = m_hPos[4 * i];
@@ -1636,16 +1646,16 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			maxDistance = maxDistance > z ? maxDistance : z;
 		}
 		test /= (float)particles;
-		std::cout << "Obj particles corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
+		//std::cout << "Obj particles corrected center of mass: (" << test.x << ", " << test.y << ", " << test.z << ")" << std::endl;
 		if (!initializedNow)
 			m_numParticles += particles;
-		std::cout << modelName << " custom inertia tensor: " << std::endl;
+		/*std::cout << modelName << " custom inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)
 		{
 			for (int col = 0; col < 3; col++)
 				std::cout << inertiaTensor[row][col] << " ";
 			std::cout << std::endl;
-		}
+		}*/
 
 		//if (!strcmp(modelName, "banana"))
 		//{
@@ -1698,7 +1708,7 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			inertiaTensor[1][1] = 6.f / (0.250 * 0.250);
 			inertiaTensor[2][2] = 6.f / (0.250  * 0.250);
 		}*/
-		std::cout << modelName << " max distance: " << maxDistance << std::endl;
+		/*std::cout << modelName << " max distance: " << maxDistance << std::endl;
 		std::cout << modelName << " inverse inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)
 		{
@@ -1707,7 +1717,7 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			std::cout << std::endl;
 		}
 
-		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;
+		std::cout << "Number of particles after newest addition: " << m_numParticles << std::endl;*/
 		//reallocate client (GPU) memory to fit new data
 
 		int numberOfParticlesSoFar = 0;
@@ -2003,9 +2013,9 @@ void ParticleSystem::addObj(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, float s
 
 	/*size_t freeSize, totalSize;
 	checkCudaErrors(cudaMemGetInfo(&freeSize, &totalSize));
-	std::cout << "GPU Memory: " << freeSize << " / " << totalSize << std::endl;
+	std::cout << "GPU Memory: " << freeSize << " / " << totalSize << std::endl;*/
 
-	MEMORYSTATUSEX status;
+	/*MEMORYSTATUSEX status;
 	status.dwLength = sizeof(status);
 	GlobalMemoryStatusEx(&status);
 

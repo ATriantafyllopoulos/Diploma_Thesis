@@ -760,17 +760,48 @@ void ParticleSystem::Find_Rigid_Body_Collisions_BVH()
 
 void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
 {
-	checkCudaErrors(createMortonCodes((float4 *)staticPos,
+
+//#define PROFILE_BVH_AR
+#ifdef PROFILE_BVH_AR
+	static int iterations = 0;
+	static float totalTime = 0;
+	static float MortonTime = 0;
+	static float RadixTreeTime = 0;
+	static float LeafNodesTime = 0;
+	static float InternalNodesTime = 0;
+	static float TraverseTime = 0;
+#endif
+
+#ifdef PROFILE_BVH_AR
+	clock_t start = clock();
+#endif
+
+	/*checkCudaErrors(createMortonCodes((float4 *)staticPos,
 		&r_mortonCodes,
 		&r_indices,
 		&r_sortedMortonCodes,
 		&r_sortedIndices,
 		numberOfRangeData,
-		numThreads));
+		numThreads));*/
+	createMortonCodesPreallocated((float4 *)staticPos,
+		&r_mortonCodes,
+		&r_indices,
+		&r_sortedMortonCodes,
+		&r_sortedIndices,
+		make_float4(minPos), make_float4(maxPos),
+		numberOfRangeData,
+		numThreads);
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_BVH_AR
+	clock_t end = clock();
+	MortonTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
+#ifdef PROFILE_BVH_AR
+	start = clock();
+#endif
 	//construct the radix tree for the static particles
 	wrapperConstructRadixTreeSoA(
 		r_isLeaf, //array containing a flag to indicate whether node is leaf
@@ -785,7 +816,14 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_BVH_AR
+	end = clock();
+	RadixTreeTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
+#ifdef PROFILE_BVH_AR
+	start = clock();
+#endif
 	//construct the leaf nodes of the BVH
 	wrapperConstructLeafNodesSoA(
 		r_isLeaf, //array containing a flag to indicate whether node is leaf
@@ -805,7 +843,14 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_BVH_AR
+	end = clock();
+	LeafNodesTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 
+#ifdef PROFILE_BVH_AR
+	start = clock();
+#endif
 	//construct the internal nodes of the BVH
 	wrapperConstructInternalNodesSoA(
 		r_leftIndices, //array containing indices of the left children of each node
@@ -817,9 +862,15 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
-
+#ifdef PROFILE_BVH_AR
+	end = clock();
+	InternalNodesTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
 
+#ifdef PROFILE_BVH_AR
+	start = clock();
+#endif
 	FindAugmentedRealityCollisionsBVHWrapper(
 		(float4 *)dCol, // Input: particle's color, only used for testing purposes
 		(float4 *)dPos, // Input: virutal particle positions
@@ -841,6 +892,28 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_BVH()
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_BVH_AR
+	end = clock();
+	TraverseTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_BVH_AR
+	iterations++;
+	if (iterations == 1000)
+	{
+		totalTime = MortonTime + RadixTreeTime + LeafNodesTime + InternalNodesTime + TraverseTime;
+		std::cout << "Avg. times spent on BVH collision detection for " << numRigidBodies << " rigid bodies made of " << m_numParticles << " particles" << std::endl;
+		std::cout << "Avg. time spent on Morton codes creation: " << MortonTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on radix tree creation: " << RadixTreeTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on BVH leaf nodes creation: " << LeafNodesTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on BVH internal nodes creation: " << InternalNodesTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on BVH tree traversal: " << TraverseTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on BVH collision detection in total: " << totalTime / (float)iterations << std::endl;
+
+		std::cout << std::endl;
+	}
+#endif
+
 	float3 localMin, localMax;
 	cudaMemcpy(&localMin, &(r_bounds[numberOfRangeData].min), sizeof(float3), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&localMax, &(r_bounds[numberOfRangeData].max), sizeof(float3), cudaMemcpyDeviceToHost);
@@ -879,7 +952,7 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 	//Integrate_RB_System(deltaTime);
 	Integrate_Rigid_Body_System_GPU(deltaTime);
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -887,15 +960,15 @@ void ParticleSystem::updateBVHExperimental(float deltaTime)
 		Find_Augmented_Reality_Collisions_BVH();
 
 		// handle collisions between rigid bodies and real scene
-		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
-		Handle_Augmented_Reality_Collisions_Catto_CPU();
+		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		//Handle_Augmented_Reality_Collisions_Catto_CPU();
 	}
 
 	// find collisions between rigid bodies
 	Find_Rigid_Body_Collisions_BVH();
 
 	// handle collisions between rigid bodies
-	//Handle_Rigid_Body_Collisions_Baraff_CPU();
+	Handle_Rigid_Body_Collisions_Baraff_CPU();
 	//Handle_Rigid_Body_Collisions_Catto_CPU();
 	// note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	if (m_bUseOpenGL)

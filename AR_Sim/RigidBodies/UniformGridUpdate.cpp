@@ -486,12 +486,38 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
+#define PROFILE_UG_AR
+#ifdef PROFILE_UG_AR
+	static int iterations = 0;
+	static float totalTime = 0;
+	static float CalculateHashTime = 0;
+	static float SortTime = 0;
+	static float ReorderTime = 0;
+	static float FindCollisionsTime = 0;
+#endif
+
+#ifdef PROFILE_UG_AR
+	clock_t start = clock();
+#endif
+
 	// calculate grid hash
 	calcHash(
 		staticGridParticleHash,
 		staticGridParticleIndex,
 		staticPos,
 		numberOfRangeData);
+
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef PROFILE_UG_AR
+	clock_t end = clock();
+	CalculateHashTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_UG_AR
+	start = clock();
+#endif
 	// sort particles based on hash
 	//sortParticles(&staticGridParticleHash, &staticGridParticleIndex, numberOfRangeData);
 	sortParticlesPreallocated(
@@ -499,7 +525,17 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 		&staticGridParticleIndex,
 		&sortedStaticGridParticleHash,
 		&sortedStaticGridParticleIndex,
-		m_numParticles);
+		numberOfRangeData);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_UG_AR
+	end = clock();
+	SortTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_UG_AR
+	start = clock();
+#endif
 	// reorder particle arrays into sorted order and
 	// find start and end of each cell
 	reorderDataAndFindCellStart(rbIndices, //index of the rigid body each particle belongs to
@@ -514,9 +550,19 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 		numberOfRangeData,
 		m_numGridCells);
 
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+#ifdef PROFILE_UG_AR
+	end = clock();
+	ReorderTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
 	// cudaMemset is mandatory if cudaMalloc takes place once
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
 
+#ifdef PROFILE_UG_AR
+	start = clock();
+#endif
 	FindAugmentedRealityCollisionsUniformGridWrapper(
 		collidingParticleIndex, // index of particle of contact
 		contactDistance, // penetration distance
@@ -531,25 +577,28 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 		numberOfRangeData,
 		m_params,
 		numThreads);
-	// process collisions
-	//	staticCollide(
-	//		(float4 *)dCol,
-	//		(float4 *)pForce, //total force applied to rigid body
-	//		rbIndices, //index of the rigid body each particle belongs to
-	//		(float4 *)relativePos, //particle's relative position
-	//		(float4 *)pTorque,  //rigid body angular momentum
-	//		r_radii, //radii of all scene particles
-	//		m_dVel,
-	//		m_dSortedPos,
-	//		m_dSortedVel,
-	//		staticSortedPos,
-	//		m_dGridParticleIndex,
-	//		staticCellStart,
-	//		staticCellEnd,
-	//		m_numParticles,
-	//		m_numGridCells);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+#ifdef PROFILE_UG_AR
+	end = clock();
+	FindCollisionsTime += (end - start) / (CLOCKS_PER_SEC / 1000); //time difference in milliseconds
+#endif
+
+#ifdef PROFILE_UG_AR
+	iterations++;
+	if (iterations == 1000)
+	{
+		totalTime = CalculateHashTime + SortTime + ReorderTime + FindCollisionsTime;
+		std::cout << "Avg. times spent on augmented reality uniform grid collision detection for " << numRigidBodies << " rigid bodies made of " << m_numParticles << " particles" << std::endl;
+		std::cout << "Avg. time spent on calculating hash codes: " << CalculateHashTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on sorting hash codes: " << SortTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on reordering grid: " << ReorderTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on finding collisions: " << FindCollisionsTime / (float)iterations << std::endl;
+		std::cout << "Avg. time spent on uniform grid collision detection in total: " << totalTime / (float)iterations << std::endl;
+
+		std::cout << std::endl;
+	}
+#endif
 
 }
 
@@ -631,7 +680,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 	IntegrationTime += (end - start) / (CLOCKS_PER_SEC / 1000);
 #endif	
 	// find and handle wall collisions
-	Handle_Wall_Collisions();
+	//Handle_Wall_Collisions();
 
 	if (simulateAR)
 	{
@@ -639,8 +688,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 		Find_Augmented_Reality_Collisions_Uniform_Grid();
 
 		// handle collisions between rigid bodies and real scene
-		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
-		Handle_Augmented_Reality_Collisions_Catto_CPU();
+		Handle_Augmented_Reality_Collisions_Baraff_CPU();
+		//Handle_Augmented_Reality_Collisions_Catto_CPU();
 	}
 
 	// find collisions between rigid bodies
@@ -648,7 +697,7 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 
 	// handle collisions between rigid bodies
 	//Handle_Rigid_Body_Collisions_Baraff_CPU();
-	//Handle_Rigid_Body_Collisions_Catto_CPU();
+	Handle_Rigid_Body_Collisions_Catto_CPU();
 
 	//// cudaFree contact info variables - uncomment if no collision handling routine is used
 	//checkCudaErrors(cudaFree(collidingRigidBodyIndex));

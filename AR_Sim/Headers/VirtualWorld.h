@@ -53,6 +53,8 @@ public:
 	void changeDamping(const float &x){ psystem->changeDamping(x); }
 	void changeGlobalDamping(const float &x){ psystem->changeGlobalDamping(x); }
 	void changeShear(const float &x){ psystem->changeShear(x); }
+
+	void Virtual_Benchmark();
 private:
 
 	// list of demos

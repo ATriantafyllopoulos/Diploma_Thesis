@@ -329,8 +329,10 @@ void ParticleSystem::Handle_Rigid_Body_Collisions_Baraff_CPU()
 						m_params.particleRadius,
 						m_params.particleRadius,
 						cp, cn);
-					float4 r1 = cp - CMs_CPU[index];
-					float4 r2 = cp - CMs_CPU[rigidBodyIndex];
+					/*float4 r1 = cp - CMs_CPU[index];
+					float4 r2 = cp - CMs_CPU[rigidBodyIndex];*/
+					float4 r1 = relative_CPU[current_particle];
+					float4 r2 = relative_CPU[particleIndex];
 
 					glm::mat3 IinvA = rbCurrentInertia_CPU[index];
 					glm::mat3 IinvB = rbCurrentInertia_CPU[rigidBodyIndex];
@@ -1741,34 +1743,22 @@ void ParticleSystem::initializeVirtualSoA()
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	//cudaFree everything
-	if (mortonCodes)
-		cudaFree(mortonCodes);
-	if (sortedMortonCodes)
-		cudaFree(sortedMortonCodes);
-	if (indices)
-		cudaFree(indices);
-	if (sortedIndices)
-		cudaFree(sortedIndices);
-	if (parentIndices)
-		cudaFree(parentIndices);
-	if (leftIndices)
-		cudaFree(leftIndices);
-	if (rightIndices)
-		cudaFree(rightIndices);
-	if (radii)
-		cudaFree(radii);
-	if (minRange)
-		cudaFree(minRange);
-	if (maxRange)
-		cudaFree(maxRange);
-	if (bounds)
-		cudaFree(bounds);
-	if (isLeaf)
-		cudaFree(isLeaf);
-	if (CMs)
-		cudaFree(CMs);
+	if (mortonCodes)checkCudaErrors(cudaFree(mortonCodes));
+	if (sortedMortonCodes)checkCudaErrors(cudaFree(sortedMortonCodes));
+	if (indices)checkCudaErrors(cudaFree(indices));
+	if (sortedIndices)checkCudaErrors(cudaFree(sortedIndices));
+	if (parentIndices)checkCudaErrors(cudaFree(parentIndices));
+	if (leftIndices)checkCudaErrors(cudaFree(leftIndices));
+	if (rightIndices)checkCudaErrors(cudaFree(rightIndices));
+	if (radii)checkCudaErrors(cudaFree(radii));
+	if (minRange)checkCudaErrors(cudaFree(minRange));
+	if (maxRange)checkCudaErrors(cudaFree(maxRange));
+	if (bounds)checkCudaErrors(cudaFree(bounds));
+	if (isLeaf)checkCudaErrors(cudaFree(isLeaf));
+	if (CMs)checkCudaErrors(cudaFree(CMs));
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+
 	createSoA(
 		&isLeaf, //array containing a flag to indicate whether node is leaf
 		&parentIndices, //array containing indices of the parent of each node
@@ -1888,20 +1878,20 @@ void ParticleSystem::update(float deltaTime)
 		checkCudaErrors(cudaMemcpy(ANG_CPU, rbAngularVelocity, numRigidBodies * sizeof(float) * 4, cudaMemcpyDeviceToHost));
 		for (int rb = 0; rb < numRigidBodies; rb++)
 		{
-			if (iterations < 120)
+			if (iterations < 20)
 			{
 				std::ostringstream counter;
 				counter << (rb + 1);
 				std::string fileName("my_body_");
 				fileName += counter.str();
-				fileName += "_vel.txt";
+				fileName += "_vel_DEM.txt";
 				std::ofstream file(fileName.c_str(), std::ofstream::app);
 				file << VEL_CPU[rb].x << " " << VEL_CPU[rb].y << " " << VEL_CPU[rb].z << std::endl;
 				file.close();
 
 				fileName = "my_body_";
 				fileName += counter.str();
-				fileName += "_ang.txt";
+				fileName += "_ang_DEM.txt";
 				std::ofstream file2(fileName.c_str(), std::ofstream::app);
 				file2 << ANG_CPU[rb].x << " " << ANG_CPU[rb].y << " " << ANG_CPU[rb].z << std::endl;
 				file2.close();

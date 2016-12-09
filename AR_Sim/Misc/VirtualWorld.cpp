@@ -206,9 +206,9 @@ void VirtualWorld::initDemoMode()
 	glm::vec3 vView(0.0f, 0.0f, -1.f);
 	glm::vec3 vUp(0.0f, 1.0f, 0.0f);
 	viewer->setViewMatrix(glm::lookAt(vEye, vView, vUp));
-	//Demo_TwoBananas();
+	Demo_TwoBananas();
 	//Demo_TwoTeapots();
-	Demo_ThirtySixTeapots();
+	//Demo_ThirtySixTeapots();
 	//Demo_FiveHundredTeapots();
 	//psystem->setBBox(make_float3(-1, -0.8, -0.3), make_float3(1, 0.8, 1.3));
 	
@@ -290,7 +290,10 @@ void VirtualWorld::Demo_TwoBananas()
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.025f);
 	viewer->addObjectType(M_BANANA);
-
+	/*psystem->addObj(glm::vec3(0.3, 0.15, 0.0), glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "teapot");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.00025f);
+	viewer->addObjectType(M_TEAPOT);*/
 	// banana 2
 	psystem->addObj(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0, -0.0, 0), glm::vec3(0, 0, 0), 2.5f, "banana");
 	viewer->increaseNumberOfObjects();
@@ -303,19 +306,24 @@ void VirtualWorld::Demo_ThirtySixTeapots()
 	//psystem->setSceneAABB(make_float3(-1.5f, -1.f, -1.f), make_float3(1.f, 1.f, 1.f));
 
 	psystem->setSceneAABB(make_float3(-4.f, -4.f, -4.f), make_float3(4.f, 4.f, 4.f));
-	for (float x = -1; x < 1; x += 0.6)
+	//psystem->setSceneAABB(make_float3(-8.f, -8.f, -8.f), make_float3(8.f, 8.f, 8.f));
+	/*for (float x = -4; x < 4.2; x += 1.2)
+	for (float y = -4.8; y < 4.9; y += 1.2)
+	for (float z = 0.1; z < 2.6; z += 0.8)*/
+
+	//for (float x = -1; x < 1; x += 0.6)
 	//for (float x = -2; x < 2; x += 0.6)
-	//for (float x = -3; x < 3; x += 0.6)
+	for (float x = -3; x < 3; x += 0.6)
 		//for (float y = -0.8; y < 0.8; y += 0.6)
 		//for (float y = -1.8; y < 1.8; y += 0.6)
-		for (float y = -1.8; y < 2.8; y += 0.6)
+		//for (float y = -1.8; y < 2.8; y += 0.6)
 		//for (float y = -2.8; y < 2.8; y += 0.6)
-		//for (float y = -3.8; y < 2.8; y += 0.6)
-			for (float z = 0.1; z < 0.9; z += 0.4)
+		for (float y = -3.8; y < 2.8; y += 0.6)
+		for (float z = 0.1; z < 0.9; z += 0.4)
 			//for (float z = 0.1; z < 1.4; z += 0.4)
 			{
 				glm::vec3 worldSpaceCoordinates(x, y, z);
-
+				//glm::vec3 worldSpaceCoordinates(0, -0.5, -2);
 				glm::vec3 velocity((float)std::rand() / (float)RAND_MAX / 10.f,
 						(float)std::rand() / (float)RAND_MAX / 10.f,
 						(float)std::rand() / (float)RAND_MAX / 10.f);
@@ -414,4 +422,60 @@ void VirtualWorld::DemoMode()
 	viewer->setRangeVAO(psystem->getRangeVAO());
 	viewer->setRangeTexture(psystem->getRangeTexture());
 	viewer->render();
+}
+
+void VirtualWorld::Virtual_Benchmark()
+{
+	viewer->toggleShowRangeData(); //don't show range data
+	psystem->toggleARcollisions(); //disable AR collisions
+	psystem->setSceneAABB(make_float3(-4.f, -4.f, -4.f), make_float3(4.f, 4.f, 4.f));
+
+	const int iteration_limit = 1000;
+	const float xStarts[] = { -1, -2, -3};
+	const float xStops[] = { 1, 2, 3};
+	const float yStarts[] = { -0.8, -1.8, -1.8, -2.8 };
+	const float yStops[] = { 0.8, 1.8, 2.8, 2.8 };
+	const float zStarts[] = { 0.1};
+	const float zStops[] = { 0.9};
+	const int xPairs = 3, yPairs = 4, zPairs = 1;
+	const float xStep = 0.6, yStep = 0.6, zStep = 0.4;
+	for (int i = 0; i < xPairs; i++)
+	{
+		for (int j = 0; j < yPairs; j++)
+		{
+			for (int k = 0; k < zPairs; k++)
+			{
+				const float xStart = xStarts[0], xStop = xStops[0];
+				const float yStart = yStarts[0], yStop = yStops[0];
+				const float zStart = zStarts[0], zStop = zStops[0];
+				/*std::cout << "x = [" << xStart << ", " << xStop << "]" << std::endl;
+				std::cout << "y = [" << yStart << ", " << yStop << "]" << std::endl;
+				std::cout << "z = [" << zStart << ", " << zStop << "]" << std::endl;*/
+				for (float x = xStart; x < xStop; x += xStep)
+				{
+					for (float y = yStart; y < yStop; y += yStep)
+					{
+						for (float z = zStart; z < zStop; z += zStep)
+						{
+							glm::vec3 worldSpaceCoordinates(x, y, z);
+							psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 0.3, 0), 2.0f, "teapot");
+							/*viewer->increaseNumberOfObjects();
+							viewer->addScaleFactor(0.00020f);
+							viewer->addObjectType(M_TEAPOT);*/
+						}
+					}
+				}
+				/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
+				std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
+				std::cout << std::endl;*/
+				psystem->Empty_Particle_System();
+				/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
+				std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
+				std::cout << std::endl;*/
+			}
+		}
+	}
+
+	float dummy;
+	std::cin >> dummy;
 }

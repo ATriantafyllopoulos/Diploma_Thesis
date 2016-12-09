@@ -274,11 +274,11 @@ __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 	modelMatrixGPU[index] = modelMatrix;
 
 	locVel += make_float4(params.gravity, 0);
-	if (locPos.y < -4)
+	/*if (locPos.y < -4)
 	{
 		locVel = make_float4(0);
 		newVelocity = glm::vec3(0);
-	}
+	}*/
 	/*newVelocity.x = clamp(newVelocity.x, -0.2, 0.2);
 	newVelocity.y = clamp(newVelocity.y, -0.2, 0.2);
 	newVelocity.z = clamp(newVelocity.z, -0.2, 0.2);*/

@@ -641,6 +641,8 @@ public: // GLFW menu
 	void changeDamping(const float &x);
 	void changeGlobalDamping(const float &x);
 	void changeShear(const float &x);
+
+	void Empty_Particle_System();
 };
 
 #endif // __PARTICLESYSTEM_H__

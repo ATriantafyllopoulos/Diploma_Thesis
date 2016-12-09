@@ -423,7 +423,7 @@ void sortParticlesPreallocated(
 	uint **sortedGridParticleIndex,
 	uint numParticles)
 {
-#define PROFILE_SORT
+//#define PROFILE_SORT
 #ifdef PROFILE_SORT
 	static float RadixSortTime = 0;
 	static float totalMemTime = 0;

@@ -409,7 +409,7 @@ float ParticleSystem::computeImpulseMagnitude(
 
 	if (relativeVelocity > 0)
 		return 0.f;
-	float epsilon = 1.f;
+	float epsilon = 0.5f;
 	float numerator = -(1 + epsilon) * relativeVelocity;
 	float a = 1.f / mA;
 	float b = glm::dot(glm::cross(IinvA * glm::cross(rA, norm), rA), norm);
@@ -444,8 +444,8 @@ float ParticleSystem::computeImpulseMagnitude(
 
 	float epsilon = 1.f;
 	float v_rel = glm::dot(velA - velB, norm);
-	if (v_rel < 0)
-		return 0;
+	/*if (v_rel < 0)
+		return 0;*/
 	float numerator = -(1.f + epsilon) * v_rel;
 	float a = 1.f / m1;
 	float b = 1.f / m2;
