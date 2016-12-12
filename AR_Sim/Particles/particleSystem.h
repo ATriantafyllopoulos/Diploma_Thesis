@@ -596,6 +596,8 @@ private:
 	void Handle_Augmented_Reality_Collisions_Baraff_GPU();
 	void Handle_Augmented_Reality_Collisions_Baraff_CPU();
 	void Handle_Augmented_Reality_Collisions_Catto_CPU();
+	void Handle_Augmented_Reality_Collisions_Catto_Friction_CPU();
+	void Handle_Augmented_Reality_Collisions_Catto_Baumgarte_CPU(float deltaTime);
 
 	bool Uniform_Grid_Initialized;
 	// BVH collision detection

@@ -237,6 +237,15 @@ __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 	glm::mat3 currentInertia = rbCurrentInertia[index];
 	float4 locVel = vel[index];
 	float4 locAng = rbAngularVelocity[index];
+
+	/*locVel.x = abs(locVel.x) < 0.005 ? 0 : locVel.x;
+	locVel.y = abs(locVel.y) < 0.005 ? 0 : locVel.y;
+	locVel.z = abs(locVel.z) < 0.005 ? 0 : locVel.z;
+
+	locAng.x = abs(locAng.x) < 0.0005 ? 0 : locAng.x;
+	locAng.y = abs(locAng.y) < 0.0005 ? 0 : locAng.y;
+	locAng.z = abs(locAng.z) < 0.0005 ? 0 : locAng.z;*/
+
 	locPos += locVel * deltaTime;
 
 	glm::vec3 newVelocity(locAng.x, locAng.y, locAng.z);
@@ -283,10 +292,10 @@ __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 	newVelocity.y = clamp(newVelocity.y, -0.2, 0.2);
 	newVelocity.z = clamp(newVelocity.z, -0.2, 0.2);*/
 	CMs[index] = locPos;
-	vel[index] = locVel;
+	vel[index] = locVel * 0.9999;
 	rbCurrentInertia[index] = currentInertia;
 	rbQuaternion[index] = quaternion;
-	rbAngularVelocity[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0);
+	rbAngularVelocity[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0) * 0.999;
 }
 
 void GPUintegratorWrapper(float4 *CMs, //rigid body center of mass

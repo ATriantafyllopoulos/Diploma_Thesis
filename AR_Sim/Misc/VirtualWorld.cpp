@@ -144,9 +144,13 @@ void VirtualWorld::addSphere(int x, int y)
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.0002f);
 	viewer->addObjectType(M_TEAPOT);*/
-	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.0f, "banana");
+	/*psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 2.0f, "banana");
 	viewer->increaseNumberOfObjects();
 	viewer->addScaleFactor(0.020f);
+	viewer->addObjectType(M_BANANA);*/
+	psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.0f, "banana");
+	viewer->increaseNumberOfObjects();
+	viewer->addScaleFactor(0.010f);
 	viewer->addObjectType(M_BANANA);
 	/*psystem->addObj(worldSpaceCoordinates, glm::vec3(0, -0.5, 0), glm::vec3(0, 0, 0), 2.5f, "cube");
 	viewer->increaseNumberOfObjects();
