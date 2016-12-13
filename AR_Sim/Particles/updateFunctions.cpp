@@ -1780,6 +1780,19 @@ void ParticleSystem::SequentialImpulseSolver()
 				glm::vec3 friction_impulse_2 = corrective_friction_2 * tangential_direction_2;
 				glm::vec3 impulse_vector = normal_impulse + friction_impulse_1 + friction_impulse_2;
 				
+
+				//std::cout << "Relative velocity (" << vel.x << ", " << vel.y << ", " << vel.z << ")" << std::endl;
+				//std::cout << "Velocity 1 (" << (v1 + glm::cross(w1, p1)).x << ", " << (v1 + glm::cross(w1, p1)).y << ", " << (v1 + glm::cross(w1, p1)).z << ")" << std::endl;
+				//std::cout << "Velocity 2 (" << (v2 + glm::cross(w2, p2)).x << ", " << (v2 + glm::cross(w2, p2)).y << ", " << (v2 + glm::cross(w2, p2)).z << ")" << std::endl;
+				//std::cout << "Normal (" << n.x << ", " << n.y << ", " << n.z << ")" << std::endl;
+				//std::cout << "Normal impulse (" << normal_impulse.x << ", " << normal_impulse.y << ", " << normal_impulse.z << ")" << std::endl;
+				//std::cout << "Tangential 1 (" << tangential_direction.x << ", " << tangential_direction.y << ", " << tangential_direction.z << ")" << std::endl;
+				//std::cout << "Friction impulse 1 (" << friction_impulse_1.x << ", " << friction_impulse_1.y << ", " << friction_impulse_1.z << ")" << std::endl;
+				//std::cout << "Tangential 2 (" << tangential_direction_2.x << ", " << tangential_direction_2.y << ", " << tangential_direction_2.z << ")" << std::endl;
+				//std::cout << "Friction impulse 2 (" << friction_impulse_2.x << ", " << friction_impulse_2.y << ", " << friction_impulse_2.z << ")" << std::endl;
+				//std::cout << std::endl;
+
+
 				//glm::vec3 impulse_vector = corrective_impulse * n;
 				
 				v1 = v1 + impulse_vector / m1;
