@@ -295,7 +295,7 @@ __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 	vel[index] = locVel;
 	rbCurrentInertia[index] = currentInertia;
 	rbQuaternion[index] = quaternion;
-	rbAngularVelocity[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0) * 0.9999;
+	rbAngularVelocity[index] = make_float4(newVelocity.x, newVelocity.y, newVelocity.z, 0) * params.Wdamping;
 }
 
 void GPUintegratorWrapper(float4 *CMs, //rigid body center of mass

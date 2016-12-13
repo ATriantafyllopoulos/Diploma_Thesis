@@ -1455,7 +1455,7 @@ void ParticleSystem::GatherRigidBodyCollisions()
 
 
 	int current_particle = 0;
-	float epsilon = 1.f;
+	const float epsilon = m_params.RBrestitution;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -1534,7 +1534,7 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 	// pre-processing step
 	// count total number of collisions
 	int current_particle = 0;
-	const float epsilon = 0.5f;
+	const float epsilon = m_params.ARrestitution;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -1587,8 +1587,6 @@ void ParticleSystem::SequentialImpulseSolver()
 	checkCudaErrors(cudaMemcpy(rbMass_CPU, rbMass, numRigidBodies * sizeof(float), cudaMemcpyDeviceToHost));
 
 	int current_particle = 0;
-	const float epsilon = 0.5f;
-	const float friction_coefficient = 0.3;
 	const float linear_bound = 0.02;
 	const float angular_bound = 0.00002;
 	const int iterations = 8; // number of iterations per simulation step
@@ -1641,7 +1639,7 @@ void ParticleSystem::SequentialImpulseSolver()
 
 				// compute friction
 				//const float friction_bound = friction_coefficient * temporary_impulse;
-				const float friction_bound = friction_coefficient * mc * abs(m_params.gravity.y);
+				const float friction_bound = m_params.ARfriction * mc * abs(m_params.gravity.y);
 				glm::vec3 vel = v + glm::cross(w, p);
 
 				glm::vec3 tangential_direction(1, 0, 0);
@@ -2721,16 +2719,30 @@ void ParticleSystem::initializeRealSoA()
 void ParticleSystem::update(float deltaTime)
 {
 	//updateBVHSoA(deltaTime);
-	deltaTime = 0.05;
+	
 	/*m_params.spring = 0.9f;
 	m_params.damping = 0.01f;
 	m_params.shear = 0.0f;*/
 	//m_params.gravity.y = -0.008;
 	//m_params.gravity.y = -0.012;
+
+	// simulation parameters
+	deltaTime = 0.05;
+	m_params.gravity.y = -0.012;
+	m_params.Wdamping = 0.9999;
+	m_params.Vdamping = 0.9999;
+
+	// DEM parameters
 	m_params.spring = 100.0f;
 	m_params.damping = 0.0f;
 	m_params.shear = 0.1f;
-	m_params.gravity.y = -0.012;
+
+	// SIS parameters
+	m_params.ARrestitution = 0.4;
+	m_params.RBrestitution = 0.7;
+	m_params.ARfriction = 0.3;
+	m_params.RBfriction = 0.1;
+
 	if (m_numParticles)
 	{
 		//if (collisionMethod == M_UNIFORM_GRID)

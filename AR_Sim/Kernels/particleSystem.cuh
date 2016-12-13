@@ -47,6 +47,11 @@ struct SimParams
 	float attraction;
 	float boundaryDamping;
 	float ARrestitution;
+	float RBrestitution;
+	float ARfriction;
+	float RBfriction;
+	float Wdamping;
+	float Vdamping;
 };
 
 #endif

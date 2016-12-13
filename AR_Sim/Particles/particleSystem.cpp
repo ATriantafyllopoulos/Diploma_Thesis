@@ -148,7 +148,13 @@ numThreads(128)
 	m_params.gravity = make_float3(0.0f, -0.03f, 0.0f);
 	m_params.globalDamping = 0.9f;
 	simulateAR = true;
-	m_params.ARrestitution = 0.3;
+	m_params.ARrestitution = 0.5;
+	m_params.RBrestitution = 1;
+	m_params.ARfriction = 0.3;
+	m_params.RBfriction = 0.1;
+	m_params.Wdamping = 0.9999;
+	m_params.Vdamping = 0.9999;
+
 	imageIndex = 1;
 	imageOffset = 1;
 
