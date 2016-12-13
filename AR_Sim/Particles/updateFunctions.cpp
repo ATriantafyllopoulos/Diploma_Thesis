@@ -1739,8 +1739,49 @@ void ParticleSystem::SequentialImpulseSolver()
 				// compute difference between old and new impulse
 				corrective_impulse = temporary_impulse - ContactAccumulatedImpulse[c];
 				ContactAccumulatedImpulse[c] = temporary_impulse; // store new clamped accumulated impulse
+	
+				const float friction_bound = m_params.ARfriction * mc * abs(m_params.gravity.y);
+				glm::vec3 vel = v1 + glm::cross(w1, p1) - v2 + glm::cross(w2, p2);
+
+				glm::vec3 tangential_direction(1, 0, 0);
+				if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
+					tangential_direction = glm::vec3(0, 1, 0);
+				tangential_direction = tangential_direction - glm::dot(tangential_direction, n) * n;
+				float k_t = (1 / m1 + glm::dot(glm::cross(Iinv1 * glm::cross(p1, tangential_direction), p1), tangential_direction)) + 
+					(1 / m2 + glm::dot(glm::cross(Iinv2 * glm::cross(p2, tangential_direction), p2), tangential_direction));
+				float corrective_friction = -glm::dot(vel, tangential_direction) / k_t;
+
+
+				float temporary_friction = ContactAccumulatedFriction[c];
+				temporary_friction = temporary_friction + corrective_friction;
+				if (temporary_friction < -friction_bound)
+					temporary_friction = -friction_bound; // allow no negative accumulated impulses
+				else if (temporary_friction > friction_bound)
+					temporary_friction = friction_bound; // max upper bound for accumulated impulse
+				corrective_friction = temporary_friction - ContactAccumulatedFriction[c];
+				ContactAccumulatedFriction[c] = temporary_friction; // store new clamped accumulated impulse
+
+				glm::vec3 tangential_direction_2 = glm::cross(tangential_direction, n);
+				float k_t_2 = (1 / m1 + glm::dot(glm::cross(Iinv1 * glm::cross(p1, tangential_direction_2), p1), tangential_direction_2)) +
+					(1 / m2 + glm::dot(glm::cross(Iinv2 * glm::cross(p2, tangential_direction_2), p2), tangential_direction_2));
+				float corrective_friction_2 = -glm::dot(vel, tangential_direction_2) / k_t_2;
+				float temporary_friction_2 = ContactAccumulatedFriction_2[c];
+				temporary_friction_2 = temporary_friction_2 + corrective_friction_2;
+				if (temporary_friction_2 < -friction_bound)
+					temporary_friction_2 = -friction_bound; // allow no negative accumulated impulses
+				else if (temporary_friction_2 > friction_bound)
+					temporary_friction_2 = friction_bound; // max upper bound for accumulated impulse
+				corrective_friction_2 = temporary_friction_2 - ContactAccumulatedFriction_2[c];
+				ContactAccumulatedFriction_2[c] = temporary_friction_2; // store new clamped accumulated impulse
+
 				// apply new clamped corrective impulse difference to velocity
-				glm::vec3 impulse_vector = corrective_impulse * n;
+				glm::vec3 normal_impulse = corrective_impulse * n;
+				glm::vec3 friction_impulse_1 = corrective_friction * tangential_direction;
+				glm::vec3 friction_impulse_2 = corrective_friction_2 * tangential_direction_2;
+				glm::vec3 impulse_vector = normal_impulse + friction_impulse_1 + friction_impulse_2;
+				
+				//glm::vec3 impulse_vector = corrective_impulse * n;
+
 				v1 = v1 + impulse_vector / m1;
 				w1 = w1 + Iinv1 * glm::cross(p1, impulse_vector);
 
