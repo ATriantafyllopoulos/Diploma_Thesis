@@ -729,6 +729,89 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 
 }
 
+void ParticleSystem::updateUniformGridSIS(float deltaTime)
+{
+	ContactNormal.resize(0);
+	ContactPoint.resize(0);
+	ContactAccumulatedImpulse.resize(0);
+	ContactAccumulatedFriction.resize(0);
+	ContactAccumulatedFriction_2.resize(0);
+	ContactBias.resize(0);
+	ContactRigidBody_1.resize(0);
+	ContactRigidBody_2.resize(0);
+
+	//#define PROFILE_UG_UPDATE
+#ifdef PROFILE_UG_UPDATE
+	static int iterations = 0;
+	static float IntegrationTime = 0;
+	static float MappingTime = 0;
+#endif
+
+#ifdef PROFILE_UG_UPDATE
+	clock_t start = clock();
+#endif
+	assert(m_bInitialized);
+	if (m_bUseOpenGL)
+	{
+		dPos = (float *)mapGLBufferObject(&m_cuda_posvbo_resource);
+		dCol = (float *)mapGLBufferObject(&m_cuda_colorvbo_resource);
+	}
+	else
+	{
+		dPos = (float *)m_cudaPosVBO;
+	}
+#ifdef PROFILE_UG_UPDATE
+	clock_t end = clock();
+	MappingTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif
+	
+#ifdef PROFILE_UG_UPDATE
+	start = clock();
+#endif
+	setParameters(&m_params);
+	Integrate_Rigid_Body_System_GPU(deltaTime);
+#ifdef PROFILE_UG_UPDATE
+	end = clock();
+	IntegrationTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif	
+	// find and handle wall collisions
+	//Handle_Wall_Collisions();
+
+	if (simulateAR)
+	{
+		// find collisions between rigid bodies and real scene
+		Find_Augmented_Reality_Collisions_Uniform_Grid();
+		GatherAugmentedRealityCollisions();
+	}
+
+	// find collisions between rigid bodies
+	Find_Rigid_Body_Collisions_Uniform_Grid();
+	GatherRigidBodyCollisions();
+
+	SequentialImpulseSolver();
+
+#ifdef PROFILE_UG_UPDATE
+	start = clock();
+#endif
+	if (m_bUseOpenGL)
+	{
+		unmapGLBufferObject(m_cuda_colorvbo_resource);
+		unmapGLBufferObject(m_cuda_posvbo_resource);
+	}
+#ifdef PROFILE_UG_UPDATE
+	end = clock();
+	MappingTime += (end - start) / (CLOCKS_PER_SEC / 1000);
+#endif
+#ifdef PROFILE_UG_UPDATE
+	if (++iterations == 1000)
+	{
+		std::cout << "Avg. time spent on integration: " << IntegrationTime / (float)iterations << "ms" << std::endl;
+		std::cout << "Avg. time spent on mapping: " << MappingTime / (float)iterations << "ms" << std::endl;
+		std::cout << std::endl;
+	}
+#endif
+}
+
 void ParticleSystem::Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM()
 {
 	// calculate grid hash

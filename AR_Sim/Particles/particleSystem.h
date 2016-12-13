@@ -599,6 +599,19 @@ private:
 	void Handle_Augmented_Reality_Collisions_Catto_Friction_CPU();
 	void Handle_Augmented_Reality_Collisions_Catto_Baumgarte_CPU(float deltaTime);
 
+	void updateUniformGridSIS(float deltaTime);
+	void GatherAugmentedRealityCollisions();
+	void GatherRigidBodyCollisions();
+	void SequentialImpulseSolver();
+	std::vector<float4>ContactNormal; // store one normal per collision
+	std::vector<float4>ContactPoint; // store one contact point per collision
+	std::vector<float>ContactAccumulatedImpulse; // store the accumulated impulses per collision
+	std::vector<float>ContactAccumulatedFriction; // store the accumulated impulses per collision
+	std::vector<float>ContactAccumulatedFriction_2; // store the accumulated impulses per collision
+	std::vector<float>ContactBias; // bias at each contact point
+	std::vector<int>ContactRigidBody_1;// index to first colliding rigid body
+	std::vector<int>ContactRigidBody_2;// index to second colliding rigid body
+
 	bool Uniform_Grid_Initialized;
 	// BVH collision detection
 	void Find_Rigid_Body_Collisions_BVH();
