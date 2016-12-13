@@ -975,7 +975,7 @@ SimParams params)
 	}
 	// manually override collision detection
 	// collide with virtual plane at y = 0.5
-	/*if (pos.y < 1.5)
+	/*if (pos.y < 0.2)
 	{
 		contactDistance[originalIndex] = 1.5 - pos.y;
 		collisionCounter++;

@@ -1003,7 +1003,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				contactNormal[collision_counter] = normal_CPU[particleIndex]; // scene's normal at collision point
-				//contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
+				contactNormal[collision_counter] = make_float4(0, 1, 0, 0);
 				/*float4 cp, cn;
 				findExactContactPoint(CMs_CPU[index] + relative_CPU[current_particle],
 					position_CPU[particleIndex],
@@ -1507,7 +1507,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 	collision_counter = 0;
 	current_particle = 0;
 
-	const float epsilon = 0.3f;
+	const float epsilon = 0.5f;
 	
 	for (int index = 0; index < numRigidBodies; index++)
 	{
@@ -1547,7 +1547,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 	file.close();
 #endif
 	// solve contacts using SIS
-	const float friction_coefficient = 0.8;
+	const float friction_coefficient = 0.3;
 	const int iterations = 8; // number of iterations per simulation step
 	const int UPPER_BOUND = 100; // upper bound for accumulated impulse
 	for (int k = 0; k < iterations; k++)
@@ -1593,18 +1593,24 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 			contactAccumulatedImpulse[c] = temporary_impulse; // store new clamped accumulated impulse
 
 			// compute friction
-			const float friction_bound = friction_coefficient * temporary_impulse;
-			//const float friction_bound = friction_coefficient * mc * m_params.gravity.y;
+			//const float friction_bound = friction_coefficient * temporary_impulse;
+			const float friction_bound = friction_coefficient * mc * abs(m_params.gravity.y);
+			//std::cout << "Friction bound: " << friction_bound << std::endl;
 			glm::vec3 vel = v + glm::cross(w, p);
-			glm::vec3 tanVel = vel - (glm::dot(vel, n) * n);
-			glm::vec3 tangential_direction = glm::normalize(tanVel);
-			float k_t = 1 / (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction), p), tangential_direction));
-			float corrective_friction = glm::dot(vel, tangential_direction) / k_t;
-			if (abs(tanVel.x) < 0.0001 && abs(tanVel.y) < 0.0001 && abs(tanVel.z) < 0.0001)
-				corrective_friction = 0;
+
+			/*glm::vec3 tanVel = vel - (glm::dot(vel, n) * n);
+			glm::vec3 tangential_direction = glm::normalize(tanVel);*/
+			glm::vec3 tangential_direction(1, 0, 0);
+			if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
+				tangential_direction = glm::vec3(0, 1, 0);
+			tangential_direction = tangential_direction - glm::dot(tangential_direction, n) * n;
+			float k_t = (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction), p), tangential_direction));
+			float corrective_friction = -glm::dot(vel, tangential_direction) / k_t;
+			/*if (abs(tanVel.x) < 0.0001 && abs(tanVel.y) < 0.0001 && abs(tanVel.z) < 0.0001)
+				corrective_friction = 0;*/
 			float temporary_friction = contactAccumulatedFriction[c];
 			temporary_friction = temporary_friction + corrective_friction;
-			
+			//std::cout << "Temporary friction 1: " << temporary_friction << std::endl;
 			if (temporary_friction < -friction_bound)
 				temporary_friction = -friction_bound; // allow no negative accumulated impulses
 			else if (temporary_friction > friction_bound)
@@ -1613,14 +1619,14 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 			contactAccumulatedFriction[c] = temporary_friction; // store new clamped accumulated impulse
 
 
-			glm::vec3 tangential_direction_2 = glm::cross(n, tangential_direction);
-			float k_t_2 = 1 / (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction_2), p), tangential_direction_2));
-			float corrective_friction_2 = glm::dot(vel, tangential_direction_2) / k_t_2;
-			if (abs(tanVel.x) < 0.0001 && abs(tanVel.y) < 0.0001 && abs(tanVel.z) < 0.0001)
-				corrective_friction_2 = 0;
+			glm::vec3 tangential_direction_2 = glm::cross(tangential_direction, n);
+			float k_t_2 = (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction_2), p), tangential_direction_2));
+			float corrective_friction_2 = -glm::dot(vel, tangential_direction_2) / k_t_2;
+			/*if (abs(tanVel.x) < 0.0001 && abs(tanVel.y) < 0.0001 && abs(tanVel.z) < 0.0001)
+				corrective_friction_2 = 0;*/
 			float temporary_friction_2 = contactAccumulatedFriction_2[c];
 			temporary_friction_2 = temporary_friction_2 + corrective_friction_2;
-
+			//std::cout << "Temporary friction 2: " << temporary_friction_2 << std::endl;
 			if (temporary_friction_2 < -friction_bound)
 				temporary_friction_2 = -friction_bound; // allow no negative accumulated impulses
 			else if (temporary_friction_2 > friction_bound)
@@ -1628,9 +1634,23 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 			corrective_friction_2 = temporary_friction_2 - contactAccumulatedFriction_2[c];
 			contactAccumulatedFriction_2[c] = temporary_friction_2; // store new clamped accumulated impulse
 
-			corrective_impulse += corrective_friction + corrective_friction_2;
+			//corrective_impulse += corrective_friction + corrective_friction_2;
+			glm::vec3 normal_impulse = corrective_impulse * n;
+			glm::vec3 friction_impulse_1 = corrective_friction * tangential_direction;
+			glm::vec3 friction_impulse_2 = corrective_friction_2 * tangential_direction_2;
+
+			/*std::cout << "Normal (" << n.x << ", " << n.y << ", " << n.z << ")" << std::endl;
+			std::cout << "Tangential 1 (" << tangential_direction.x << ", " << tangential_direction.y << ", " << tangential_direction.z << ")" << std::endl;
+			std::cout << "Tangential 2 (" << tangential_direction_2.x << ", " << tangential_direction_2.y << ", " << tangential_direction_2.z << ")" << std::endl;
+			std::cout << "Velocity (" << vel.x << ", " << vel.y << ", " << vel.z << ")" << std::endl;
+			std::cout << "Normal impulse (" << normal_impulse.x << ", " << normal_impulse.y << ", " << normal_impulse.z << ")" << std::endl;
+			std::cout << "Friction impulse 1 (" << friction_impulse_1.x << ", " << friction_impulse_1.y << ", " << friction_impulse_1.z << ")" << std::endl;
+			std::cout << "Friction impulse 2 (" << friction_impulse_2.x << ", " << friction_impulse_2.y << ", " << friction_impulse_2.z << ")" << std::endl;
+			std::cout << std::endl;*/
 			// apply new clamped corrective impulse difference to velocity
-			glm::vec3 impulse_vector = corrective_impulse * n;
+			
+			glm::vec3 impulse_vector = corrective_impulse * n + corrective_friction * tangential_direction + 
+				corrective_friction_2 * tangential_direction_2;
 			v = v + impulse_vector / m;
 			w = w + Iinv * glm::cross(p, impulse_vector);
 
@@ -1641,9 +1661,9 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_Friction_CPU()
 			vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < 0.02 ? 0 : vel_CPU[rigidBodyIndex].y;
 			vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < 0.02 ? 0 : vel_CPU[rigidBodyIndex].z;
 
-			rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < 0.0002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
-			rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < 0.0002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
-			rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < 0.0002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
+			rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < 0.00002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
+			rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < 0.00002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
+			rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < 0.00002 ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
 
 
 #ifdef PRINT_COLLISIONS	
