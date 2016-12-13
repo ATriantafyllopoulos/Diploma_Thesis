@@ -1793,21 +1793,21 @@ void ParticleSystem::SequentialImpulseSolver()
 				vel_CPU[rigidBodyIndex2] = make_float4(v2.x, v2.y, v2.z, 0);
 				rbAngularVelocity_CPU[rigidBodyIndex2] = make_float4(w2.x, w2.y, w2.z, 0);
 
-				vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
-				vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
-				vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
+				//vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
+				//vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
+				//vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
 
-				rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
-				rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
-				rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
-				
-				vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
-				vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
-				vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
+				//rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
+				//rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
+				//rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
+				//
+				//vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
+				//vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
+				//vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
 
-				rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
-				rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
-				rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
 
 
 
