@@ -1741,7 +1741,7 @@ void ParticleSystem::SequentialImpulseSolver()
 				ContactAccumulatedImpulse[c] = temporary_impulse; // store new clamped accumulated impulse
 	
 				const float friction_bound = m_params.RBfriction * mc * abs(m_params.gravity.y);
-				glm::vec3 vel = v1 + glm::cross(w1, p1) - v2 + glm::cross(w2, p2);
+				glm::vec3 vel = -v1 + glm::cross(w1, p1) + v2 + glm::cross(w2, p2);
 
 				glm::vec3 tangential_direction(1, 0, 0);
 				if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
@@ -1806,21 +1806,21 @@ void ParticleSystem::SequentialImpulseSolver()
 				vel_CPU[rigidBodyIndex2] = make_float4(v2.x, v2.y, v2.z, 0);
 				rbAngularVelocity_CPU[rigidBodyIndex2] = make_float4(w2.x, w2.y, w2.z, 0);
 
-				//vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
-				//vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
-				//vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
+				vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
+				vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
+				vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
 
-				//rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
-				//rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
-				//rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
-				//
-				//vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
-				//vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
-				//vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
+				rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
+				rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
+				rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
+				
+				vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
+				vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
+				vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
 
-				//rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
-				//rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
-				//rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
+				rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
+				rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
+				rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
 
 
 
@@ -2800,7 +2800,7 @@ void ParticleSystem::update(float deltaTime)
 	//m_params.gravity.y = -0.012;
 
 	// simulation parameters
-	deltaTime = 0.05;
+	deltaTime = 0.01;
 	m_params.gravity.y = -0.012;
 	m_params.Wdamping = 0.9999;
 	m_params.Vdamping = 0.9999;
@@ -2811,8 +2811,8 @@ void ParticleSystem::update(float deltaTime)
 	m_params.shear = 0.1f;
 
 	// SIS parameters
-	m_params.ARrestitution = 0.4;
-	m_params.RBrestitution = 0.7;
+	m_params.ARrestitution = 0.3;
+	m_params.RBrestitution = 0.5;
 	m_params.ARfriction = 0.3;
 	m_params.RBfriction = 0.1;
 
