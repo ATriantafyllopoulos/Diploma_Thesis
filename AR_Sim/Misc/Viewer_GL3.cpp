@@ -193,10 +193,10 @@ void Viewer_GL3::render(void)
 	renderer->setProjectionMatrix(projectionMatrix);
 	
 	renderer->setViewMatrix(viewMatrix);
-	//renderer->display(ParticleRenderer::PARTICLE_SPHERES);
+	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 	if (showRangeData)
 		renderer->renderDepthImage();
-	if (number_of_objects)// (number_of_objects)
+	if (0)// (number_of_objects)
 	{
 		CAssimpModel::BindModelsVAO();
 		shader.bind();

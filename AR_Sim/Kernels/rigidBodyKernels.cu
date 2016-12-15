@@ -209,6 +209,55 @@ void integrateSystemRigidBodies(float4 *CMs, //rigid body center of mass
 		params); //simulation parameters
 }
 
+__device__ glm::quat UpdateQuaternion()
+{
+	return glm::quat(1, 0, 0, 0);
+}
+
+__global__ void RungeKuttaIntegratorKernel(float4 *CMs, //rigid body center of mass
+	float4 *vel, //velocity of rigid body
+	float4 *rbAngularVelocity, //contains angular velocities for each rigid body
+	glm::quat *rbQuaternion, //contains current quaternion for each rigid body
+	glm::mat3 *rbInertia, //original moment of inertia for each rigid body - 9 values per RB
+	glm::mat3 *rbCurrentInertia, //current moment of inertia for each rigid body - 9 values per RB
+	glm::mat4 *modelMatrixGPU, // modelMatrix used for rendering
+	glm::quat *cumulativeQuaternionGPU,  // quaternion used to compute modelMatrix
+	float dt, //time step
+	float *rbMass, //inverse of total mass of rigid body
+	int numBodies, //number of rigid bodies
+	SimParams params)
+{
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= numBodies)
+		return;
+
+	float locMass = rbMass[index];
+	glm::mat3 inertia = rbInertia[index];
+	glm::mat3 currentInertia = rbCurrentInertia[index];
+
+	glm::quat quaternion_u0 = rbQuaternion[index];
+	float4 Pos_u0 = CMs[index];
+	float4 Vel_u0 = vel[index];
+	float4 Ang_u0 = rbAngularVelocity[index];
+
+	glm::quat quaternion_f0 = quaternion_u0;
+	float4 Pos_f0 = Pos_u0;
+	float4 Vel_f0 = Vel_u0;
+	float4 Ang_f0 = Ang_u0;
+
+	float t1 = dt / 2;
+
+	glm::quat quaternion_u1 = quaternion_u0 + quaternion_f0 * dt / 2.f;
+	float4 Pos_u1 = Pos_u0 + Pos_f0 * dt / 2.f;
+	float4 Vel_u1 = Vel_u0 + Vel_f0 * dt / 2.f;
+	float4 Ang_u1 = Ang_u0 + Ang_f0 * dt / 2.f;
+
+	glm::quat quaternion_f1 = quaternion_u1 + quaternion_f0 * dt / 2.f;
+	float4 Pos_f1 = Pos_u1 + Vel_u1 * dt / 2.f;
+	float4 Vel_f1 = Vel_u1 + make_float4(params.gravity) * dt / 2.f;
+	float4 Ang_f1 = Ang_u1 * params.Wdamping;
+}
 
 __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 	float4 *vel, //velocity of rigid body
@@ -250,7 +299,7 @@ __global__ void GPUintegratorKernel(float4 *CMs, //rigid body center of mass
 
 	glm::vec3 newVelocity(locAng.x, locAng.y, locAng.z);
 	glm::vec3 normalizedVel = normalize(newVelocity);
-	float theta = glm::length(newVelocity);
+	float theta = glm::length(newVelocity) * deltaTime;
 	if (theta > 0.00001)
 	{
 		quaternion.w = cos(theta / 2.f);

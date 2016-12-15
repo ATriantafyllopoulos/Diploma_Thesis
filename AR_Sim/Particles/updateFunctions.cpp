@@ -1684,13 +1684,13 @@ void ParticleSystem::SequentialImpulseSolver()
 				vel_CPU[rigidBodyIndex] = make_float4(v.x, v.y, v.z, 0);
 				rbAngularVelocity_CPU[rigidBodyIndex] = make_float4(w.x, w.y, w.z, 0);
 
-				vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
-				vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
-				vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
+				//vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
+				//vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
+				//vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
 
-				rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
-				rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
-				rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
+				//rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
+				//rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
+				//rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
 
 #ifdef PRINT_COLLISIONS	
 				std::cout << "Applied impulse: " << corrective_impulse << std::endl;
@@ -1780,7 +1780,7 @@ void ParticleSystem::SequentialImpulseSolver()
 				glm::vec3 normal_impulse = corrective_impulse * n;
 				glm::vec3 friction_impulse_1 = corrective_friction * tangential_direction;
 				glm::vec3 friction_impulse_2 = corrective_friction_2 * tangential_direction_2;
-				glm::vec3 impulse_vector = normal_impulse + friction_impulse_1 + friction_impulse_2;
+				glm::vec3 impulse_vector = normal_impulse;// +friction_impulse_1 + friction_impulse_2;
 				
 
 				//std::cout << "Relative velocity (" << vel.x << ", " << vel.y << ", " << vel.z << ")" << std::endl;
@@ -2815,8 +2815,8 @@ void ParticleSystem::update(float deltaTime)
 	// SIS parameters
 	m_params.ARrestitution = 0.5;
 	m_params.RBrestitution = 0.7;
-	m_params.ARfriction = 0.7;
-	m_params.RBfriction = 0.5;
+	m_params.ARfriction = 0.2;
+	m_params.RBfriction = 0.0;
 
 	if (m_numParticles)
 	{
