@@ -192,11 +192,13 @@ void ParticleSystem::addRigidBody(
 	checkCudaErrors(cudaFree(collidingRigidBodyIndex));
 	checkCudaErrors(cudaFree(collidingParticleIndex));
 	checkCudaErrors(cudaFree(contactDistance));
-
+	checkCudaErrors(cudaFree(contact_normal));
+	
 	// allocate collision detection buffers
 	checkCudaErrors(cudaMalloc((void**)&collidingRigidBodyIndex, sizeof(int) * m_numParticles));
 	checkCudaErrors(cudaMalloc((void**)&collidingParticleIndex, sizeof(int) * m_numParticles));
 	checkCudaErrors(cudaMalloc((void**)&contactDistance, sizeof(float) * m_numParticles));
+	checkCudaErrors(cudaMalloc((void**)&contact_normal, sizeof(float) * 4 * m_numParticles));
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());

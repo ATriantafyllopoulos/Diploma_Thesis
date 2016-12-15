@@ -1527,7 +1527,9 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 	// copy contact info to CPU - one contact per particle
 	float *contactDistance_CPU = new float[m_numParticles];
 	int *collidingParticleIndex_CPU = new int[m_numParticles];
-
+	float4 *contact_normal_CPU = new float4[m_numParticles];
+	
+	checkCudaErrors(cudaMemcpy(contact_normal_CPU, contact_normal, m_numParticles * 4 * sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(contactDistance_CPU, contactDistance, m_numParticles * sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(collidingParticleIndex_CPU, collidingParticleIndex, m_numParticles * sizeof(int), cudaMemcpyDeviceToHost));
 
@@ -1543,14 +1545,15 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				//ContactNormal.push_back(normal_CPU[particleIndex]); // scene's normal at collision point
-				ContactNormal.push_back(make_float4(0, 1, 0, 0));
+				//ContactNormal.push_back(make_float4(0, 1, 0, 0));
+				ContactNormal.push_back(contact_normal_CPU[current_particle]);
 				ContactPoint.push_back(relative_CPU[current_particle] + CMs_CPU[index]);
 				ContactRigidBody_1.push_back(index);
 				ContactRigidBody_2.push_back(-1);
 				float3 v = make_float3(vel_CPU[index].x, vel_CPU[index].y, vel_CPU[index].z);
 				float3 w = make_float3(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
 				//float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(normal_CPU[particleIndex])); // relative velocity at current contact
-				float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(0, 1, 0));
+				float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(contact_normal_CPU[current_particle]));
 				ContactBias.push_back(epsilon * v_rel);
 				ContactAccumulatedImpulse.push_back(0);
 				ContactAccumulatedFriction.push_back(0);
@@ -1568,6 +1571,7 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 
 	delete relative_CPU;
 	delete normal_CPU;
+	delete contact_normal_CPU;
 
 	delete contactDistance_CPU;
 	delete collidingParticleIndex_CPU;
@@ -1645,6 +1649,9 @@ void ParticleSystem::SequentialImpulseSolver()
 				glm::vec3 tangential_direction(1, 0, 0);
 				if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
 					tangential_direction = glm::vec3(0, 1, 0);
+				else if(abs(tangential_direction.x + n.x) < 0.0001 && abs(tangential_direction.x + n.x) < 0.0001 && abs(tangential_direction.x + n.x) < 0.0001)
+					tangential_direction = glm::vec3(0, 1, 0);
+
 				tangential_direction = tangential_direction - glm::dot(tangential_direction, n) * n;
 				tangential_direction = glm::normalize(tangential_direction);
 				float k_t = (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction), p), tangential_direction));

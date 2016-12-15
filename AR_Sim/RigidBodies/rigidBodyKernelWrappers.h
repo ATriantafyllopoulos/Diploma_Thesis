@@ -253,6 +253,7 @@ void HandleRigidBodyCollisionWrapper(
 void FindAugmentedRealityCollisionsUniformGridWrapper(
 	int *collidingParticleIndex, // index of particle of contact
 	float *contactDistance, // penetration distance
+	float4 *contactNormal, // contact normal
 	float4 *color,  // particle color
 	float4 *oldPos,  // sorted positions
 	float4 *ARPos,  // sorted augmented reality positions

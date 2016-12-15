@@ -559,13 +559,15 @@ void ParticleSystem::Find_Augmented_Reality_Collisions_Uniform_Grid()
 #endif
 	// cudaMemset is mandatory if cudaMalloc takes place once
 	checkCudaErrors(cudaMemset(contactDistance, 0, sizeof(float) * m_numParticles));
-
+	checkCudaErrors(cudaMemset(contact_normal, 0, sizeof(float) * 4 * m_numParticles));
+	
 #ifdef PROFILE_UG_AR
 	start = clock();
 #endif
 	FindAugmentedRealityCollisionsUniformGridWrapper(
 		collidingParticleIndex, // index of particle of contact
 		contactDistance, // penetration distance
+		(float4 *)contact_normal, // contact normal
 		(float4 *)dCol, // particle color
 		(float4 *)m_dSortedPos, // sorted positions
 		(float4 *)staticSortedPos, // sorted augmented reality positions

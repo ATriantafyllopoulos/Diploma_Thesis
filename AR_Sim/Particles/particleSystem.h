@@ -633,6 +633,7 @@ private:
 	int *collidingParticleIndex;
 	// penetration distance
 	float *contactDistance;
+	float *contact_normal;
 
 public:
 	void setSceneAABB(const float3 &minP, const float3 &maxP) { minPos = minP; maxPos = maxP; }

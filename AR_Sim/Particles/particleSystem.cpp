@@ -99,6 +99,7 @@ numThreads(128)
 	collidingRigidBodyIndex = NULL;
 	collidingParticleIndex = NULL;
 	contactDistance = NULL;
+	contact_normal = NULL;
 
 	m_hVel = NULL;
 	m_hCellStart = NULL;

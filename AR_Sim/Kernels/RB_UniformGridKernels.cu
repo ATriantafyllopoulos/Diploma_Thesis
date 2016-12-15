@@ -928,6 +928,7 @@ __global__
 void FindAugmentedRealityCollisionsUniformGridKernel(
 int *collidingParticleIndex, // index of particle of contact
 float *contactDistance, // penetration distance
+float4 *contactNormal, // contact normal
 float4 *color,  // particle color
 float4 *oldPos,  // unsorted positions
 float4 *ARPos,  // sorted augmented reality positions
@@ -978,8 +979,34 @@ SimParams params)
 	if (pos.y < 0.2)
 	{
 		contactDistance[originalIndex] = 0.2 - pos.y;
+		contactNormal[originalIndex] = make_float4(0, 1, 0, 0);
 		collisionCounter++;
 	}
+	else if (pos.x < -0.5)
+	{
+		contactDistance[originalIndex] = -1 - pos.x;
+		contactNormal[originalIndex] = make_float4(1, 0, 0, 0);
+		collisionCounter++;
+	}
+	else if (pos.x > 0.5)
+	{
+		contactDistance[originalIndex] = pos.x - 1;
+		contactNormal[originalIndex] = make_float4(-1, 0, 0, 0);
+		collisionCounter++;
+	}
+	else if (pos.z < -0.5)
+	{
+		contactDistance[originalIndex] = -0.5 - pos.z;
+		contactNormal[originalIndex] = make_float4(0, 0, 1, 0);
+		collisionCounter++;
+	}
+	else if (pos.z > 0.5)
+	{
+		contactDistance[originalIndex] = pos.z - 0.5;
+		contactNormal[originalIndex] = make_float4(0, 0, -1, 0);
+		collisionCounter++;
+	}
+
 	/*float3 n = make_float3(0, sqrt(2.f) / 2, sqrt(2.f) / 2);
 	if (dot(n, pos) < 0)
 	{
@@ -997,6 +1024,7 @@ SimParams params)
 void FindAugmentedRealityCollisionsUniformGridWrapper(
 	int *collidingParticleIndex, // index of particle of contact
 	float *contactDistance, // penetration distance
+	float4 *contactNormal, // contact normal
 	float4 *color,  // particle color
 	float4 *oldPos,  // unsorted positions
 	float4 *ARPos,  // sorted augmented reality positions
@@ -1015,6 +1043,7 @@ void FindAugmentedRealityCollisionsUniformGridWrapper(
 	FindAugmentedRealityCollisionsUniformGridKernel << < gridDim, blockDim >> >(
 		collidingParticleIndex, // index of particle of contact
 		contactDistance, // penetration distance
+		contactNormal, // contact normal
 		color,  // particle color
 		oldPos, // unsorted positions
 		ARPos,  // sorted augmented reality positions
