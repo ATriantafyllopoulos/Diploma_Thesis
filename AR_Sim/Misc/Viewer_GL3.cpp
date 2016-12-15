@@ -103,7 +103,7 @@ void Viewer_GL3::init(void)
 	shader.setUniform("gSampler", 0);
 	shader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	shader.setUniform("sunLight.vColor", glm::vec3(1.0f, 0.0f, 0.0f)); // color 
+	shader.setUniform("sunLight.vColor", glm::vec3(1.0f, 1.0f, 1.0f)); // color 
 	shader.setUniform("sunLight.vDirection", glm::vec3(sqrt(2.0f) / 2, -sqrt(2.0f) / 2, 0)); // direction
 	shader.setUniform("sunLight.fAmbient", 0.5f); // ambient
 
@@ -140,6 +140,7 @@ void Viewer_GL3::init(void)
 	objModels[2].LoadModelFromFile("Data/OBjmodels/banana.obj");
 	objModels[3].LoadModelFromFile("Data/OBjmodels/cube.obj");
 	number_of_objects = 0;
+
 	CAssimpModel::FinalizeVBO();
 	
 }
@@ -180,8 +181,8 @@ void Viewer_GL3::render(void)
     glViewport(0, 0, windowWidth, windowHeight); // Set the viewport size to fill the window
 	viewport = glm::vec4(0, 0, windowWidth, windowHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / (float)windowHeight, 0.1f, 100.f);
 
@@ -192,7 +193,7 @@ void Viewer_GL3::render(void)
 	renderer->setProjectionMatrix(projectionMatrix);
 	
 	renderer->setViewMatrix(viewMatrix);
-	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
+	//renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 	if (showRangeData)
 		renderer->renderDepthImage();
 	if (number_of_objects)// (number_of_objects)
@@ -209,15 +210,18 @@ void Viewer_GL3::render(void)
 			switch (objectTypeArray[i])
 			{
 			case M_BUNNY:
+				glBindTexture(GL_TEXTURE_2D, 3);
 				objModels[0].RenderModel();
 				break;
 			case M_TEAPOT:
 				objModels[1].RenderModel();
 				break;
 			case M_BANANA:
+				glBindTexture(GL_TEXTURE_2D, 2);
 				objModels[2].RenderModel();
 				break;
 			case M_CUBE:
+				glBindTexture(GL_TEXTURE_2D, 4);
 				objModels[3].RenderModel();
 				break;
 			}

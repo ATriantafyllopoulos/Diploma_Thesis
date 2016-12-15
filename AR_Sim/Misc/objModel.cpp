@@ -185,6 +185,14 @@ void CAssimpModel::FinalizeVBO()
 	// Normal vectors
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 2 * sizeof(aiVector3D) + sizeof(aiVector2D), (void*)(sizeof(aiVector3D) + sizeof(aiVector2D)));
+
+	tTextures.resize(0);
+	tTextures.push_back(CTexture());
+	tTextures[0].LoadTexture2D("Data/OBJskins/banana.jpg");
+	tTextures.push_back(CTexture());
+	tTextures[1].LoadTexture2D("Data/OBJskins/bunny.jpg");
+	tTextures.push_back(CTexture());
+	tTextures[1].LoadTexture2D("Data/OBJskins/box.jpg");
 }
 
 /*-----------------------------------------------
@@ -216,11 +224,12 @@ void CAssimpModel::RenderModel()
 {
 	if (!bLoaded)return;
 	int iNumMeshes = ESZ(iMeshSizes);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	
 	FOR(i, iNumMeshes)
 	{
 		//int iMatIndex = iMaterialIndices[i];
-		//tTextures[iMatIndex].BindTexture();	
+		//tTextures[iMatIndex].BindTexture();
+		//tTextures[0].BindTexture();
 		glDrawArrays(GL_TRIANGLES, iMeshStartIndices[i], iMeshSizes[i]);
 	}
 }

@@ -820,7 +820,6 @@ void ParticleSystem::Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM()
 		m_dGridParticleIndex,
 		dPos,
 		m_numParticles);
-
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 	// sort particles based on hash
@@ -850,8 +849,6 @@ void ParticleSystem::Find_And_Handle_Rigid_Body_Collisions_Uniform_Grid_DEM()
 
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
-
-
 
 	FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 		rbIndices, // index of the rigid body each particle belongs to

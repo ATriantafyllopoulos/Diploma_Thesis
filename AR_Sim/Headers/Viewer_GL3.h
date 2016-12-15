@@ -36,6 +36,7 @@
 #include <glm/trigonometric.hpp>
 
 #include "objModel.h"
+#include "texture.h"
 
 #define PI 3.14159265359
 /**

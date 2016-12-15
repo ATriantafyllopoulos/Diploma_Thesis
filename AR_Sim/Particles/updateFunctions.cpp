@@ -1589,7 +1589,7 @@ void ParticleSystem::SequentialImpulseSolver()
 	int current_particle = 0;
 	const float linear_bound = 0.02;
 	const float angular_bound = 0.00002;
-	const int iterations = 8; // number of iterations per simulation step
+	const int iterations = 18; // number of iterations per simulation step
 	const int UPPER_BOUND = 100; // upper bound for accumulated impulse
 	const int collision_counter = ContactNormal.size();
 
@@ -1611,8 +1611,6 @@ void ParticleSystem::SequentialImpulseSolver()
 				float m = rbMass_CPU[rigidBodyIndex];
 				glm::vec3 v(vel_CPU[rigidBodyIndex].x, vel_CPU[rigidBodyIndex].y, vel_CPU[rigidBodyIndex].z);
 				glm::vec3 w(rbAngularVelocity_CPU[rigidBodyIndex].x, rbAngularVelocity_CPU[rigidBodyIndex].y, rbAngularVelocity_CPU[rigidBodyIndex].z);
-
-
 
 				float mc = 1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, n), p), n); // active mass at current collision
 				if (abs(mc) < 0.00001) mc = 1.f;
@@ -1646,6 +1644,7 @@ void ParticleSystem::SequentialImpulseSolver()
 				if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
 					tangential_direction = glm::vec3(0, 1, 0);
 				tangential_direction = tangential_direction - glm::dot(tangential_direction, n) * n;
+				tangential_direction = glm::normalize(tangential_direction);
 				float k_t = (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction), p), tangential_direction));
 				float corrective_friction = -glm::dot(vel, tangential_direction) / k_t;
 
@@ -1661,6 +1660,7 @@ void ParticleSystem::SequentialImpulseSolver()
 
 
 				glm::vec3 tangential_direction_2 = glm::cross(tangential_direction, n);
+				tangential_direction_2 = glm::normalize(tangential_direction_2);
 				float k_t_2 = (1 / m + glm::dot(glm::cross(Iinv * glm::cross(p, tangential_direction_2), p), tangential_direction_2));
 				float corrective_friction_2 = -glm::dot(vel, tangential_direction_2) / k_t_2;
 				float temporary_friction_2 = ContactAccumulatedFriction_2[c];
@@ -1747,6 +1747,7 @@ void ParticleSystem::SequentialImpulseSolver()
 				if (abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001 && abs(tangential_direction.x - n.x) < 0.0001)
 					tangential_direction = glm::vec3(0, 1, 0);
 				tangential_direction = tangential_direction - glm::dot(tangential_direction, n) * n;
+				tangential_direction = glm::normalize(tangential_direction);
 				float k_t = (1 / m1 + glm::dot(glm::cross(Iinv1 * glm::cross(p1, tangential_direction), p1), tangential_direction)) + 
 					(1 / m2 + glm::dot(glm::cross(Iinv2 * glm::cross(p2, tangential_direction), p2), tangential_direction));
 				float corrective_friction = -glm::dot(vel, tangential_direction) / k_t;
@@ -1762,6 +1763,7 @@ void ParticleSystem::SequentialImpulseSolver()
 				ContactAccumulatedFriction[c] = temporary_friction; // store new clamped accumulated impulse
 
 				glm::vec3 tangential_direction_2 = glm::cross(tangential_direction, n);
+				tangential_direction_2 = glm::normalize(tangential_direction_2);
 				float k_t_2 = (1 / m1 + glm::dot(glm::cross(Iinv1 * glm::cross(p1, tangential_direction_2), p1), tangential_direction_2)) +
 					(1 / m2 + glm::dot(glm::cross(Iinv2 * glm::cross(p2, tangential_direction_2), p2), tangential_direction_2));
 				float corrective_friction_2 = -glm::dot(vel, tangential_direction_2) / k_t_2;
@@ -1806,21 +1808,21 @@ void ParticleSystem::SequentialImpulseSolver()
 				vel_CPU[rigidBodyIndex2] = make_float4(v2.x, v2.y, v2.z, 0);
 				rbAngularVelocity_CPU[rigidBodyIndex2] = make_float4(w2.x, w2.y, w2.z, 0);
 
-				vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
-				vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
-				vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
+				//vel_CPU[rigidBodyIndex].x = abs(vel_CPU[rigidBodyIndex].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].x;
+				//vel_CPU[rigidBodyIndex].y = abs(vel_CPU[rigidBodyIndex].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].y;
+				//vel_CPU[rigidBodyIndex].z = abs(vel_CPU[rigidBodyIndex].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex].z;
 
-				rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
-				rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
-				rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
-				
-				vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
-				vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
-				vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
+				//rbAngularVelocity_CPU[rigidBodyIndex].x = abs(rbAngularVelocity_CPU[rigidBodyIndex].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].x;
+				//rbAngularVelocity_CPU[rigidBodyIndex].y = abs(rbAngularVelocity_CPU[rigidBodyIndex].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].y;
+				//rbAngularVelocity_CPU[rigidBodyIndex].z = abs(rbAngularVelocity_CPU[rigidBodyIndex].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex].z;
+				//
+				//vel_CPU[rigidBodyIndex2].x = abs(vel_CPU[rigidBodyIndex2].x) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].x;
+				//vel_CPU[rigidBodyIndex2].y = abs(vel_CPU[rigidBodyIndex2].y) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].y;
+				//vel_CPU[rigidBodyIndex2].z = abs(vel_CPU[rigidBodyIndex2].z) < linear_bound ? 0 : vel_CPU[rigidBodyIndex2].z;
 
-				rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
-				rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
-				rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].x = abs(rbAngularVelocity_CPU[rigidBodyIndex2].x) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].x;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].y = abs(rbAngularVelocity_CPU[rigidBodyIndex2].y) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].y;
+				//rbAngularVelocity_CPU[rigidBodyIndex2].z = abs(rbAngularVelocity_CPU[rigidBodyIndex2].z) < angular_bound ? 0 : rbAngularVelocity_CPU[rigidBodyIndex2].z;
 
 
 
@@ -2800,21 +2802,21 @@ void ParticleSystem::update(float deltaTime)
 	//m_params.gravity.y = -0.012;
 
 	// simulation parameters
-	deltaTime = 0.01;
+	deltaTime = 0.05;
 	m_params.gravity.y = -0.012;
 	m_params.Wdamping = 0.9999;
 	m_params.Vdamping = 0.9999;
 
 	// DEM parameters
-	m_params.spring = 100.0f;
-	m_params.damping = 0.0f;
+	m_params.spring = 1.0f;
+	m_params.damping = 0.3f;
 	m_params.shear = 0.1f;
 
 	// SIS parameters
-	m_params.ARrestitution = 0.3;
-	m_params.RBrestitution = 0.5;
-	m_params.ARfriction = 0.3;
-	m_params.RBfriction = 0.1;
+	m_params.ARrestitution = 0.5;
+	m_params.RBrestitution = 0.7;
+	m_params.ARfriction = 0.7;
+	m_params.RBfriction = 0.5;
 
 	if (m_numParticles)
 	{

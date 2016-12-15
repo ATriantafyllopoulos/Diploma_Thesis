@@ -222,7 +222,7 @@ void FindAndHandleRigidBodyCollisionsUniformGridWrapper(
 {
 	dim3 blockDim(numThreads, 1);
 	dim3 gridDim((numParticles + numThreads - 1) / numThreads, 1);
-
+	if (gridDim.x < 1)gridDim.x = 1;
 	FindAndHandleRigidBodyCollisionsUniformGridKernel << < gridDim, blockDim >> >(
 		rbIndices, // index of the rigid body each particle belongs to
 		pLinearImpulse, // total linear impulse acting on current particle

@@ -16,9 +16,9 @@ void main()
 {
 	vec3 vNormalized = normalize(vNormal);
 	
-	//vec4 vTexColor = texture2D(gSampler, vTexCoord);
+	vec4 vTexColor = texture2D(gSampler, vTexCoord);
 
-	//vec4 vMixedColor = vTexColor*vColor;
+	vec4 vMixedColor = vTexColor*vColor;
 
 	//outputColor = vMixedColor;
 
@@ -26,5 +26,5 @@ void main()
 	float fMult = clamp(sunLight.fAmbient+fDiffuseIntensity, 0.0, 1.0);
 	vec4 vDirLightColor = vec4(sunLight.vColor*fMult, 1.0);	
 	
-	outputColor = vColor * vDirLightColor;
+	outputColor = vMixedColor * vDirLightColor;
 }

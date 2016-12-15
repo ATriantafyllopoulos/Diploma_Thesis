@@ -25,7 +25,18 @@ void main()
   
 	vTexCoord = inCoord;
 
+	//vec3 g = vec3(0.478957, -8.010560, 4.166928);
+	//g = normalize(g);
+	//mat4 gravityR = mat4(1.f, 0.f, 0.f, 0.f,
+	//	-g.x, -g.y, -g.z, 0.f,
+	//	0.f, g.z, -g.y, 0.f,
+	//	0.f, 0.f, 0.f, 1.f);
+	//gravityR = inverse(gravityR);
+	//vec4 temp4 = gravityR * vec4(inPosition, 1.0);
+	//vEyeSpacePos = mMV*temp4;
+	
 	vEyeSpacePos = mMV*vec4(inPosition, 1.0);
+	
 	vNormal = (matrices.normalMatrix*vec4(inNormal, 1.0)).xyz;
 	vWorldPos = (matrices.modelMatrix*vec4(inPosition, 1.0)).xyz;
 	vec3 temp;
