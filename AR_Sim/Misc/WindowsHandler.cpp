@@ -29,7 +29,7 @@ WindowsHandler::WindowsHandler(std::string inTitle, int inWidth, int inHeight)
     glfwSetKeyCallback(window, keyCallbackPure);
 
     viewMode = M_AR;
-    objectMode = M_BUNNY;
+    objectMode = M_CUBE;
     collisionMethod = M_BVH;
     PrintMainMenu();
     sdkCreateTimer(&timer);
@@ -63,13 +63,25 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 	{
 		if(objectMode == M_BUNNY)
 		{
-			std::cout << "Changing to throwing teapots." << std::endl;
+			std::cout << "Changing to throwing teapots" << std::endl;
 			objectMode = M_TEAPOT;
 			world->setObjectMode(M_TEAPOT);
 		}
 		else if(objectMode == M_TEAPOT)
 		{
-			std::cout << "Changing to throwing bunnies." << std::endl;
+			std::cout << "Changing to throwing bananas" << std::endl;
+			objectMode = M_BANANA;
+			world->setObjectMode(M_BANANA);
+		}
+		else if (objectMode == M_BANANA)
+		{
+			std::cout << "Changing to throwing cubes" << std::endl;
+			objectMode = M_CUBE;
+			world->setObjectMode(M_CUBE);
+		}
+		else if (objectMode == M_CUBE)
+		{
+			std::cout << "Changing to throwing bunnies" << std::endl;
 			objectMode = M_BUNNY;
 			world->setObjectMode(M_BUNNY);
 		}
@@ -211,14 +223,14 @@ WindowsHandler::~WindowsHandler()
 
 void WindowsHandler::PrintMainMenu()
 {
-	std::cout << "Current version only supports keyboard menu." << std::endl;
-	std::cout << "Press C to toggle AR collisions ON and OFF." << std::endl;
-	std::cout << "Press V to toggle between a free moving and an AR view mode." << std::endl;
-	std::cout << "Press M to toggle between collision detection methods (BVH and Uniform Grid)." << std::endl;
-	std::cout << "Press O to toggle between objects (Stanford Bunny and Teapot)." << std::endl;
-	std::cout << "Press P pause in a current frame or continue video." << std::endl;
-	std::cout << "Press R to toggle visualization of range data." << std::endl;
-	std::cout << "Press H at any time to display these instructions again." << std::endl;
+	std::cout << "Current version only supports keyboard menu" << std::endl;
+	std::cout << "Press C to toggle AR collisions ON and OFF" << std::endl;
+	std::cout << "Press V to toggle between a free moving and an AR view mode" << std::endl;
+	std::cout << "Press M to toggle between collision detection methods (BVH and Uniform Grid)" << std::endl;
+	std::cout << "Press O to toggle between objects (Stanford Bunny, Teapot, Cube, and Banana)" << std::endl;
+	std::cout << "Press P pause in a current frame or continue video" << std::endl;
+	std::cout << "Press R to toggle visualization of range data" << std::endl;
+	std::cout << "Press H at any time to display these instructions again" << std::endl;
 }
 
 void WindowsHandler::createWindow()
