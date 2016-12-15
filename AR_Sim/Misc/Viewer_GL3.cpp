@@ -110,7 +110,10 @@ void Viewer_GL3::init(void)
 	shader.unbind();
 
 	// camera init parameters
-	vEye = glm::vec3(0.0f, 0.0f, 0.1f);
+	/*vEye = glm::vec3(0.0f, 0.0f, 0.1f);
+	vView = glm::vec3(0.0f, 0.0f, -1.0f);
+	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
+	vEye = glm::vec3(-0.3f, 0.7f, 1.8f);
 	vView = glm::vec3(0.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
 	fSpeed = 25.0f;
@@ -193,10 +196,10 @@ void Viewer_GL3::render(void)
 	renderer->setProjectionMatrix(projectionMatrix);
 	
 	renderer->setViewMatrix(viewMatrix);
-	renderer->display(ParticleRenderer::PARTICLE_SPHERES);
+	//renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 	if (showRangeData)
 		renderer->renderDepthImage();
-	if (0)// (number_of_objects)
+	if (number_of_objects)// (number_of_objects)
 	{
 		CAssimpModel::BindModelsVAO();
 		shader.bind();
@@ -214,6 +217,7 @@ void Viewer_GL3::render(void)
 				objModels[0].RenderModel();
 				break;
 			case M_TEAPOT:
+				glBindTexture(GL_TEXTURE_2D, 5);
 				objModels[1].RenderModel();
 				break;
 			case M_BANANA:

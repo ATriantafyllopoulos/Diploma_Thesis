@@ -192,7 +192,9 @@ void CAssimpModel::FinalizeVBO()
 	tTextures.push_back(CTexture());
 	tTextures[1].LoadTexture2D("Data/OBJskins/bunny.jpg");
 	tTextures.push_back(CTexture());
-	tTextures[1].LoadTexture2D("Data/OBJskins/box.jpg");
+	tTextures[2].LoadTexture2D("Data/OBJskins/box.jpg");
+	tTextures.push_back(CTexture());
+	tTextures[3].LoadTexture2D("Data/OBJskins/teapot.jpg");
 }
 
 /*-----------------------------------------------
