@@ -40,9 +40,12 @@ public:
     void onMouseClick(GLFWwindow* win, int button, int action, int mods);
     void Demo();
 private:
-
+	bool Object_Rain;
+	void Rain_Objects();
+	int Rain_Counter;
     VirtualWorld *world;
     void PrintMainMenu();
+	void ChangeObject();
     void createWindow();
     GLFWwindow* window;
     std::string title;

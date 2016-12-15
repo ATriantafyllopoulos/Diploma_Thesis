@@ -109,8 +109,9 @@ void VirtualWorld::addSphere(int x, int y)
 	glm::vec3 worldSpaceCoordinates = glm::unProject(win, viewer->getViewMatrix(), viewer->getProjectionMatrix(), viewPort);
 	glm::vec3 velocity = glm::vec3(0.f, -0.1f, 0.0f);
 	worldSpaceCoordinates.y = 0.2f;
-	worldSpaceCoordinates.y = 0.7f;
-
+	worldSpaceCoordinates.y = 1.7f;
+	worldSpaceCoordinates.x = 0;
+	worldSpaceCoordinates.z = 0;
 	if (objectMode == M_BUNNY)
 	{
 		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f, "bunny");

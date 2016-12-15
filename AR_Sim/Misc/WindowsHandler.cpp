@@ -33,7 +33,8 @@ WindowsHandler::WindowsHandler(std::string inTitle, int inWidth, int inHeight)
     collisionMethod = M_BVH;
     PrintMainMenu();
     sdkCreateTimer(&timer);
-
+	Object_Rain = false;
+	Rain_Counter = 0;
 }
 
 
@@ -61,30 +62,7 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 	}
 	else if (key == GLFW_KEY_O && action == GLFW_PRESS)
 	{
-		if(objectMode == M_BUNNY)
-		{
-			std::cout << "Changing to throwing teapots" << std::endl;
-			objectMode = M_TEAPOT;
-			world->setObjectMode(M_TEAPOT);
-		}
-		else if(objectMode == M_TEAPOT)
-		{
-			std::cout << "Changing to throwing bananas" << std::endl;
-			objectMode = M_BANANA;
-			world->setObjectMode(M_BANANA);
-		}
-		else if (objectMode == M_BANANA)
-		{
-			std::cout << "Changing to throwing cubes" << std::endl;
-			objectMode = M_CUBE;
-			world->setObjectMode(M_CUBE);
-		}
-		else if (objectMode == M_CUBE)
-		{
-			std::cout << "Changing to throwing bunnies" << std::endl;
-			objectMode = M_BUNNY;
-			world->setObjectMode(M_BUNNY);
-		}
+		ChangeObject();
 	}
 	else if (key == GLFW_KEY_M && action == GLFW_PRESS)
 	{
@@ -131,6 +109,10 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 		world->toggleSimulation();
 		world->DemoMode();
 		world->toggleSimulation();
+	}
+	else if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+	{
+		Object_Rain = !Object_Rain;
 	}
 	else if (key == GLFW_KEY_G && action == GLFW_PRESS)
 	{
@@ -183,6 +165,34 @@ void WindowsHandler::keyCallback(GLFWwindow* window, int key, int scancode, int 
 		}
 	}
 
+}
+
+void WindowsHandler::ChangeObject()
+{
+	if (objectMode == M_BUNNY)
+	{
+		std::cout << "Changing to throwing teapots" << std::endl;
+		objectMode = M_TEAPOT;
+		world->setObjectMode(M_TEAPOT);
+	}
+	else if (objectMode == M_TEAPOT)
+	{
+		std::cout << "Changing to throwing bananas" << std::endl;
+		objectMode = M_BANANA;
+		world->setObjectMode(M_BANANA);
+	}
+	else if (objectMode == M_BANANA)
+	{
+		std::cout << "Changing to throwing cubes" << std::endl;
+		objectMode = M_CUBE;
+		world->setObjectMode(M_CUBE);
+	}
+	else if (objectMode == M_CUBE)
+	{
+		std::cout << "Changing to throwing bunnies" << std::endl;
+		objectMode = M_BUNNY;
+		world->setObjectMode(M_BUNNY);
+	}
 }
 
 void WindowsHandler::keyCallbackPure(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -279,6 +289,11 @@ void WindowsHandler::Run()
     	world->render();
     	sdkStopTimer(&timer);
     	computeFPS();
+		if (Object_Rain)
+		{
+			if (++Rain_Counter == 20)
+				Rain_Objects();
+		}
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            glfwWindowShouldClose(window) == 0 );
@@ -287,7 +302,6 @@ void WindowsHandler::Run()
 void WindowsHandler::Demo()
 {
 	do{
-
 		sdkStartTimer(&timer);
 		world->DemoMode();
 		sdkStopTimer(&timer);
@@ -296,6 +310,16 @@ void WindowsHandler::Demo()
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
 			glfwWindowShouldClose(window) == 0 );
 }
+
+void WindowsHandler::Rain_Objects()
+{
+	ChangeObject();
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+	world->addSphere(xpos, ypos);
+	Rain_Counter = 0;
+}
+
 void WindowsHandler::computeFPS()
 {
 
