@@ -81,7 +81,10 @@ class ParticleRenderer
 		CShader staticVertex, staticFragment;
 		GLuint rangeSampler, rangeVAO, rangeTexture;
 		int numberOfRangeData;
-
+		GLuint quad_VertexArrayID;
+		
+		CShaderProgram sceneShader;
+		CShader sceneVertex, sceneFragment;
 	public:
 		void setNumberOfRangeData(const int &x) { numberOfRangeData = x; }
 		void setRangeSampler(const GLuint &x) { rangeSampler = x; }

@@ -240,7 +240,7 @@ void Viewer_GL3::render(void)
 
 		shader.unbind();
 	}
-	renderer->renderARScene(windowWidth, windowHeight);
+	//renderer->renderARScene(windowWidth, windowHeight);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

@@ -9,8 +9,6 @@ out vec4 outputColor;
 uniform sampler2D gSampler;
 uniform vec4 vColor;
 
-
-
 void main()
 {
 	vec3 vNormalized = normalize(vNormal);

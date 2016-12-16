@@ -182,6 +182,63 @@ void ParticleRenderer::_initGL()
 	staticShader.setUniform("matrices.normalMatrix", normalMatrix);
 	staticShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));//*/
     staticShader.unbind();
+
+
+	sceneVertex.loadShader("Shaders/scene.vert", GL_VERTEX_SHADER);
+	sceneFragment.loadShader("Shaders/scene.frag", GL_FRAGMENT_SHADER);
+	sceneShader.createProgram();
+	sceneShader.addShaderToProgram(&sceneVertex);
+	sceneShader.addShaderToProgram(&sceneFragment);
+	sceneShader.linkProgram();
+	sceneShader.bind();
+	sceneShader.setUniform("gSampler", 0);
+	sceneShader.unbind();
+
+	
+	glGenVertexArrays(1, &quad_VertexArrayID);
+	glBindVertexArray(quad_VertexArrayID);
+
+	/*const GLfloat g_quad_vertex_buffer_data[] = {
+	-1.0f, -1.0f, 0.0f,
+	1.0f, -1.0f, 0.0f,
+	-1.0f, 1.0f, 0.0f,
+	-1.0f, 1.0f, 0.0f,
+	1.0f, -1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+	};*/
+	/*const GLfloat quad_data[] = {
+	0.0f, 0.0f, 0.0f, 0.f, 1.f,
+	width, 0.0f, 0.0f, 1.f, 1.f,
+	width, height, 0.0f, 1.f, 0.f,
+	0.0f, 0.0f, 0.0f, 0.f, 1.f,
+	0.0f, height, 0.0f, 0.f, 0.f,
+	width, height, 0.0f, 1.f, 0.f,
+	};*/
+	//GLfloat quad_data[] = { // format = x, y, z, u, v
+	//	-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+	//	1.0f, 1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f
+	//};
+	int width = 480;
+	int height = 640;
+	const GLfloat quad_data[] = {
+		-2 * width, -2 * height, 0.0f, 0.f, 1.f,
+		2 * width, -2 * height, 0.0f, 1.f, 1.f,
+		2 * width, 2 * height, 0.0f, 1.f, 0.f,
+		-2 * width, -2 * height, 0.0f, 0.f, 1.f,
+		-2 * width, 2 * height, 0.0f, 0.f, 0.f,
+		2 * width, 2 * height, 0.0f, 1.f, 0.f,
+	};
+
+	GLuint quad_vertexbuffer;
+	glGenBuffers(1, &quad_vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_data), quad_data, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, nullptr);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (void*)(sizeof(float) * 3));
+
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 }
 
 void ParticleRenderer::renderDepthImage()
@@ -210,7 +267,7 @@ void ParticleRenderer::renderDepthImage()
 
 void ParticleRenderer::renderARScene(int width, int height)
 {
-	glEnable(GL_TEXTURE_2D);
+	/*glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, rangeTexture);
 	glBegin(GL_QUADS);
 	glTexCoord2i(0, 0); glVertex2i(0, 0);
@@ -219,5 +276,15 @@ void ParticleRenderer::renderARScene(int width, int height)
 	glTexCoord2i(0, 1); glVertex2i(0, height);
 	glEnd();
 
-	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);*/
+
+	
+
+	sceneShader.bind();
+	glBindVertexArray(quad_VertexArrayID);
+	glBindTexture(GL_TEXTURE_2D, rangeTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	//glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindVertexArray(0);
+	sceneShader.unbind();
 }
