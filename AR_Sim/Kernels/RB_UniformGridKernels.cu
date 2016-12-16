@@ -976,13 +976,13 @@ SimParams params)
 	}
 	// manually override collision detection
 	// collide with virtual plane at y = 0.5
-	if (pos.y < 0.2)
+	/*if (pos.y < 0.2)
 	{
 		contactDistance[originalIndex] = 0.2 - pos.y;
 		contactNormal[originalIndex] = make_float4(0, 1, 0, 0);
 		collisionCounter++;
-	}
-	else if (pos.x < -0.5)
+	}*/
+	/*else if (pos.x < -0.5)
 	{
 		contactDistance[originalIndex] = -1 - pos.x;
 		contactNormal[originalIndex] = make_float4(1, 0, 0, 0);
@@ -1005,7 +1005,7 @@ SimParams params)
 		contactDistance[originalIndex] = pos.z - 0.5;
 		contactNormal[originalIndex] = make_float4(0, 0, -1, 0);
 		collisionCounter++;
-	}
+	}*/
 
 	/*float3 n = make_float3(0, sqrt(2.f) / 2, sqrt(2.f) / 2);
 	if (dot(n, pos) < 0)

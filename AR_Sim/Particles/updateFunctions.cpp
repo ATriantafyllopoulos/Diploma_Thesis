@@ -1544,16 +1544,16 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 			if (contactDistance_CPU[current_particle] > 0) // if current particle has collided
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
-				//ContactNormal.push_back(normal_CPU[particleIndex]); // scene's normal at collision point
+				ContactNormal.push_back(normal_CPU[particleIndex]); // scene's normal at collision point
 				//ContactNormal.push_back(make_float4(0, 1, 0, 0));
-				ContactNormal.push_back(contact_normal_CPU[current_particle]);
+				//ContactNormal.push_back(contact_normal_CPU[current_particle]);
 				ContactPoint.push_back(relative_CPU[current_particle] + CMs_CPU[index]);
 				ContactRigidBody_1.push_back(index);
 				ContactRigidBody_2.push_back(-1);
 				float3 v = make_float3(vel_CPU[index].x, vel_CPU[index].y, vel_CPU[index].z);
 				float3 w = make_float3(rbAngularVelocity_CPU[index].x, rbAngularVelocity_CPU[index].y, rbAngularVelocity_CPU[index].z);
-				//float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(normal_CPU[particleIndex])); // relative velocity at current contact
-				float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(contact_normal_CPU[current_particle]));
+				float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(normal_CPU[particleIndex])); // relative velocity at current contact
+				//float v_rel = dot(v + cross(w, make_float3(relative_CPU[current_particle])), make_float3(contact_normal_CPU[current_particle]));
 				ContactBias.push_back(epsilon * v_rel);
 				ContactAccumulatedImpulse.push_back(0);
 				ContactAccumulatedFriction.push_back(0);
@@ -2824,7 +2824,7 @@ void ParticleSystem::update(float deltaTime)
 	// SIS parameters
 	m_params.ARrestitution = 0.5;
 	m_params.RBrestitution = 0.7;
-	m_params.ARfriction = 0.2;
+	m_params.ARfriction = 0.1;
 	m_params.RBfriction = 0.0;
 
 	if (m_numParticles)

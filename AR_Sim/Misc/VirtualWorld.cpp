@@ -101,6 +101,8 @@ void VirtualWorld::initializeParticleSystem()
 
 void VirtualWorld::addSphere(int x, int y)
 {
+	if (psystem->getNumberOfObjects() > 200)
+		return; 
 	glm::vec4 viewPort = viewer->getViewport();
 	float xPos = x;
 	float yPos = viewPort.w - y;
@@ -109,9 +111,10 @@ void VirtualWorld::addSphere(int x, int y)
 	glm::vec3 worldSpaceCoordinates = glm::unProject(win, viewer->getViewMatrix(), viewer->getProjectionMatrix(), viewPort);
 	glm::vec3 velocity = glm::vec3(0.f, -0.1f, 0.0f);
 	worldSpaceCoordinates.y = 0.2f;
-	worldSpaceCoordinates.y = 1.7f;
+	worldSpaceCoordinates.y = 0.7f;
+	/*worldSpaceCoordinates.y = 1.7f;
 	worldSpaceCoordinates.x = 0;
-	worldSpaceCoordinates.z = 0;
+	worldSpaceCoordinates.z = 0;*/
 	if (objectMode == M_BUNNY)
 	{
 		psystem->addObj(worldSpaceCoordinates, velocity, glm::vec3(0, 0, 0), 1.5f, "bunny");
@@ -425,52 +428,58 @@ void VirtualWorld::Virtual_Benchmark()
 	psystem->toggleARcollisions(); //disable AR collisions
 	psystem->setSceneAABB(make_float3(-4.f, -4.f, -4.f), make_float3(4.f, 4.f, 4.f));
 
-	const int iteration_limit = 1000;
-	const float xStarts[] = { -1, -2, -3};
-	const float xStops[] = { 1, 2, 3};
-	const float yStarts[] = { -0.8, -1.8, -1.8, -2.8 };
-	const float yStops[] = { 0.8, 1.8, 2.8, 2.8 };
-	const float zStarts[] = { 0.1};
-	const float zStops[] = { 0.9};
-	const int xPairs = 3, yPairs = 4, zPairs = 1;
-	const float xStep = 0.6, yStep = 0.6, zStep = 0.4;
-	for (int i = 0; i < xPairs; i++)
-	{
-		for (int j = 0; j < yPairs; j++)
-		{
-			for (int k = 0; k < zPairs; k++)
-			{
-				const float xStart = xStarts[0], xStop = xStops[0];
-				const float yStart = yStarts[0], yStop = yStops[0];
-				const float zStart = zStarts[0], zStop = zStops[0];
-				/*std::cout << "x = [" << xStart << ", " << xStop << "]" << std::endl;
-				std::cout << "y = [" << yStart << ", " << yStop << "]" << std::endl;
-				std::cout << "z = [" << zStart << ", " << zStop << "]" << std::endl;*/
-				for (float x = xStart; x < xStop; x += xStep)
-				{
-					for (float y = yStart; y < yStop; y += yStep)
-					{
-						for (float z = zStart; z < zStop; z += zStep)
-						{
-							glm::vec3 worldSpaceCoordinates(x, y, z);
-							psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 0.3, 0), 2.0f, "teapot");
-							/*viewer->increaseNumberOfObjects();
-							viewer->addScaleFactor(0.00020f);
-							viewer->addObjectType(M_TEAPOT);*/
-						}
-					}
-				}
-				/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
-				std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
-				std::cout << std::endl;*/
-				psystem->Empty_Particle_System();
-				/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
-				std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
-				std::cout << std::endl;*/
-			}
-		}
-	}
-
+	//const int iteration_limit = 1000;
+	//const float xStarts[] = { -1, -2, -3};
+	//const float xStops[] = { 1, 2, 3};
+	//const float yStarts[] = { -0.8, -1.8, -1.8, -2.8 };
+	//const float yStops[] = { 0.8, 1.8, 2.8, 2.8 };
+	//const float zStarts[] = { 0.1};
+	//const float zStops[] = { 0.9};
+	//const int xPairs = 3, yPairs = 4, zPairs = 1;
+	//const float xStep = 0.6, yStep = 0.6, zStep = 0.4;
+	//for (int i = 0; i < xPairs; i++)
+	//{
+	//	for (int j = 0; j < yPairs; j++)
+	//	{
+	//		for (int k = 0; k < zPairs; k++)
+	//		{
+	//			const float xStart = xStarts[0], xStop = xStops[0];
+	//			const float yStart = yStarts[0], yStop = yStops[0];
+	//			const float zStart = zStarts[0], zStop = zStops[0];
+	//			/*std::cout << "x = [" << xStart << ", " << xStop << "]" << std::endl;
+	//			std::cout << "y = [" << yStart << ", " << yStop << "]" << std::endl;
+	//			std::cout << "z = [" << zStart << ", " << zStop << "]" << std::endl;*/
+	//			for (float x = xStart; x < xStop; x += xStep)
+	//			{
+	//				for (float y = yStart; y < yStop; y += yStep)
+	//				{
+	//					for (float z = zStart; z < zStop; z += zStep)
+	//					{
+	//						glm::vec3 worldSpaceCoordinates(x, y, z);
+	//						psystem->addObj(worldSpaceCoordinates, glm::vec3(0, 0.0, 0), glm::vec3(0, 0.3, 0), 2.0f, "teapot");
+	//						/*viewer->increaseNumberOfObjects();
+	//						viewer->addScaleFactor(0.00020f);
+	//						viewer->addObjectType(M_TEAPOT);*/
+	//					}
+	//				}
+	//			}
+	//			/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
+	//			std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
+	//			std::cout << std::endl;*/
+	//			psystem->Empty_Particle_System();
+	//			/*std::cout << "Total number of rigid bodies: " << psystem->getNumberOfObjects() << std::endl;
+	//			std::cout << "Total number of particles: " << psystem->getNumParticles() << std::endl;
+	//			std::cout << std::endl;*/
+	//		}
+	//	}
+	//}
+	Demo_FiveHundredTeapots();
+	psystem->Empty_Particle_System();
+	Demo_FiveHundredTeapots();
+	psystem->Empty_Particle_System();
+	Demo_FiveHundredTeapots();
+	psystem->Empty_Particle_System();
 	float dummy;
+	std::cout << "Enter something to exit..." << std::endl;
 	std::cin >> dummy;
 }

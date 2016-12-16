@@ -1719,6 +1719,13 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			inertiaTensor[1][1] = 6.f / (0.1 * 0.1);
 			inertiaTensor[2][2] = 6.f / (0.1 * 0.1);
 		}
+		/*if (!strcmp(modelName, "cube"))
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 6.f / (0.15 * 0.15);
+			inertiaTensor[1][1] = 6.f / (0.15 * 0.15);
+			inertiaTensor[2][2] = 6.f / (0.15 * 0.15);
+		}*/
 		/*std::cout << modelName << " max distance: " << maxDistance << std::endl;
 		std::cout << modelName << " inverse inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)

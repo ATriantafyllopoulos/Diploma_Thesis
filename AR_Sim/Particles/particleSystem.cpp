@@ -522,6 +522,7 @@ void ParticleSystem::Empty_Particle_System()
 	if (collidingRigidBodyIndex){ checkCudaErrors(cudaFree(collidingRigidBodyIndex)); collidingRigidBodyIndex = NULL; }
 	if (collidingParticleIndex){ checkCudaErrors(cudaFree(collidingParticleIndex)); collidingParticleIndex = NULL; }
 	if (contactDistance){ checkCudaErrors(cudaFree(contactDistance)); contactDistance = NULL; }
+	if (contact_normal){ checkCudaErrors(cudaFree(contact_normal)); contact_normal = NULL; }
 
 	if (m_dPos){ checkCudaErrors(cudaFree(m_dPos)); m_dPos = NULL; }
 	if (m_dVel){ checkCudaErrors(cudaFree(m_dVel)); m_dVel = NULL; }

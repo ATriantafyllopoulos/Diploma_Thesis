@@ -111,11 +111,17 @@ void Viewer_GL3::init(void)
 
 	// camera init parameters
 	/*vEye = glm::vec3(0.0f, 0.0f, 0.1f);
-	vView = glm::vec3(0.0f, 0.0f, -1.0f);
+	vView = glm::vec3(0.0f, -0.5f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
-	vEye = glm::vec3(-0.3f, 0.7f, 1.8f);
+	vEye = glm::vec3(0.0f, 0.0f, 0.1f);
 	vView = glm::vec3(0.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	/*vEye = glm::vec3(-0.3f, 0.7f, 1.8f);
+	vView = glm::vec3(0.0f, 0.0f, -1.0f);
+	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
+	/*vEye = glm::vec3(0.0f, 1.8f, 2.5f);
+	vView = glm::vec3(0.0f, 0.0f, 0.0f);
+	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
 	fSpeed = 25.0f;
 	fSensitivity = 0.01f;
 
@@ -196,6 +202,7 @@ void Viewer_GL3::render(void)
 	renderer->setProjectionMatrix(projectionMatrix);
 	
 	renderer->setViewMatrix(viewMatrix);
+	
 	//renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 	if (showRangeData)
 		renderer->renderDepthImage();
@@ -233,6 +240,7 @@ void Viewer_GL3::render(void)
 
 		shader.unbind();
 	}
+	renderer->renderARScene(windowWidth, windowHeight);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
