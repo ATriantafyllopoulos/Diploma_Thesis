@@ -16,6 +16,5 @@ void main()
 	vec4 vTexColor = texture2D(gSampler, vTexCoord);
 
 	vec4 vMixedColor = vTexColor*vColor;
-
 	outputColor = vMixedColor;
 }

@@ -192,6 +192,9 @@ void Viewer_GL3::render(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); // Clear required buffers
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDisable(GL_DEPTH_TEST);
+	renderer->renderARScene(windowWidth, windowHeight);
+
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / (float)windowHeight, 0.1f, 100.f);
 
@@ -240,7 +243,7 @@ void Viewer_GL3::render(void)
 
 		shader.unbind();
 	}
-	//renderer->renderARScene(windowWidth, windowHeight);
+	
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

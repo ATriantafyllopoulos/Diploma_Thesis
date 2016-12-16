@@ -160,7 +160,7 @@ void ParticleRenderer::_initGL()
 	particleShader.addShaderToProgram(&particleFragment);
 	particleShader.linkProgram();
 	particleShader.bind();
-	particleShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	particleShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
 	particleShader.setUniform("pointRadius", m_particleRadius);
 	particleShader.unbind();
 
@@ -180,7 +180,7 @@ void ParticleRenderer::_initGL()
 	glm::mat4 normalMatrix = glm::transpose(glm::inverse(glm::mat4(1.0)));
 	staticShader.setUniform("matrices.modelMatrix", glm::mat4(1.0));
 	staticShader.setUniform("matrices.normalMatrix", normalMatrix);
-	staticShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));//*/
+	staticShader.setUniform("vColor", glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));//*/
     staticShader.unbind();
 
 
@@ -243,10 +243,12 @@ void ParticleRenderer::_initGL()
 
 void ParticleRenderer::renderDepthImage()
 {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	staticShader.bind();
 	//staticShader.setUniform("matrices.projMatrix", projectionMatrix);
 	staticShader.setUniform("matrices.viewMatrix", viewMatrix);
-
 	//staticShader.setUniform("sunLight.vColor", glm::vec3(1.f, 1.f, 1.f));
 
 	//staticShader.setUniform("gSampler", 0);
