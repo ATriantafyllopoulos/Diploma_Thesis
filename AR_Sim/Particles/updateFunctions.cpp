@@ -2812,13 +2812,14 @@ void ParticleSystem::update(float deltaTime)
 
 	// simulation parameters
 	deltaTime = 0.05;
+	//deltaTime = 0.01;
 	m_params.gravity.y = -0.012;
 	m_params.Wdamping = 0.9999;
 	m_params.Vdamping = 0.9999;
 
 	// DEM parameters
-	m_params.spring = 1.0f;
-	m_params.damping = 0.3f;
+	m_params.spring = 0.5f;
+	m_params.damping = 0.2f;
 	m_params.shear = 0.1f;
 
 	// SIS parameters
