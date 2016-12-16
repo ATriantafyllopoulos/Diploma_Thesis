@@ -42,8 +42,9 @@ void main()
 		0.f, g.z, -g.y, 0.f,
 		0.f, 0.f, 0.f, 1.f);
 	gravityR = inverse(gravityR);
-	vec4 temp4 = gravityR * vec4(inPosition, 1.0);
-	vEyeSpacePos = mMV*temp4;
+	vec4 temp4 = gravityR * matrices.modelMatrix * vec4(inPosition, 1.0);
+	vEyeSpacePos = matrices.viewMatrix*temp4;
+	//vEyeSpacePos = mMV*temp4;
 	
 	//vEyeSpacePos = mMV*vec4(inPosition, 1.0);
 	vNormal = (matrices.normalMatrix*vec4(inNormal, 1.0)).xyz;
