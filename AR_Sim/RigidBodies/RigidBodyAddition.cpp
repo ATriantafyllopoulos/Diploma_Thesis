@@ -1690,42 +1690,70 @@ void ParticleSystem::initObject(glm::vec3 pos, glm::vec3 vel, glm::vec3 ang, flo
 			inertiaTensor[1][1] = 0.0173912;
 			inertiaTensor[2][2] = 0.02457;
 		}*/
-		if (!strcmp(modelName, "banana")) //scale = 2.0
+		if (!strcmp(modelName, "banana") && abs(scale - 2.f) < 0.0001) //scale = 2.0
 		{
 			inertiaTensor = glm::mat3(1.f);
 			inertiaTensor[0][0] = 0.0140314;
 			inertiaTensor[1][1] = 0.0218576;
 			inertiaTensor[2][2] = 0.0309458;
 		}
-		if (!strcmp(modelName, "bunny")) //scale = 1.5
+		else if (!strcmp(modelName, "banana") && abs(scale - 1.5f) < 0.0001)
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 0.00596544;
+			inertiaTensor[1][1] = 0.00895867;
+			inertiaTensor[2][2] = 0.0125508;
+		}
+		else if (!strcmp(modelName, "banana") && abs(scale - 1.0f) < 0.0001)
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 0.00321249;
+			inertiaTensor[1][1] = 0.00464048;
+			inertiaTensor[2][2] = 0.00641495;
+		}
+		if (!strcmp(modelName, "bunny") && abs(scale - 1.5f) < 0.0001) //scale = 1.5
 		{
 			inertiaTensor = glm::mat3(1.f);
 			inertiaTensor[0][0] = 0.00989096;
 			inertiaTensor[1][1] = 0.00979847;
 			inertiaTensor[2][2] = 0.0119784;
 		}
-		if (!strcmp(modelName, "teapot")) //scale = 2.0
+		if (!strcmp(modelName, "teapot") && abs(scale - 2.f) < 0.0001) //scale = 2.0
 		{
 			inertiaTensor = glm::mat3(1.f);
 			inertiaTensor[0][0] = 0.0122465;
 			inertiaTensor[1][1] = 0.0232885;
 			inertiaTensor[2][2] = 0.0208828;
 		}
+		else if (!strcmp(modelName, "teapot") && abs(scale - 1.5f) < 0.0001)
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 0.0075797;
+			inertiaTensor[1][1] = 0.0140341;
+			inertiaTensor[2][2] = 0.012614;
+		}
 		inertiaTensor = glm::inverse(inertiaTensor);
-		if (!strcmp(modelName, "cube"))
+		if (!strcmp(modelName, "cube") && abs(scale - 1.f) < 0.0001 )
 		{
 			inertiaTensor = glm::mat3(1.f);
 			inertiaTensor[0][0] = 6.f / (0.1 * 0.1);
 			inertiaTensor[1][1] = 6.f / (0.1 * 0.1);
 			inertiaTensor[2][2] = 6.f / (0.1 * 0.1);
 		}
-		/*if (!strcmp(modelName, "cube"))
+		else if (!strcmp(modelName, "cube") && abs(scale - 2.f) < 0.0001)
+		{
+			inertiaTensor = glm::mat3(1.f);
+			inertiaTensor[0][0] = 6.f / (0.2 * 0.2);
+			inertiaTensor[1][1] = 6.f / (0.2 * 0.2);
+			inertiaTensor[2][2] = 6.f / (0.2 * 0.2);
+		}
+		if (!strcmp(modelName, "cube") && abs(scale - 1.5) < 0.0001)
 		{
 			inertiaTensor = glm::mat3(1.f);
 			inertiaTensor[0][0] = 6.f / (0.15 * 0.15);
 			inertiaTensor[1][1] = 6.f / (0.15 * 0.15);
 			inertiaTensor[2][2] = 6.f / (0.15 * 0.15);
-		}*/
+		}
 		/*std::cout << modelName << " max distance: " << maxDistance << std::endl;
 		std::cout << modelName << " inverse inertia tensor: " << std::endl;
 		for (int row = 0; row < 3; row++)

@@ -243,9 +243,7 @@ void ParticleRenderer::_initGL()
 
 void ParticleRenderer::renderDepthImage()
 {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+	
 	staticShader.bind();
 	//staticShader.setUniform("matrices.projMatrix", projectionMatrix);
 	staticShader.setUniform("matrices.viewMatrix", viewMatrix);

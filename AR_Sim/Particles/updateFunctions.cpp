@@ -807,6 +807,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Baraff_CPU()
 						m_params.particleRadius,
 						cp, cn);
 					cn = normal_CPU[particleIndex];
+					//cn = make_float4(0, 1, 0, 0);
 					// customly added for collision with horizontal plane
 					// TODO: remove
 					cp = relative_CPU[current_particle];
@@ -994,7 +995,7 @@ void ParticleSystem::Handle_Augmented_Reality_Collisions_Catto_CPU()
 	collision_counter = 0;
 	current_particle = 0;
 
-	float epsilon = 0.3f;
+	const float epsilon = m_params.ARrestitution;
 	for (int index = 0; index < numRigidBodies; index++)
 	{
 		for (int particle = 0; particle < particlesPerObjectThrown[index]; particle++)
@@ -1545,7 +1546,6 @@ void ParticleSystem::GatherAugmentedRealityCollisions()
 			{
 				int particleIndex = collidingParticleIndex_CPU[current_particle];
 				ContactNormal.push_back(normal_CPU[particleIndex]); // scene's normal at collision point
-				//ContactNormal.push_back(make_float4(0, 1, 0, 0));
 				//ContactNormal.push_back(contact_normal_CPU[current_particle]);
 				ContactPoint.push_back(relative_CPU[current_particle] + CMs_CPU[index]);
 				ContactRigidBody_1.push_back(index);
@@ -2819,8 +2819,8 @@ void ParticleSystem::update(float deltaTime)
 
 	// DEM parameters
 	m_params.spring = 0.5f;
-	m_params.damping = 0.2f;
-	m_params.shear = 0.1f;
+	m_params.damping = 0.0f;
+	m_params.shear = 0.0f;
 
 	// SIS parameters
 	m_params.ARrestitution = 0.5;

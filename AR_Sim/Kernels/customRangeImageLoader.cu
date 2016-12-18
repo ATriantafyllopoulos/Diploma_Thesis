@@ -38,10 +38,18 @@ __global__ void RGBDloader(	unsigned short *image,
 	//	float focalY = 586.73;
 	//	float cx = 321.55;
 	//	float cy = 235.01;
-	float focalX = 528;
-	float focalY = 528;
+	/*float focalX = 525;
+	float focalY = 525;
 	float cx = 319.5;
-	float cy = 239.5;
+	float cy = 239.5;*/
+	float focalX = 517.3;
+	float focalY = 516.5;
+	float cx = 318.6;
+	float cy = 255.3;
+	/*float focalX = 591.1;
+	float focalY = 590.1;
+	float cx = 308.8;
+	float cy = 253.0;*/
 
 	
 	float posZ = image[y*imageWidth + x];// / 1000.f;

@@ -691,8 +691,8 @@ void ParticleSystem::updateUniformGrid(float deltaTime)
 
 		// handle collisions between rigid bodies and real scene
 		//Handle_Augmented_Reality_Collisions_Baraff_CPU();
-		//Handle_Augmented_Reality_Collisions_Catto_CPU();
-		Handle_Augmented_Reality_Collisions_Catto_Friction_CPU();
+		Handle_Augmented_Reality_Collisions_Catto_CPU();
+		//Handle_Augmented_Reality_Collisions_Catto_Friction_CPU();
 		//Handle_Augmented_Reality_Collisions_Catto_Baumgarte_CPU(deltaTime);
 	}
 

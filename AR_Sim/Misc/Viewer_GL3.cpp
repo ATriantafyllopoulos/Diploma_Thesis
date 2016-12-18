@@ -113,10 +113,11 @@ void Viewer_GL3::init(void)
 	/*vEye = glm::vec3(0.0f, 0.0f, 0.1f);
 	vView = glm::vec3(0.0f, -0.5f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
-	vEye = glm::vec3(0.0f, 0.0f, 0.1f);
+	vEye = glm::vec3(0.0f, 0.0f, 0.0f);
 	vView = glm::vec3(0.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);
-	/*vEye = glm::vec3(-0.3f, 0.7f, 1.8f);
+	//vEye = glm::vec3(-0.3f, 0.7f, 1.8f);
+	/*vEye = glm::vec3(0.0f, 0.7f, 1.8f);
 	vView = glm::vec3(0.0f, 0.0f, -1.0f);
 	vUp = glm::vec3(0.0f, 1.0f, 0.0f);*/
 	/*vEye = glm::vec3(0.0f, 1.8f, 2.5f);
@@ -193,7 +194,8 @@ void Viewer_GL3::render(void)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDisable(GL_DEPTH_TEST);
-	renderer->renderARScene(windowWidth, windowHeight);
+	if (showRangeData)
+		renderer->renderARScene(windowWidth, windowHeight);
 
 	glEnable(GL_DEPTH_TEST);
 	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / (float)windowHeight, 0.1f, 100.f);
@@ -208,7 +210,16 @@ void Viewer_GL3::render(void)
 	
 	//renderer->display(ParticleRenderer::PARTICLE_SPHERES);
 	if (showRangeData)
-		renderer->renderDepthImage();
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	}
+	else
+	{
+		glDisable(GL_BLEND);
+	}
+	renderer->renderDepthImage();
 	if (number_of_objects)// (number_of_objects)
 	{
 		CAssimpModel::BindModelsVAO();

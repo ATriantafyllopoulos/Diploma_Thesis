@@ -52,8 +52,12 @@ void main()
 	vec3 temp;
 	//vEyeSpacePos.x = 579.83 * (vEyeSpacePos.x) / vEyeSpacePos.z + 321.55;
 	//vEyeSpacePos.y = 586.73 * (vEyeSpacePos.y) / vEyeSpacePos.z + 235.01;
-	vEyeSpacePos.x = 528 * (vEyeSpacePos.x) / vEyeSpacePos.z + 319.5;
-	vEyeSpacePos.y = 528 * (vEyeSpacePos.y) / vEyeSpacePos.z + 239.5;
+	//vEyeSpacePos.x = 520.9 * (vEyeSpacePos.x) / vEyeSpacePos.z + 325.1;
+	//vEyeSpacePos.y = 521.0 * (vEyeSpacePos.y) / vEyeSpacePos.z + 249.7;
+	vEyeSpacePos.x = 517.3 * (vEyeSpacePos.x) / vEyeSpacePos.z + 318.6;
+	vEyeSpacePos.y = 516.5 * (vEyeSpacePos.y) / vEyeSpacePos.z + 255.3;
+	//vEyeSpacePos.x = 591.1 * (vEyeSpacePos.x) / vEyeSpacePos.z + 308.8;
+	//vEyeSpacePos.y = 590.1 * (vEyeSpacePos.y) / vEyeSpacePos.z + 253.0;
 	temp.x = -(vEyeSpacePos.x - 320) / 320;
 	temp.y = -(vEyeSpacePos.y - 240) / 240;
 	float far = 100.0;
